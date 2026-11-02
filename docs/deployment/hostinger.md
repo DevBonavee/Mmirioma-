@@ -507,6 +507,8 @@ migration run with the helper script against a populated database.
 9. **Water sources:** none exist on a new deployment. Add and activate at
    least one (section 9) before taking orders, with a real laboratory
    report reference.
+10. **Search Console:** the domain is not verified and the sitemap is not
+    submitted (section 15). Nothing about search results has been checked.
 
 ## 14. Known limitations
 
@@ -519,3 +521,49 @@ migration run with the helper script against a populated database.
 - **Backups only as good as their off-site copy** until a target is chosen.
 - **Caddy certificates** live in the `caddy_data` volume; losing it means
   asking Let's Encrypt again (rate limits apply).
+
+## 15. Search Console
+
+The app serves `https://mmiriomadelivery.com/robots.txt` and `/sitemap.xml` as
+real files (#331, [seo.md](../features/seo.md)). Google only reports on the site
+once a person with the Google account has proved the domain is theirs and given
+it the sitemap. This has not been done. The steps below are what to do; the menu
+names in hPanel and Search Console may differ a little from the words here, so
+read the screen.
+
+1. **Check the files first**, from any machine:
+
+   ```bash
+   curl -i https://mmiriomadelivery.com/robots.txt     # 200, text/plain, starts "# MmiriOma"
+   curl -i https://mmiriomadelivery.com/sitemap.xml    # 200, text/xml, four <loc> entries
+   ```
+
+   If either answers with HTML (the app's page), the release does not include the
+   file; redeploy (section 7).
+
+2. **Add the property.** In [Google Search Console](https://search.google.com/search-console),
+   add a **Domain** property for `mmiriomadelivery.com`. A Domain property covers
+   `www`, `http` and `https` together, which matters because `www` redirects to
+   the main domain (section 5).
+
+3. **Verify with a DNS record.** Search Console shows a `TXT` record to add. In
+   Hostinger's hPanel, open the domain's DNS records and add a `TXT` record for
+   the root (`@`) with exactly that value, then press Verify in Search Console. DNS
+   can take from minutes to a few hours; Verify again later if it says it cannot
+   find the record. Keep the record afterwards: removing it drops the verification.
+   This needs no change to the app, which is why there is no verification file in
+   the repository.
+
+4. **Submit the sitemap.** In Search Console, open Sitemaps and enter
+   `sitemap.xml`. The status should change to "Success" and list four pages. If it
+   says it could not fetch the file, run the `curl` check again.
+
+5. **Ask for the landing page to be looked at.** Use URL inspection on
+   `https://mmiriomadelivery.com/`; the page's HTML should show the title and the
+   canonical `https://mmiriomadelivery.com/`. Indexing takes days, not minutes, so
+   do not expect results the same day.
+
+Then keep this up to date: when `/about` and `/contact` exist, add them to
+`frontend/public/sitemap.xml` and redeploy, and Search Console reads the new
+file on its own schedule. If the domain ever changes, change the four places
+listed in [seo.md](../features/seo.md) (section 6) first.
