@@ -64,7 +64,8 @@ the official number.
 **Status: agreed** (G3) on 2026-11-02 by @nnamdi-security (technical lead),
 who is not the author, with the decisions and conditions in
 [Decisions](#decisions-proposed-in-339) and
-[Open questions](#open-questions-for-339). Nothing is built yet. Requirements: FR-055, NFR-002, NFR-003,
+[Open questions](#open-questions-for-339). **Built in #339**
+([public-contact-form.md](../features/public-contact-form.md)). Requirements: FR-055, NFR-002, NFR-003,
 NFR-005 (SRS); the privacy notice, sections 2, 3, 7 and 8.
 
 A visitor who is not signed in sends a message to the team from the website.
@@ -76,7 +77,7 @@ answers by phone; nothing is sent by email (there is no email provider, SRS
 **Public:** no session cookie, no CSRF token (nothing is signed in to forge).
 Abuse is limited by the rules below.
 
-**Request**
+**Request** ([examples/public-contact-request.json](examples/public-contact-request.json))
 
 ```json
 {
@@ -99,7 +100,7 @@ Abuse is limited by the rules below.
 
 There is **no email field**: see [decision 1](#decisions-proposed-in-339).
 
-**201**
+**201** ([examples/public-contact-receipt.json](examples/public-contact-receipt.json))
 
 ```json
 { "reference": "SR-4K7M2Q9X", "created_at": "2026-11-02T10:15:00Z" }
@@ -302,6 +303,7 @@ git history of this file, for when an email provider is approved.
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-02 | Built (#339), as agreed; examples added | @nnamdi-security (technical lead) |
 | 2026-11-02 | Proposed (#339): `POST /public/contact`, a website message stored as a support request (migration, admin queue fields, rate limits, privacy rows) | @nnamdi-security (technical lead, G3, 2026-11-02), with the conditions in the section |
 | 2026-10-27 | Built in #56; the per-IP limit set to 120 requests per 10 minutes | @nnamdi-security (technical lead, #56) |
 | 2026-10-26 | Revised in #8: contact read from backend settings only (FR-055), `phone` always set, `whatsapp` on by a setting (WhatsApp confirmed active); admin "Support WhatsApp" field removed; newsletter left out of the pilot | @nnamdi-security (technical lead, #36), with @chidimmamogbo's decisions on #8 |

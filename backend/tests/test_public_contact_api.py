@@ -77,5 +77,6 @@ def test_the_121st_request_in_ten_minutes_is_429(client: TestClient) -> None:
     assert body["details"]["retry_after_seconds"] == int(response.headers["Retry-After"]) > 0
 
 
-def test_post_is_not_allowed(client: TestClient) -> None:
-    assert client.post(PATH).status_code == 405
+def test_put_and_delete_are_not_allowed(client: TestClient) -> None:
+    assert client.put(PATH).status_code == 405
+    assert client.delete(PATH).status_code == 405
