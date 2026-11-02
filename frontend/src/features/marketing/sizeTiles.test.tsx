@@ -15,7 +15,8 @@ async function readSource(path: string): Promise<string> {
   const fsModule = 'node:fs/promises'
   const { readFile } = (await import(/* @vite-ignore */ fsModule)) as { readFile: (file: string, encoding: string) => Promise<string> }
   const { cwd } = (globalThis as unknown as { process: { cwd: () => string } }).process
-  return readFile(`${cwd()}/${path}`, 'utf-8')
+  // A Windows checkout has CRLF line endings; the rules below are matched with LF.
+  return (await readFile(`${cwd()}/${path}`, 'utf-8')).replaceAll(String.fromCharCode(13, 10), String.fromCharCode(10))
 }
 const marketingCss = await readSource('src/features/marketing/marketing.css')
 const themeCss = await readSource('src/styles/theme.css')

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { HomeLogo } from '../../components/brand/HomeLogo'
 import { cx } from '../../lib/cx'
 import { CONTACT } from './content'
 import { ArrowLeftIcon } from './icons'
@@ -613,9 +614,9 @@ function LegalPage({
     <div className="mk-page min-w-0 overflow-x-clip bg-white font-marketing text-[16px] leading-normal text-ink">
       <header className="sticky top-0 z-30 border-0 border-b border-solid border-[#E3EDF7] bg-white/95 backdrop-blur-sm">
         <div className="mx-auto box-border flex max-w-[1200px] items-center justify-between gap-6 px-6 py-3.5">
-          <Link to="/" aria-label="MmiriOma home" className="flex min-h-11 min-w-0 items-center no-underline">
+          <HomeLogo className="min-w-0">
             <BrandLogo className="h-auto w-[190px] max-w-full" />
-          </Link>
+          </HomeLogo>
           <Link
             to="/"
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-solid border-input-line px-[18px] text-center text-[15px] font-semibold whitespace-nowrap text-ink no-underline transition-colors duration-150 hover:border-primary hover:bg-mk-panel hover:text-ink"
@@ -667,7 +668,10 @@ function LegalPage({
       <footer className="bg-mk-navy text-mk-foot-text">
         <div className="mx-auto box-border flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-8 text-[14px]">
           <span className="flex flex-wrap items-center gap-4 text-mk-foot-muted">
-            <BrandLogo dark className="h-8" />© 2026 MmiriOma. All rights reserved.
+            <HomeLogo>
+              <BrandLogo dark className="h-8" />
+            </HomeLogo>
+            © 2026 MmiriOma. All rights reserved.
           </span>
           <nav aria-label="Legal" className="flex flex-wrap gap-6">
             <Link to="/" className="text-mk-foot-text no-underline hover:text-white">

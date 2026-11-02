@@ -253,7 +253,10 @@ the draft already survives a reload (it is kept in the browser's session storage
 ### Phone, tablet and desktop
 
 The landing page is checked at 360, 768, 1280 and 1920 px. Any horizontal scroll
-or cramped section found is fixed in the code pull request and listed there. The
+or cramped section found is fixed in the code pull request and listed there.
+The check found no horizontal scroll at any of the four widths. At 360 px the
+tanker "1,000" and "Custom" labels were wider than their 41 px tiles, so below
+420 px they use a smaller size (14 px and 12 px). The
 service areas list keeps its "sample" wording until #346 replaces it.
 
 ## Open items

@@ -2,6 +2,7 @@ import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { Logo } from '../brand/Logo'
+import { HomeLogo } from '../brand/HomeLogo'
 import {
   BellIcon,
   ChevronDownIcon,
@@ -93,9 +94,9 @@ export function AdminShell({ searchPlaceholder, onSearch, user, counts = {}, unr
         <IconButton label="Open menu" className="lg:hidden" onClick={() => setOpen(true)} aria-expanded={open}>
           <MenuIcon size={24} roundJoin={false} />
         </IconButton>
-        <Link to="/admin" aria-label="MmiriOma admin dashboard" className="lg:mr-[52px]">
+        <HomeLogo className="lg:mr-[52px]">
           <Logo height={34} alt="" />
-        </Link>
+        </HomeLogo>
         <form
           role="search"
           className="order-last flex h-11 max-w-[520px] flex-[1_1_100%] items-center gap-2.5 rounded-input bg-field px-3.5 text-mute md:order-none md:flex-[1_1_280px]"
@@ -148,7 +149,9 @@ export function AdminShell({ searchPlaceholder, onSearch, user, counts = {}, unr
             />
             <div className="animate-slide-in relative flex h-full flex-col overflow-y-auto bg-white shadow-[16px_0_40px_rgba(0,0,0,0.25)]">
               <div className="flex items-center justify-between px-3.5 pt-3">
-                <Logo height={30} />
+                <HomeLogo>
+                  <Logo height={30} alt="" />
+                </HomeLogo>
                 <IconButton label="Close menu" onClick={() => setOpen(false)}>
                   <CloseIcon size={20} strokeWidth={2.4} roundJoin={false} />
                 </IconButton>

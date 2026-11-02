@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { Logo } from '../brand/Logo'
+import { HomeLogo } from '../brand/HomeLogo'
 import { BellIcon, ChevronLeftIcon, MenuIcon } from '../icons/icons'
 import { Avatar } from '../ui/Avatar'
 import { IconButton, IconLink } from '../ui/IconButton'
@@ -63,7 +64,11 @@ export function TopBar({
       )}
     >
       {left ?? <TopBarSpacer />}
-      {center ?? <Logo height={30} />}
+      {center ?? (
+        <HomeLogo>
+          <Logo height={30} alt="" />
+        </HomeLogo>
+      )}
       {right ?? <TopBarSpacer />}
     </header>
   )

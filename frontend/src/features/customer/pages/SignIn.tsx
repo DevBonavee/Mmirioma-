@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Wave } from '../../../components/art/Art'
 import { Illustration } from '../../../components/brand/Illustration'
+import { HomeLogo } from '../../../components/brand/HomeLogo'
 import { Logo } from '../../../components/brand/Logo'
 import { MobileShell, ScrollArea } from '../../../components/layout/MobileShell'
 import { Button } from '../../../components/ui/Button'
@@ -56,7 +57,9 @@ export function SignIn() {
           <Illustration name="drop-hero" className="absolute top-[-4%] left-[-5%] h-[108%] w-[110%] max-w-none object-cover object-[30%_50%]" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0)_40%,#FFFFFF_100%)]" />
           <div className="rise-1 absolute top-[22px] left-[22px] rounded-icon bg-white/92 px-3 py-2">
-            <Logo height={30} />
+            <HomeLogo>
+              <Logo height={30} alt="" />
+            </HomeLogo>
           </div>
           <Wave fill="#FFFFFF" className="bottom-0" />
         </div>
