@@ -34,7 +34,7 @@ function renderAt(path: string) {
 beforeEach(async () => {
   resetMockDb()
   vi.restoreAllMocks()
-  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0082', password: 'sample-password-1' })
+  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0082', password: 'Sample-Passw0rd-1', accepted_terms: true })
 })
 
 // Points are hidden for the pilot, not deleted (#107); flipping POINTS_ENABLED brings them back.

@@ -48,6 +48,12 @@ class AuthenticatedSession:
     token: str
 
 
+#: The version of ``/terms`` and ``/privacy`` a new sign-up accepts: the date of
+#: the latest change to either page. Bump it in the same change that edits one
+#: (``test_password_rule.py`` fails otherwise). Existing users are not asked again.
+TERMS_VERSION = "2026-11-03"
+
+
 def _invalid_credentials() -> APIError:
     return APIError(
         HTTPStatus.UNAUTHORIZED,
@@ -67,8 +73,27 @@ def _secret() -> str:
     return get_settings().session_secret.get_secret_value()
 
 
+def record_terms_acceptance(user: User) -> None:
+    """Stamp the time and terms version on a new account. Does not commit.
+
+    Called only after the sign-up request carried ``accepted_terms: true``. The
+    time and version are the server's own; the client sends neither.
+
+    Args:
+        user: The account being created.
+    """
+    user.terms_accepted_at = datetime.now(UTC)
+    user.terms_version = TERMS_VERSION
+
+
 async def create_user(
-    session: AsyncSession, *, name: str, phone: str, password: str, role: UserRole
+    session: AsyncSession,
+    *,
+    name: str,
+    phone: str,
+    password: str,
+    role: UserRole,
+    terms_accepted: bool = False,
 ) -> User:
     """Create an account with a hashed password and commit it.
 
@@ -78,6 +103,8 @@ async def create_user(
         phone: Normalized E.164 phone number.
         password: Plain-text password; only its hash is stored.
         role: Role to grant. API registration always passes ``customer``.
+        terms_accepted: The person accepted at sign-up. The command-line tool
+            and the demo seed leave it false, so no acceptance is recorded.
 
     Returns:
         The new user.
@@ -89,6 +116,8 @@ async def create_user(
     """
     password_hash = await asyncio.to_thread(security.hash_password, password)
     user = User(name=name, phone=phone, password_hash=password_hash, role=role)
+    if terms_accepted:
+        record_terms_acceptance(user)
     session.add(user)
     try:
         await session.commit()

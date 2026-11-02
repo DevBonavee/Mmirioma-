@@ -4,6 +4,7 @@
 import type { FieldValues, Path, UseFormSetError } from 'react-hook-form'
 import { z } from 'zod'
 import { ApiError } from './api/client'
+import { passwordProblem } from './format/password'
 import { normalizeNigerianPhone } from './format/phone'
 
 /** Message the auth design uses for a bad phone number (docs/api/auth.md). */
@@ -16,11 +17,11 @@ export const phoneField = z
   .min(1, 'Enter your phone number.')
   .refine((v) => normalizeNigerianPhone(v) !== null, PHONE_MESSAGE)
 
-/** New password rule from the auth contract: 8 to 128 characters, no composition rules. */
-export const newPasswordField = z
-  .string()
-  .min(8, 'Use at least 8 characters.')
-  .max(128, 'Use 128 characters or fewer.')
+/** New password rule from the auth contract (#332): see {@link passwordProblem}. */
+export const newPasswordField = z.string().superRefine((value, ctx) => {
+  const message = passwordProblem(value)
+  if (message) ctx.addIssue({ code: 'custom', message })
+})
 
 /** Something@something.something with no spaces: the email check shared by forms and mocks. */
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

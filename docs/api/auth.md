@@ -23,9 +23,8 @@ from [partners.md](partners.md). See [Changes](#changes).
 [Change password](#change-password-8).
 
 **Password rule and recorded acceptance (2026-11-02, #332): agreed** (G3) on
-2026-11-02 by @nnamdi-security (technical lead), who is not the author. Not in
-force until #332 is built, and then only with the rollout order in
-[Rollout](#rollout). See
+2026-11-02 by @nnamdi-security (technical lead), who is not the author. Built
+in #332, and live only with the rollout order in [Rollout](#rollout). See
 [Password rule and recorded acceptance](#password-rule-and-recorded-acceptance-332).
 
 ## Roles
@@ -142,10 +141,10 @@ provider's delivery report:
 - Phone: Nigerian mobile number. Accepted inputs `08000000001`,
   `2348000000001`, `+2348000000001` (spaces and dashes ignored). Stored and
   returned as `+234` followed by 10 digits starting with 7, 8 or 9.
-- Password: 8–128 characters. No composition rules (NIST SP 800-63B). Stored
-  only as a salted scrypt hash. **Agreed change (#332), in force when it is built:**
-  a new password also needs an uppercase letter, a number and a symbol
-  ([#332](#password-rule-and-recorded-acceptance-332)). Sign-in stays as it is.
+- Password: a new one needs 8–128 characters, an uppercase letter, a number and
+  a symbol ([#332](#password-rule-and-recorded-acceptance-332)). Sign-in checks
+  only the maximum length, so older passwords keep working. Stored only as a
+  salted scrypt hash.
 
 ## Sessions
 
@@ -191,7 +190,7 @@ Only the signed-in user's own object is returned by these endpoints.
 
 | Method | Path | Auth | Body | Success | Errors |
 | --- | --- | --- | --- | --- | --- |
-| POST | `/auth/register` | none | `{name, phone, password}` | 201 `Session` + cookie | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` |
+| POST | `/auth/register` | none | `{name, phone, password, accepted_terms}` | 201 `Session` + cookie | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` |
 | POST | `/auth/partner-register` | none | see [partners.md](partners.md#post-authpartner-register) | 201 `Session` + cookie, role `driver` | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` (shares the registration limit) |
 | POST | `/auth/login` | none | `{phone, password}` | 200 `Session` + cookie | 401 `invalid_credentials`, 422 `validation_error`, 429 `too_many_attempts` |
 | POST | `/auth/logout` | session + CSRF | none | 204, cookie cleared | 401 `not_authenticated`, 403 `csrf_failed` |
@@ -233,7 +232,7 @@ same screen in the partner and admin apps) had no endpoint. Agreed in #8, built 
 Request ([examples/change-password-request.json](examples/change-password-request.json)):
 
 ```json
-{ "current_password": "sample-current-password", "new_password": "sample-new-password" }
+{ "current_password": "sample-current-password", "new_password": "Sample-New-Passw0rd" }
 ```
 
 Rules:
@@ -246,9 +245,8 @@ Rules:
   endpoint cannot be used to guess passwords faster than login
   (NFR-002). Example:
   [examples/error-password-incorrect.json](examples/error-password-incorrect.json).
-- `new_password` follows the [password rules](#identifier-and-password-rules)
-  (8-128 characters, no composition rules); otherwise 422 `validation_error`
-  with `loc` `["body", "new_password"]`. It is stored only as a salted scrypt
+- `new_password` follows the [password rule](#the-password-rule); otherwise 422
+  `validation_error` with `loc` `["body", "new_password"]`. It is stored only as a salted scrypt
   hash. Whether it may equal the current one is not checked (no SRS rule).
 - **Other sessions end** (decided by @chidimmamogbo, 2026-10-26): on success,
   every other session of the account is revoked server-side
@@ -274,8 +272,7 @@ date-constant `TERMS_VERSION` without re-acceptance, the same rule for
 `create-user`, clearing both columns on anonymize, not returning the fields,
 and null covering command-line and seeded accounts), because each follows the
 issue or is the narrowest choice where it is silent, and the rollout order
-removes the sign-up break. The team asked for composition rules. This replaces
-the "no composition rules" line above when #332 is built. Length matters more than
+removes the sign-up break. The team asked for composition rules. Length matters more than
 symbols for security, so the 8-character minimum stays visible and passwords up
 to 128 characters stay allowed. The SRS sets no password rule (NFR-001 asks only
 for hashing), so the rule comes from #332. The 18+ rule is already in the Terms
@@ -360,21 +357,20 @@ do not change.
 | `accepted_terms` | Required, and must be the JSON value `true`. Absent, `false` or anything else is 422 `validation_error` with `loc` `["body", "accepted_terms"]` |
 
 - **What it means:** the person ticked one box confirming three things: they are
-  18 or older, they accept the Terms of Use (`/terms`), and they accept the
-  Privacy Policy (`/privacy`). The age is the person's own statement. No date of
+  18 or older, they accept the Terms of Service (`/terms`), and they accept the
+  Privacy Notice (`/privacy`). The age is the person's own statement. No date of
   birth is collected and the server cannot check it.
 - **`msg` when refused:** `Confirm you are 18 or older and accept the Terms of
-  Use and Privacy Policy.` An absent field gets the standard `missing` entry, as
+  Service and Privacy Notice.` An absent field gets the standard `missing` entry, as
   for any other required field.
 - **What the server records:** on success, in the same transaction as the new
   account, `users.terms_accepted_at` (server time, UTC) and `users.terms_version`.
   The client sends neither, and sending either is 422 `validation_error`, as for
   any unknown field.
 - **The version** is one constant in the backend, `TERMS_VERSION`: the date of
-  the latest change to either page, written `YYYY-MM-DD`. It is `2026-11-01`
-  today, the Privacy Policy's last update (the Terms were last updated on 27
-  October 2026), and changes when the #332 build updates the notice (see
-  [Rollout](#rollout)). It is bumped in the same change that edits either page.
+  the latest change to either page, written `YYYY-MM-DD`. It is `2026-11-03`,
+  the Privacy Notice's last update (the Terms were last updated on 27 October
+  2026). It is bumped in the same change that edits either page.
   Bumping it does not ask existing users to accept again; no such flow is
   proposed.
 - **Not returned:** the `User` object does not change. No screen needs these
@@ -404,7 +400,7 @@ Decided by @chidimmamogbo on 2026-11-02:
   branch, and the two merge back to back, with no deploy or promotion to `main`
   in between.
 - **Privacy notice:** the #332 build adds the acceptance record to
-  `PRIVACY_NOTICE.md` and the `/privacy` page, as version 3.1, and `TERMS_VERSION`
+  `PRIVACY_NOTICE.md` and the `/privacy` page, as version 4.0, and `TERMS_VERSION`
   takes that version's date. The notice's legal review is still open.
 - **Change password screen:** the #332 build tightens `newPasswordField` in
   `frontend/src/lib/forms.ts` to this rule, because #336 covers only the sign-up
@@ -439,6 +435,7 @@ Decided by @chidimmamogbo on 2026-11-02:
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-03 | #332 build, amending what was agreed on 2026-11-02: the acceptance message names the pages as they call themselves, "Terms of Service" and "Privacy Notice", and the notice becomes version 4.0, not 3.1, because the privacy procedure asks for a major version when new data is collected | @chidimmamogbo's decision; needs the reviewer's agreement in the PR |
 | 2026-11-02 | Proposed (#332): new passwords need 8-128 characters, an uppercase letter, a number and a symbol; `accepted_terms` required on `POST /auth/register` and `POST /auth/partner-register`, with the time and terms version stored. **Breaking** for clients that do not send `accepted_terms`, and for clients that send weak passwords | @nnamdi-security (technical lead, G3, 2026-11-02) |
 | 2026-10-31 | Additive: `delivery_status` on `PhoneCodeSent`, and `GET /auth/phone-verification/status` and `GET /auth/phone-change/status` (Termii delivery reports). No existing field, status or error code changes | Proposed in the `fix/termii-otp-and-driver-area` branch; needs one reviewer's agreement in the PR |
 | 2026-10-26 | Change password (#8): `POST /auth/password`; a change ends the account's other sessions | @nnamdi-security (technical lead, #36), with @chidimmamogbo's decisions on #8 |

@@ -22,7 +22,8 @@ directory ([admin-drivers.md](admin-drivers.md), #45).
 ## 2. Feature workflow
 
 1. The partner signs up (`POST /auth/partner-register`) with a name, phone,
-   password, Keke or tanker, plate, a tanker's capacity in gallons, and a
+   password (the new-password rule, [authentication.md](authentication.md)),
+   the 18+ and Terms acceptance, Keke or tanker, plate, a tanker's capacity in gallons, and a
    service zone from `GET /service-zones`. The server creates the account
    and a driver profile in one transaction, `pending` and offline, and signs
    them in.

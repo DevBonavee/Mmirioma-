@@ -4,7 +4,15 @@ import uuid
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    StringConstraints,
+)
+from pydantic_core import PydanticCustomError
 
 from app.modules.auth.models import User, UserRole
 from app.shared.phone import normalize_nigerian_phone
@@ -14,9 +22,69 @@ PASSWORD_MAX_LENGTH = 128
 
 PhoneNumber = Annotated[str, Field(max_length=32), AfterValidator(normalize_nigerian_phone)]
 PersonName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
-# Length limits follow NIST SP 800-63B; no composition rules. The maximum also
-# bounds hashing cost.
-Password = Annotated[str, Field(min_length=PASSWORD_MIN_LENGTH, max_length=PASSWORD_MAX_LENGTH)]
+TERMS_NOT_ACCEPTED_MESSAGE = (
+    "Confirm you are 18 or older and accept the Terms of Service and Privacy Notice."
+)
+
+
+def password_problem(password: str) -> str | None:
+    """Say what a new password still needs (docs/api/auth.md, #332).
+
+    The one place the rule lives: the schemas below and the command-line tool
+    both use it. The team asked for the composition rules; the length is what
+    matters most for security, and the maximum also bounds hashing cost.
+
+    Uppercase and number mean plain ``A-Z`` and ``0-9``, so the form's check
+    gives the same answer. A symbol is anything that is not a letter, a number
+    or whitespace, so a Nigerian keyboard's ``₦`` counts. Lowercase is not
+    required.
+
+    Args:
+        password: The password as typed.
+
+    Returns:
+        A message for the person naming everything missing at once, or None
+        when the password is acceptable. It never repeats the password.
+    """
+    if len(password) > PASSWORD_MAX_LENGTH:
+        return f"Use {PASSWORD_MAX_LENGTH} characters or fewer."
+    missing = []
+    if len(password) < PASSWORD_MIN_LENGTH:
+        missing.append(f"at least {PASSWORD_MIN_LENGTH} characters")
+    if not any("A" <= c <= "Z" for c in password):
+        missing.append("an uppercase letter")
+    if not any("0" <= c <= "9" for c in password):
+        missing.append("a number")
+    if all(c.isalnum() or c.isspace() for c in password):
+        missing.append("a symbol")
+    if not missing:
+        return None
+    needed = missing[0] if len(missing) == 1 else f"{', '.join(missing[:-1])} and {missing[-1]}"
+    return f"Your password needs {needed}."
+
+
+def _check_new_password(password: str) -> str:
+    problem = password_problem(password)
+    if problem:
+        # Not ValueError: pydantic would put "Value error, " before the message,
+        # and screens show this message as it is.
+        raise PydanticCustomError("value_error", problem)
+    return password
+
+
+def _require_true(value: object) -> object:
+    # Before the Literal check, so "true", 1 or false all get the one message.
+    if value is not True:
+        raise PydanticCustomError("value_error", TERMS_NOT_ACCEPTED_MESSAGE)
+    return value
+
+
+# Every field that sets a password. A field that only checks an existing
+# password takes the maximum alone, so accounts from before #332 can still sign in.
+Password = Annotated[str, AfterValidator(_check_new_password)]
+# The person's tick on one box: 18 or older, the Terms of Service and the Privacy
+# Notice. The server stores the time and version itself (docs/api/auth.md).
+AcceptedTerms = Annotated[Literal[True], BeforeValidator(_require_true)]
 
 
 class RegisterRequest(BaseModel):
@@ -27,6 +95,7 @@ class RegisterRequest(BaseModel):
     name: PersonName
     phone: PhoneNumber
     password: Password
+    accepted_terms: AcceptedTerms
 
 
 class LoginRequest(BaseModel):
@@ -35,8 +104,9 @@ class LoginRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     phone: PhoneNumber
-    # Only the maximum is enforced here: a too-short password simply fails to
-    # match, and checking the minimum would leak the password policy per account.
+    # Only the maximum is enforced here: a password that breaks the new-password
+    # rule simply fails to match, and accounts from before the rule must still
+    # be able to sign in.
     password: Annotated[str, Field(min_length=1, max_length=PASSWORD_MAX_LENGTH)]
 
 

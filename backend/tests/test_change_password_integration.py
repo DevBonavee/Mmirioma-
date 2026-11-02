@@ -26,7 +26,7 @@ pytestmark = [
 
 created_phones = auth_part.created_phones
 db_client = auth_part.db_client
-NEW_PASSWORD = "a new sample password"
+NEW_PASSWORD = "A-new-sample-passw0rd"
 
 
 def _connect() -> psycopg.Connection:

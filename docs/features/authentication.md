@@ -110,6 +110,7 @@ Migration `0002` (revises `0001`).
 | `password_hash` | varchar(255) | `scrypt$<log2N>$<r>$<p>$<salt>$<hash>` |
 | `role` | varchar(20), CHECK `ck_users_user_role` | `customer`, `admin`, `driver` |
 | `is_active` | boolean, default true | false blocks login and all sessions |
+| `terms_accepted_at`, `terms_version` | timestamptz and varchar(10), nullable, set together (`ck_users_terms_acceptance_complete`) | When and which Terms and Privacy Policy the person accepted at sign-up (#332, migration `0024`). Null means no acceptance was recorded |
 | `phone_verified_at` | timestamptz, nullable | Set when the customer verifies the phone by SMS code (FR-003, [phone-verification.md](phone-verification.md)); required before ordering |
 | `created_at`, `updated_at` | timestamptz | |
 
@@ -133,7 +134,7 @@ All under `/api/v1`.
 
 | Method | Path | Roles | Request | Success | Errors (status + code) |
 | --- | --- | --- | --- | --- | --- |
-| POST | `/auth/register` | public | `{name, phone, password}` (extra fields rejected) | 201 `{user, csrf_token, expires_at}` + cookie | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` |
+| POST | `/auth/register` | public | `{name, phone, password, accepted_terms}` (extra fields rejected) | 201 `{user, csrf_token, expires_at}` + cookie | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` |
 | POST | `/auth/login` | public | `{phone, password}` | 200 `{user, csrf_token, expires_at}` + cookie | 401 `invalid_credentials`, 422 `validation_error`, 429 `too_many_attempts` |
 | POST | `/auth/logout` | any signed-in | none; `X-CSRF-Token` header | 204, cookie cleared | 401 `not_authenticated`, 403 `csrf_failed` |
 | GET | `/auth/me` | any signed-in | none | 200 `{user, csrf_token, expires_at}` | 401 `not_authenticated` |
@@ -186,8 +187,25 @@ and their `/verify`) are documented in
   with no password, hash or session data (NFR-004). This session keeps its
   cookie and CSRF token. The new password may equal the old one (no SRS
   rule). No SMS is sent about the change (FR-050 lists none).
-- **Passwords:** 8–128 characters, no composition rules (NIST SP 800-63B).
-  scrypt N=2^16, r=8, p=2 (OWASP equivalent-strength setting, about 64 MiB per
+- **New passwords** (#332): 8–128 characters with an uppercase letter (`A-Z`),
+  a number (`0-9`) and a symbol (anything that is not a letter, a number or
+  whitespace). The rule is on `POST /auth/register`,
+  `POST /auth/partner-register`, `new_password` on `POST /auth/password`, and
+  the `create-user` command; it lives in `password_problem` in `schemas.py`, with
+  a copy in `frontend/src/lib/format/password.ts` for the forms and mocks. Sign-in,
+  `current_password` and the phone-change password check only the maximum, so
+  older passwords keep working and nobody is forced to change one. The team asked
+  for the composition rules; length matters more for security.
+- **Recorded acceptance** (#332): both sign-up endpoints require
+  `accepted_terms: true`: one box confirming the person is 18 or older and accepts
+  the Terms of Service and the Privacy Notice. The age is their own statement. The server
+  stores the time and `TERMS_VERSION` (`service.py`), the date of the latest change
+  to either page; `test_password_rule.py` fails if a change edits a page and not
+  the constant. Bumping it does not ask existing users again. Null means no
+  acceptance was recorded: accounts from before the rule, the command-line tool
+  or the demo seed. Anonymizing an account clears both columns. The values are not
+  returned by any endpoint.
+- **Hashing:** scrypt N=2^16, r=8, p=2 (OWASP equivalent-strength setting, about 64 MiB per
   hash), 16-byte random salt. Parameters are stored per hash so they can be
   raised later. Chosen over argon2/bcrypt to avoid a new dependency.
 
@@ -234,13 +252,14 @@ and their `/verify`) are documented in
 | No cookie, unknown token, revoked, expired, or inactive user | 401 `not_authenticated` |
 | Unsafe method without a valid CSRF token | 403 `csrf_failed` (checked before the role) |
 | Signed in with the wrong role | 403 `forbidden` |
-| Invalid phone, short/long password, blank name, extra fields | 422 `validation_error`. Messages never echo the password or phone |
+| Invalid phone, weak password, blank name, extra fields | 422 `validation_error`. Messages never echo the password or phone. A weak password gets one entry naming everything missing, in words a screen can show |
+| Sign-up without `accepted_terms: true` | 422 `validation_error` on `accepted_terms`; nothing is stored |
 | `SESSION_SECRET` changes (or is unset in development and the process restarts) | Every existing session becomes invalid and users must sign in again |
 | Logged-out cookie replayed | 401: revocation is server-side, not just cookie deletion |
 | Too many failed logins for a phone or IP, or registrations from an IP | 429 `too_many_attempts`, `Retry-After` header and `details.retry_after_seconds`. Same answer for registered and unknown phones |
 | Change password with a wrong current password | 403 `password_incorrect`; nothing changes; counted as a failed sign-in for the phone |
 | Change password while the phone is limited | 429 `too_many_attempts`, even with the right password, which is not checked |
-| Change password: new password under 8 or over 128 characters, or an extra field (such as a "new password again") | 422 `validation_error` on that field |
+| Change password: a new password that breaks the rule, or an extra field (such as a "new password again") | 422 `validation_error` on that field |
 
 Passwords and session tokens are never logged or returned. Phone numbers are not
 logged.
@@ -287,6 +306,13 @@ TEST_DATABASE_URL="$(grep '^DATABASE_URL=' ../.env | cut -d= -f2-)" pytest tests
   deactivation (FR-002), expiry, staff login with its role, lockout after five
   failures. Test accounts use
   random phones and are deleted afterwards.
+- `test_password_rule.py` (no database): each rule and the boundary lengths,
+  refusals on `POST /auth/register`, sign-in and phone change still taking an
+  older password, the acceptance field, the command-line tool, `TERMS_VERSION`
+  matching the pages.
+- `test_password_rule_integration.py` (real database): the stored time and version,
+  a refused sign-up storing nothing, null for accounts made outside sign-up, and
+  the columns only set together.
 - `test_change_password_api.py` (no database): every role, signed out,
   CSRF, `password_incorrect`, wrong passwords using up the sign-in limit
   then 429, the right password not using it up, every validation rule.

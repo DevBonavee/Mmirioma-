@@ -31,9 +31,23 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         phone_verified_at: When the customer proved they own ``phone`` with
             an SMS code (FR-003). Null until then. A customer needs it before
             their first order; changing the phone sets it again (FR-004).
+        terms_accepted_at: When the person confirmed at sign-up that they are 18
+            or older and accept the Terms of Service and Privacy Notice. Null means
+            no acceptance was recorded, which is never read as acceptance:
+            accounts from before #332, and accounts from the command-line tool
+            or the demo seed, which do not go through sign-up.
+        terms_version: Which version of those pages was accepted
+            (``service.TERMS_VERSION``). Set and cleared with
+            ``terms_accepted_at``.
     """
 
     __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint(
+            "(terms_accepted_at IS NULL) = (terms_version IS NULL)",
+            name="terms_acceptance_complete",
+        ),
+    )
 
     name: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str] = mapped_column(String(16), unique=True)
@@ -52,6 +66,8 @@ class User(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     is_active: Mapped[bool] = mapped_column(default=True, server_default=true())
     phone_verified_at: Mapped[datetime | None] = mapped_column(default=None)
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(default=None)
+    terms_version: Mapped[str | None] = mapped_column(String(10), default=None)
 
 
 class UserSession(UUIDPrimaryKeyMixin, TimestampMixin, Base):

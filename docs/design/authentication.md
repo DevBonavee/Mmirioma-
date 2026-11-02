@@ -100,7 +100,8 @@ Client messages (from the prompt):
 Copy written by the design (not in the prompt; approved with this design):
 
 - "Enter your full name." (name error on C2)
-- "Use 8 to 128 characters." (password error on C2)
+- The password error on C2 is now the server's message naming what is missing
+  (#332, [auth.md](../api/auth.md#the-password-rule)).
 - C1 sentence: "We bring water to your door in Enugu, and the driver unloads it
   for you."
 - "Got it" on the C2 success notice

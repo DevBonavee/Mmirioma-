@@ -3,8 +3,8 @@
 <!-- The website's Privacy page (/privacy, frontend/src/features/marketing/LegalPages.tsx)
 mirrors this notice section by section. Change both together. -->
 
-**Version:** 3.0  
-**Last updated:** 1 November 2026  
+**Version:** 4.0  
+**Last updated:** 3 November 2026  
 **Service area:** Enugu State, Nigeria
 
 At **MmiriOma**, we respect your privacy. This notice explains what personal information we collect when you create an account, request water, receive a delivery, pay, contact us or deliver for us as a rider or driver; why we use it; who receives it; how long we keep it; and how you can exercise your rights. We aim to handle personal data in accordance with the **Nigeria Data Protection Act 2023** and other applicable laws.
@@ -25,6 +25,7 @@ MmiriOma is a water ordering and delivery service for households and businesses,
 | Information | Why it is needed |
 |---|---|
 | Your name, your mobile number (verified by an SMS code) and your password | Create and protect your account; contact you about your orders. Your password is stored only in a scrambled (hashed) form |
+| When you sign up: the time you confirmed you are 18 or older and accepted our Terms and this notice, and which version you accepted | Keep a record of your agreement |
 | Delivery details for each order: contact name and phone number, delivery address, landmark, delivery instructions, preferred date and quantity | Check that we can serve the area, agree the price and time with you, and deliver |
 | Saved addresses: a name you give each one (for example "Home"), the address, landmark and the delivery area you choose | Let you reuse an address when you order; the area tells us whether we can deliver there |
 | If you deliver for us as a rider or driver: your name, mobile number, password, vehicle type (keke or tanker), plate number, the tank capacity you declare, the area you serve, your approval status and whether you are available for work | Check your vehicle and approve you before you take jobs, offer you only jobs your vehicle can carry, and contact you about deliveries |

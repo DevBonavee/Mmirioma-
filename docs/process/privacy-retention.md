@@ -282,5 +282,6 @@ admin account and writes an audit row.
 
 | Date | Change | By |
 | --- | --- | --- |
+| 2026-11-03 | Notice 4.0 (#332): adds the record of the acceptance at sign-up. Anonymizing an account also clears that record | @chidimmamogbo (+ Claude Code) |
 | 2026-10-27 | "Deletion: riders and drivers" with `anonymize-partner`, by the rules the privacy contact confirmed on #119; open item 4 closed | @nnamdi-security (+ Claude Code), #119 |
 | 2026-10-27 | Copied into the fork from the main repo (`c4d972c`) and extended: deletion requests made in the app (`set-deletion-status`), what anonymizing also removes (saved addresses, in-app messages, support request messages, the deletion reason, feedback messages), never-verified accounts with audit rows anonymized, support requests in the monthly review, rider and driver accounts (open item 4), and the website copy of the notice. The notice question in #104 (section 8, never-verified accounts) is decided: the wording from PR #106, accepted by the privacy contact. Privacy contact's decisions (2026-10-27): the notice becomes 2.0, as the version rule asks when what is collected changes (it had been numbered 1.2 and was never published); section 9 names "Delete my account" in the app; rider and driver deletion gets its own issue (#119) | @nnamdi-security (+ Claude Code), #104 |
