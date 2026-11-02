@@ -698,6 +698,61 @@ total only, [order-details-and-price.md](order-details-and-price.md#response-200
 no coordinates or boundary, so nothing in it needs a session to protect.
 Inactive zones are never listed.
 
+### Amendment #346: zone centre and boundary on `GET /service-zones`
+
+**Status: proposed** (#346). Not agreed until a reviewer who is not the author
+signs off (G3). Nothing is built yet. The landing page's service-area map
+([design](../design/landing-service-areas.md)) needs each active zone's
+position, and the endpoint above says it holds "no coordinates or boundary".
+Zones already have both: `centre` is required and `boundary` is optional
+(FR-010), and the admin zone endpoints already return them. This amendment
+makes the public list return them too.
+
+`ServiceZoneOption` gains two fields:
+
+```json
+{
+  "items": [
+    {
+      "id": "9e8d7c6b-5a4f-4e3d-8c1b-0a9f8e7d6c5b",
+      "name": "Independence Layout",
+      "centre": { "latitude": 6.4584, "longitude": 7.5464 },
+      "boundary": null
+    }
+  ]
+}
+```
+
+| Field | Rule |
+| --- | --- |
+| `centre` | Always present. `{ "latitude", "longitude" }`, WGS 84 decimal degrees, as the admin zone object |
+| `boundary` | A GeoJSON `Polygon` (one ring of `[longitude, latitude]` positions), as the admin zone object, or `null` when the admin set none |
+
+Rules:
+
+- **Additive.** A client that reads only `id` and `name` (the address form,
+  partner sign-up) is not affected. Active zones only, by name, no
+  pagination, no session, no CSRF token: unchanged.
+- **Still no fees** and nothing else from the admin object. A service area's
+  outline and centre are not personal data; they are what the landing page
+  shows (the earlier "no coordinates" line existed because nothing public used
+  them).
+- **Cacheable.** The response may carry `Cache-Control: public, max-age=300`,
+  as `GET /public/contact`, so a busy landing page does not read the
+  database on every visit. Recommendation for the reviewer; the endpoint has no
+  rate limit today and this adds none.
+- **Values are the administrator's.** The sample coordinates above are SAMPLE
+  DATA; the server returns whatever the admin entered and never invents a
+  centre or a boundary.
+- No migration: both columns exist.
+
+**Decisions proposed:**
+
+1. Extend `GET /service-zones` rather than add a second public endpoint, so
+   the address form, partner sign-up and the map read one list.
+2. A zone without a boundary is shown as a pin at its centre; no new admin
+   screen is needed.
+
 ## Price lists
 
 FR-022: the server computes every quote as **water cost + delivery cost +
@@ -941,6 +996,7 @@ migration):
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-02 | Proposed for #346: `GET /service-zones` also returns each zone's `centre` and optional `boundary` ([amendment](#amendment-346-zone-centre-and-boundary-on-get-service-zones)) | Not yet agreed: needs one reviewer who is not the author |
 | 2026-11-01 | Amended for #275: `AdminDriver.delivered_jobs`, the count of `completed` assignments whose order is `delivered`; the design's "trips" now reads it ([amendment](#amendment-275-delivered-jobs-on-the-admin-driver)) | @nnamdi-security (technical lead, G3), #275 |
 | 2026-10-28 | Amended for #160: `GET /admin/water-categories` (`id`, `label`, `is_active`; `code` left out; inactive categories listed) for the Pricing screen's Water picker ([amendment](#amendment-160-the-list-of-water-categories)); building is #161 | @nnamdi-security (technical lead, G3), PR #163 |
 | 2026-10-28 | Built the Drivers section (#45) and settled five edges it left open: a repeat request first, what `counts.available` and `q` count, drivers with no profile, and the partner's `account` message ([decisions](#drivers)); `delivery_type` stays on `driver_profiles` | @nnamdi-security (technical lead), #45 |
