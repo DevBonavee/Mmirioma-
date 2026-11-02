@@ -3,14 +3,15 @@
 Issue: [#346](https://github.com/mmiri-oma/mmirioma/issues/346) · Requirements:
 FR-010, FR-020, FR-027, NFR-020, NFR-021, NFR-022 · Prompt: none (an
 amendment to the landing page's "Our service areas" section, see
-[landing-v1.md](landing-v1.md)) · Contract (proposed, G3 not yet passed):
+[landing-v1.md](landing-v1.md)) · Contract (agreed, G3, 2026-11-03):
 [admin-directory.md](../api/admin-directory.md#amendment-346-zone-centre-and-boundary-on-get-service-zones) ·
 Map choice (decided, #334): [maps.md](../architecture/maps.md), option M1,
 MapLibre GL JS with OpenFreeMap tiles
-Designer: @Cloudcrackamara + Claude Code · Reviewed by: none yet · Status: draft
+Designer: @Cloudcrackamara + Claude Code · Reviewed by: @nnamdi-security (2026-11-03) · Status: approved
 
-**Draft for a reviewer who is not the author.** Do not build the screen until
-this says `Status: approved` (G2) and the contract says `Status: agreed` (G3).
+**Approved (G2) on 2026-11-03 by @nnamdi-security, who is not the author.** The
+contract is agreed (G3), so the screen may be built, with the decisions under
+"Review decisions" below.
 
 ## What changes
 
@@ -116,7 +117,38 @@ Tiles come from the configured tile provider, not from MmiriOma's API.
    #340, which adds the same provider for the address pin. If #346 ships
    first, its PR makes the edit instead.
 4. The condition from #334: someone reads OpenFreeMap's privacy policy before
-   go-live.
+   go-live. Done on 2026-11-03 (see Review decisions, item 5), pending a
+   person's confirmation.
+
+## Review decisions
+
+Recommendations by @nnamdi-security, 2026-11-03, approved with the design:
+
+1. **Boundary when set, pin otherwise:** agreed. A pin at the centre is the
+   honest form when no outline exists; the wording must not suggest the pin is
+   the whole area.
+2. **Geometry on `GET /service-zones`:** agreed, with a 60-second cache (see
+   the contract's decisions).
+3. **No list in the page HTML for visitors without JavaScript:** agreed. The
+   whole page is drawn by JavaScript, and prerendering is not planned. The
+   name list is independent of the map and shows when the map cannot load.
+4. **Privacy notice:** whichever of #340 and #346 merges first edits section 7
+   of `PRIVACY_NOTICE.md` to name the tile provider (and the website page
+   mirrors it); the other rebases onto it and does not repeat the line. The
+   edit must say, in plain words, that the visitor's browser contacts the tile
+   provider and that the provider receives the visitor's IP address and the
+   parts of the map viewed, not any typed address.
+5. **OpenFreeMap's privacy policy was read on 2026-11-03** (the condition in
+   maps.md section 10). It says: access logs contain no IP addresses; error
+   logs may include the IP and the requested address; IP logging may be
+   switched on for at most 30 days during a security incident; server logs are
+   deleted after 7 days (incident logs up to 30); no cookies or tracking;
+   Cloudflare may be used as a CDN under its own policy; the operator is
+   Hyperknot Software Kft., Hungary; server locations are not stated. A person
+   should confirm this reading before go-live. The notice's provider line must
+   name the operator and the CDN.
+6. **Condition:** the page goes live only after item 4's notice edit has merged.
+   The landing-page bundle change is noted in the build PR.
 
 ## Changes to the design system
 
