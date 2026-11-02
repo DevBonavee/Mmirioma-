@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { HomeLogo } from '../../components/brand/HomeLogo'
 import { cx } from '../../lib/cx'
 import { InstallHowToSheet } from '../pwa/InstallParts'
 import { appFor, type AppKind } from '../pwa/manifest'
@@ -119,9 +120,9 @@ export function MarketingHeader({ current }: { current: 'home' | 'faq' }) {
   return (
     <header className="sticky top-0 z-30 border-0 border-b border-solid border-[#E6EEF7] bg-white/95 backdrop-blur-sm">
       <div className="mk-wrap flex min-h-[76px] items-center justify-between gap-6">
-        <Link to="/" aria-label="MmiriOma home" className="flex shrink-0 items-center">
+        <HomeLogo className="shrink-0">
           <BrandLogo className="h-11" />
-        </Link>
+        </HomeLogo>
         <nav aria-label="Main" className="flex items-center gap-[30px] text-[15px] font-medium max-[960.98px]:hidden">
           {NAV_LINKS.map((l) => (
             <Link
@@ -214,7 +215,9 @@ export function MarketingFooter({ variant }: { variant: 'full' | 'short' }) {
       <div className="mk-wrap flex flex-col gap-12 pt-16 pb-7">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,160px),1fr))] gap-x-8 gap-y-10">
           <div className="mk-foot-brand flex max-w-[360px] min-w-0 flex-col gap-[18px]">
-            <BrandLogo dark className="h-[46px] self-start" />
+            <HomeLogo className="self-start">
+              <BrandLogo dark className="h-[46px]" />
+            </HomeLogo>
             <p className="m-0 text-[15px] leading-[1.65]">Water delivery for homes, offices and businesses in Enugu. Poured into your drums or tank.</p>
           </div>
           <FootColumn label="Quick Links">

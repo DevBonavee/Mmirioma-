@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Illustration } from '../components/brand/Illustration'
+import { HomeLogo } from '../components/brand/HomeLogo'
 import { Logo } from '../components/brand/Logo'
 import { MessageCircleIcon } from '../components/icons/icons'
 import { ButtonLink } from '../components/ui/Button'
@@ -38,9 +39,9 @@ export function NotFound() {
   return (
     <div className="flex min-h-dvh flex-col bg-[linear-gradient(180deg,#F3F9FE_0%,#FFFFFF_60%)] text-ink">
       <header className="mx-auto flex w-full max-w-[1100px] items-center px-4 py-4 sm:px-6">
-        <Link to="/" aria-label="MmiriOma home" className="flex min-h-11 items-center">
+        <HomeLogo>
           <Logo height={34} alt="" />
-        </Link>
+        </HomeLogo>
       </header>
       <main className="flex flex-1 flex-col items-center justify-center px-4 pb-16 text-center sm:px-6">
         <div className="rise-1 flex w-full max-w-[460px] flex-col items-center gap-4">

@@ -70,6 +70,20 @@ export function saveDraft(draft: OrderDraft): void {
   }
 }
 
+/**
+ * Whether the draft holds anything the customer entered or chose that is not
+ * the starting draft (#337). The one-time `idempotency_key` is ignored: every
+ * new draft has its own. Read from the stored draft by the leave-order prompt,
+ * since storage is written synchronously by `update` and cleared by `reset`.
+ *
+ * @param draft - The draft to check.
+ * @returns `true` when it differs from a fresh draft.
+ */
+export function hasUnsentChanges(draft: OrderDraft): boolean {
+  const comparable = (d: OrderDraft) => JSON.stringify({ ...d, idempotency_key: null })
+  return comparable(draft) !== comparable(newDraft())
+}
+
 export function clearDraft(): void {
   try {
     sessionStorage.removeItem(KEY)
