@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import auditSample from '../../../../../docs/api/examples/admin-audit-logs-page.json'
 import notificationsSample from '../../../../../docs/api/examples/admin-notifications-page.json'
 import alreadyResolvedSample from '../../../../../docs/api/examples/error-support-request-already-resolved.json'
+import websiteSample from '../../../../../docs/api/examples/admin-support-request-website.json'
 import requestSample from '../../../../../docs/api/examples/admin-support-request.json'
 import requestsPageSample from '../../../../../docs/api/examples/admin-support-requests-page.json'
 import { createApiClient } from '../../../lib/api/client'
@@ -51,6 +52,18 @@ describe('issueFromRead', () => {
       urgent: false,
       status: 'open',
       resolution: null,
+    })
+  })
+
+  it('shows a website visitor as the reporter, with the visitor name (#339)', () => {
+    const issue = issueFromRead(websiteSample as AdminSupportRequest)
+    expect(issue).toMatchObject({
+      id: 'SR-6H2P8W3D',
+      reported_by: 'customer',
+      reporter_name: 'Sample Visitor',
+      reference: null,
+      status: 'open',
+      urgent: false,
     })
   })
 

@@ -1,0 +1,16 @@
+{
+  "reference": "SR-6H2P8W3D",
+  "source": "website",
+  "type": "other",
+  "message": "Do you deliver to Independence Layout?",
+  "order_reference": null,
+  "status": "open",
+  "created_at": "2026-11-02T10:15:00Z",
+  "customer": {
+    "id": null,
+    "name": "Sample Visitor",
+    "phone": "+2348000000001"
+  },
+  "resolution": null,
+  "is_simulated": false
+}

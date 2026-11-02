@@ -234,11 +234,11 @@ function Rows({ rows }: { rows: [ReactNode, ReactNode][] }) {
 }
 
 /*
- * The Privacy page mirrors PRIVACY_NOTICE.md (version 3.0) section by
+ * The Privacy page mirrors PRIVACY_NOTICE.md (version 4.0) section by
  * section, with the same facts (#93). Change both together; the notice is the
  * source.
  */
-const PRIVACY_VERSION = 'Version 3.0, last updated 1 November 2026.'
+const PRIVACY_VERSION = 'Version 4.0, last updated 2 November 2026.'
 
 const PRIVACY: Section[] = [
   {
@@ -306,6 +306,10 @@ const PRIVACY: Section[] = [
             ['Cash payment records: amount due, amount collected, who collected and received it, and when', 'To account for cash paid on delivery.'],
             ['Bank account details, only if we pay you a refund by bank transfer', 'To make that refund.'],
             ['What you tell us when you call or message our support line', 'To answer your questions and handle complaints.'],
+            [
+              'Messages you send through the contact form on our website, whether or not you have an account: your name, your phone number, the type of question if you choose one, and your message',
+              'To answer you by phone, and handle your question or complaint. We do not link the message to an account, and we do not ask for your email address.',
+            ],
             [
               'Problems and questions you send in the app ("Report a problem" and Help): the type of problem, your message, the order it is about, its status and how our staff resolved it',
               'To investigate and resolve the problem, and handle complaints.',
@@ -404,7 +408,7 @@ const PRIVACY: Section[] = [
         <List
           items={[
             "The driver assigned to your order sees the contact's first name and last initial, phone number, delivery address, landmark, instructions and quantity, and only while they are assigned to the delivery.",
-            "Our authorized staff (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers.",
+            "Our authorized staff (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers. They also see the messages sent through the website contact form, to answer them.",
             'Termii, our SMS provider, receives your phone number and the text of each message we send you.',
             "Hostinger (HOSTINGER Global S.à r.l., Luxembourg), our hosting provider, runs the server and stores the service's data and backups in its data centre in Paris, France.",
             'Backblaze (Backblaze, Inc., United States) stores an off-site copy of our backups in its data centre in Amsterdam, the Netherlands.',
@@ -470,6 +474,10 @@ const PRIVACY: Section[] = [
               "Deleted. If your account is closed sooner, your message and our staff's note about it are removed then, and the rest of the record is kept until the 3 years end.",
             ],
             [
+              'Messages you send through the website contact form: 3 years after our staff resolve them',
+              'Deleted. We keep no account for you, so to have a message deleted sooner, call or email us (section 9).',
+            ],
+            [
               'Account deletion requests: 3 years after we complete or refuse your request',
               'Deleted. Until then, the reference, dates and outcome are kept as a record that the request was handled; the reason you gave is removed earlier, when your account is closed.',
             ],
@@ -489,7 +497,9 @@ const PRIVACY: Section[] = [
         <p>
           You can ask us to access, correct or delete your personal information by calling <Phone /> or emailing <PrivacyEmail />. Before we
           disclose or change anything, we confirm the request comes from you, normally by calling back the phone number on your account.
-          For deletion, you can also use "Delete my account" in the customer app; we still call you back to confirm it is you.
+          For deletion, you can also use "Delete my account" in the customer app; we still call you back to confirm it is you. If you only
+          sent us a message through the website contact form and have no account, tell us your name and the phone number you gave, and we
+          find your messages by that number and call it back to confirm it is you.
         </p>
         <List
           items={[
@@ -632,7 +642,7 @@ function LegalPage({
             <p className={cx('m-0 text-[13px] font-bold tracking-[2px]', terms ? 'text-primary' : 'text-[#0B6A5F]')}>LEGAL</p>
             <h1 className="m-0 font-display text-[clamp(40px,5vw,60px)] font-extrabold tracking-[-1.5px] text-ink">{title}</h1>
             <p className="m-0 max-w-[640px] text-[17px] leading-[1.6] text-[#3A4F67]">{intro}</p>
-            <p className="mt-1.5 mb-0 text-[14px] font-semibold text-slate">Effective date: 1 November 2026</p>
+            <p className="mt-1.5 mb-0 text-[14px] font-semibold text-slate">Effective date: 2 November 2026</p>
           </div>
         </section>
         <section>

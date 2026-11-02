@@ -45,6 +45,7 @@ from app.modules.customers.models import (
     DeletionRequest,
     DeletionRequestStatus,
     SupportRequest,
+    SupportRequestSource,
     SupportRequestStatus,
     SupportRequestType,
 )
@@ -195,6 +196,50 @@ async def create_support_request(
     await session.commit()
     await session.refresh(request)
     return request, order_reference, True
+
+
+async def create_website_support_request(
+    session: AsyncSession,
+    *,
+    name: str,
+    phone: str,
+    message: str,
+    type: SupportRequestType,
+) -> SupportRequest:
+    """Store a message from the public contact form as a support request. Commits.
+
+    docs/api/public-site.md, "POST /public/contact". The row has no user: it
+    is never linked to an account, and the phone is not looked up against
+    customers (so the form cannot be used to find out who is registered,
+    NFR-002). Every active admin is told, in the same transaction, without
+    the name, phone or message in the notification.
+
+    Args:
+        session: Database session.
+        name: The visitor's name, trimmed, 1-100 characters.
+        phone: The visitor's phone, already normalized to E.164.
+        message: Trimmed, 3-1000 characters.
+        type: What it is about; ``other`` when the visitor chose nothing.
+
+    Returns:
+        The stored request.
+    """
+    request = SupportRequest(
+        reference=new_reference(SUPPORT_PREFIX),
+        source=SupportRequestSource.WEBSITE,
+        user_id=None,
+        contact_name=name,
+        contact_phone=phone,
+        order_id=None,
+        type=type,
+        message=message,
+        idempotency_key=None,
+    )
+    session.add(request)
+    await admin_messages.website_message(session)
+    await session.commit()
+    await session.refresh(request)
+    return request
 
 
 # --- Deletion requests ------------------------------------------------------------------
@@ -377,15 +422,31 @@ class AdminSupportView:
         request: The stored request.
         order_reference: Its order's public reference, or None.
         is_simulated: The order's flag; False without an order (BR-09).
-        customer: The customer who wrote it (NFR-003: staff only).
+        customer: Who wrote it (NFR-003: staff only): the customer, or the
+            website visitor's name and phone (``id`` None).
         resolver: The admin who resolved it, or None while open.
     """
 
     request: SupportRequest
     order_reference: str | None
     is_simulated: bool
-    customer: User
+    customer: SupportSender
     resolver: User | None
+
+
+@dataclass(frozen=True)
+class SupportSender:
+    """The person behind a support request, as staff see them.
+
+    Attributes:
+        id: The customer's id, or None for a website visitor.
+        name: The customer's or the visitor's name.
+        phone: Their phone in E.164 form.
+    """
+
+    id: uuid.UUID | None
+    name: str
+    phone: str
 
 
 #: Who a support contact is: the order's receiver, or its driver.
@@ -403,7 +464,7 @@ class SupportContact:
 
 #: A support request row for staff: the request, its order's reference and
 #: flag (None without an order), the customer, and the resolver (or None).
-_AdminRow = tuple[SupportRequest, str | None, bool | None, User, User | None]
+_AdminRow = tuple[SupportRequest, str | None, bool | None, User | None, User | None]
 
 #: Characters that are wildcards in a SQL ``LIKE`` pattern, and its escape.
 _LIKE_ESCAPE = "\\"
@@ -419,7 +480,7 @@ def _admin_query(*filters: ColumnElement[bool]) -> Select[_AdminRow]:
     resolver = aliased(User)
     return (
         select(SupportRequest, Order.reference, Order.is_simulated, User, resolver)
-        .join(User, User.id == SupportRequest.user_id)
+        .outerjoin(User, User.id == SupportRequest.user_id)
         .outerjoin(Order, Order.id == SupportRequest.order_id)
         .outerjoin(resolver, resolver.id == SupportRequest.resolved_by)
         .where(*filters)
@@ -428,11 +489,16 @@ def _admin_query(*filters: ColumnElement[bool]) -> Select[_AdminRow]:
 
 def _admin_view(row: Row[_AdminRow]) -> AdminSupportView:
     request, order_reference, is_simulated, customer, resolver = row
+    if customer is not None:
+        sender = SupportSender(customer.id, customer.name, customer.phone)
+    else:
+        # A website request: the check constraint guarantees both fields.
+        sender = SupportSender(None, request.contact_name or "", request.contact_phone or "")
     return AdminSupportView(
         request=request,
         order_reference=order_reference,
         is_simulated=bool(is_simulated),
-        customer=customer,
+        customer=sender,
         resolver=resolver,
     )
 
@@ -448,8 +514,8 @@ async def list_admin_support_requests(
     """Return a page of every customer's support requests for staff.
 
     Open requests first, then newest first (admin-operations.md). ``q``
-    matches the request reference, the order reference or the customer
-    name, ignoring case; its ``%`` and ``_`` are matched literally.
+    matches the request reference, the order reference or the customer's
+    or visitor's name, ignoring case; its ``%`` and ``_`` are matched literally.
 
     Args:
         session: Database session.
@@ -471,6 +537,7 @@ async def list_admin_support_requests(
                 SupportRequest.reference.ilike(pattern, escape=_LIKE_ESCAPE),
                 Order.reference.ilike(pattern, escape=_LIKE_ESCAPE),
                 User.name.ilike(pattern, escape=_LIKE_ESCAPE),
+                SupportRequest.contact_name.ilike(pattern, escape=_LIKE_ESCAPE),
             )
         )
     open_first = case((SupportRequest.status == SupportRequestStatus.OPEN, 0), else_=1)
@@ -483,7 +550,7 @@ async def list_admin_support_requests(
     total = await session.scalar(
         select(func.count())
         .select_from(SupportRequest)
-        .join(User, User.id == SupportRequest.user_id)
+        .outerjoin(User, User.id == SupportRequest.user_id)
         .outerjoin(Order, Order.id == SupportRequest.order_id)
         .where(*filters)
     )

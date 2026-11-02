@@ -207,6 +207,7 @@ in section 8 has passed:
 | Cash payment and refund records | Nothing to do until the first records reach 6 years; before then, confirm the accounting period (open item 3) |
 | Complaints, disputes and incidents | Tool: the order's personal details go with the order at 3 years. By hand: staff notes are kept, so check notes on incidents resolved more than 3 years ago for personal details |
 | Problems you report in the app | Tool: support requests resolved more than 3 years ago are deleted (technical lead, 2026-10-27, #82). Open ones are kept until resolved |
+| Messages sent through the website contact form | Tool: deleted with the support requests resolved more than 3 years ago (they are support requests with no account, #339). Open ones are kept until resolved. They have no account, so the account-based steps never reach them: a visitor who asks to delete one is found by the phone number they gave and handled by hand until the privacy tool can look up a request by phone (follow-up issue, before the form goes live) |
 | Account deletion requests | Tool: requests completed or refused more than 3 years ago are deleted (privacy contact, 2026-10-27, #118). Requests still received or acknowledged are open work and are never deleted |
 | Support line messages (by hand) | Delete messages on the support phone 12 months after the matter was resolved |
 | Sign-in sessions | Tool: delete expired or ended sessions |
@@ -267,7 +268,7 @@ admin account and writes an audit row.
 ## Changing the notice
 
 1. Edit `PRIVACY_NOTICE.md`: raise the version (2.0 to 2.1 for a
-   clarification, 3.0 when what is collected or shared changes) and set the
+   clarification, a new major version when what is collected or shared changes) and set the
    "Last updated" date.
 2. Make the same change on the website's Privacy page,
    `frontend/src/features/marketing/LegalPages.tsx` (`/privacy`). In the
@@ -282,5 +283,6 @@ admin account and writes an audit row.
 
 | Date | Change | By |
 | --- | --- | --- |
+| 2026-11-02 | Notice 4.0 (#339): messages sent through the website contact form are collected (section 2), seen by staff (section 7), kept 3 years after resolution (section 8) and found by phone number on request (section 9); the retention table row above. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, answer on the #339 contract) + Claude Code, #339 |
 | 2026-10-27 | "Deletion: riders and drivers" with `anonymize-partner`, by the rules the privacy contact confirmed on #119; open item 4 closed | @nnamdi-security (+ Claude Code), #119 |
 | 2026-10-27 | Copied into the fork from the main repo (`c4d972c`) and extended: deletion requests made in the app (`set-deletion-status`), what anonymizing also removes (saved addresses, in-app messages, support request messages, the deletion reason, feedback messages), never-verified accounts with audit rows anonymized, support requests in the monthly review, rider and driver accounts (open item 4), and the website copy of the notice. The notice question in #104 (section 8, never-verified accounts) is decided: the wording from PR #106, accepted by the privacy contact. Privacy contact's decisions (2026-10-27): the notice becomes 2.0, as the version rule asks when what is collected changes (it had been numbered 1.2 and was never published); section 9 names "Delete my account" in the app; rider and driver deletion gets its own issue (#119) | @nnamdi-security (+ Claude Code), #104 |
