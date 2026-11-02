@@ -279,5 +279,8 @@ API mocked (above), not in a browser against this server.
   connection. Acceptable for the pilot.
 - **No retention rule** for old `phone_verifications` rows (they contain
   phone numbers). Covered by the open NFR-005 retention decision.
-- Staff and driver phones are not verified by SMS; they are created by the
-  technical lead.
+- Staff phones are not verified by SMS; they are created by the technical
+  lead. Riders and drivers who sign up themselves may use the same endpoints
+  (decision 9 in `docs/api/partners.md`), and an admin can approve them only
+  once verified. The partner app has the screen at `/partner/verify-phone`
+  (design: `docs/design/partner-phone-verification.md`, approved, G2).

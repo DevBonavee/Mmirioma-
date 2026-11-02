@@ -36,7 +36,7 @@ import { Notice } from '../../../components/ui/Notice'
 import { errorMessage } from '../../../lib/api/errorMessage'
 import { cx } from '../../../lib/cx'
 import { formatPhone } from '../../../lib/format/phone'
-import { useLogout } from '../../auth/useSession'
+import { useLogout, useSession } from '../../auth/useSession'
 import { InstallMenuItem } from '../../pwa/InstallParts'
 import { PushSettingRows } from '../../pwa/PushParts'
 import { jobStepPath, usePartnerApp } from '../partnerContext'
@@ -177,7 +177,10 @@ export function PartnerMenu() {
 export function PartnerProfilePage() {
   const { base, vehicle } = usePartnerApp()
   const profile = usePartnerProfile()
+  const session = useSession()
   const p = profile.data
+  // The phone must be verified before admin can approve (partners.md, decision 9).
+  const phoneUnverified = session.data?.user.phone_verified === false
   return (
     <MobileShell>
       <TopBar left={<BackLink to={`${base}/menu`} />} center={<TopBarTitle>My profile</TopBarTitle>} right={<TopBarSpacer />} />
@@ -202,6 +205,11 @@ export function PartnerProfilePage() {
                   <span className="block text-chip text-mute">Phone</span>
                   <span className="font-bold">{formatPhone(p.phone)}</span>
                 </span>
+                {phoneUnverified && (
+                  <Link to="/partner/verify-phone" state={{ from: `${base}/profile` }} className="font-bold text-primary no-underline hover:text-primary-dark">
+                    Verify
+                  </Link>
+                )}
               </div>
               <div className="mo-li">
                 <span className="flex-1">

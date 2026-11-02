@@ -19,6 +19,7 @@ export const partnerRoutes: RouteObject[] = [
   { path: '/partner/forgot-password', lazy: () => import('../customer/pages/AccountPages').then((m) => ({ element: <m.ForgotPassword back="/partner/login" contact="/partner/contact" /> })) }, // added
   { path: '/partner/contact', lazy: () => import('../customer/pages/SupportContact').then((m) => ({ element: <m.SupportContact back={-1} /> })) }, // added
   { path: '/partner/password', lazy: () => import('../customer/pages/AccountPages').then((m) => ({ element: <RequireRole role="driver"><m.ChangePassword back="/partner" /></RequireRole> })) }, // added
+  { path: '/partner/verify-phone', lazy: () => import('./pages/PartnerVerifyPhone').then((m) => ({ element: <RequireRole role="driver"><m.PartnerVerifyPhone /></RequireRole> })) }, // added (docs/design/partner-phone-verification.md)
   { path: '/partner', element: <PartnerHomeRedirect /> },
   {
     path: '/partner/rider',

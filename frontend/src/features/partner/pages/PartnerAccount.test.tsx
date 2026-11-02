@@ -8,6 +8,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { createQueryClient } from '../../../app/queryClient'
 import type { PartnerProfile } from '../../../domain/partner'
 import { ApiError } from '../../../lib/api/client'
+import { resetMockDb } from '../../../mocks/db'
+import { mockLogin } from '../../../mocks/authMock'
+import { listSignupAreas, partnerSignup } from '../../../mocks/partnerMock'
+import { DEMO_PASSWORD } from '../../../mocks/seed'
 import { PartnerProfilePage, PartnerSettings } from './PartnerAccount'
 
 /** What the next profile save answers; set by each test. */
@@ -41,6 +45,25 @@ function renderScreen(screenUnderTest: ReactNode) {
     </QueryClientProvider>,
   )
 }
+
+describe('profile phone verification link', () => {
+  it('offers "Verify" while the phone is not verified', async () => {
+    resetMockDb()
+    const [area] = await listSignupAreas()
+    await partnerSignup({ name: 'Sample Rider', phone: '0800 000 0072', password: 'sample-password-1', vehicle_type: 'keke', plate: 'ENU 123 AB', tank_gallons: null, service_zone_id: area.id })
+    renderScreen(<PartnerProfilePage />)
+    const link = await screen.findByRole('link', { name: 'Verify' })
+    expect(link).toHaveAttribute('href', '/partner/verify-phone')
+  })
+
+  it('offers nothing once the phone is verified', async () => {
+    resetMockDb()
+    await mockLogin({ phone: '0800 000 0101', password: DEMO_PASSWORD })
+    renderScreen(<PartnerProfilePage />)
+    expect(await screen.findByText('Phone')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Verify' })).not.toBeInTheDocument()
+  })
+})
 
 describe('partner account screens without email or "News and offers" (#85)', () => {
   it('profile shows no email row', async () => {

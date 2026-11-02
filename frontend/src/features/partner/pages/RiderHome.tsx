@@ -14,6 +14,7 @@ import { cx } from '../../../lib/cx'
 import { formatNaira } from '../../../lib/format/money'
 import { AssignedSheet } from '../components/AssignedSheet'
 import { PartnerHomeTopBar, PartnerTabs } from '../components/PartnerChrome'
+import { VerifyPhoneNotice } from '../components/VerifyPhoneNotice'
 import { greeting } from '../greeting'
 import { PARTNER_PAY_ENABLED } from '../../../lib/features'
 import { deliveredToday, jobQuantity, placeAddress, tripMinutes } from '../jobHelpers'
@@ -58,6 +59,7 @@ export function RiderHome() {
               title={`${greeting()}, ${p.name.split(' ')[0]}!`}
               sub={`Keke rider · ${p.service_areas.join(' and ')} area`}
             />
+            <VerifyPhoneNotice from={base} className="rise-2" />
             {!approved ? (
               <Notice tone={p.approval === 'suspended' ? 'error' : 'note'} className="rise-2">
                 {p.approval === 'suspended' ? (

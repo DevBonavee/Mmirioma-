@@ -17,7 +17,13 @@ with the customer's delivery code, and follow their sample earnings.
    New partners create an account at `/partner/signup` and choose Keke or
    Tanker (decision 9). Tanker drivers type how many gallons their tanker
    carries (most carry about 4,000, enough for four 1,000 gal tanks); 500 to
-   20,000 is accepted (`src/domain/tankCapacity.ts`). They stay "waiting for approval" until admin approves.
+   20,000 is accepted (`src/domain/tankCapacity.ts`). After sign-up they verify their
+   phone by SMS code at `/partner/verify-phone` ("Do this later" skips it), because admin
+   can approve a partner only once the phone is verified (decision 9 of
+   [partners.md](../api/partners.md)). They stay "waiting for approval" until admin approves.
+   While the phone is not verified, the home shows "Verify your phone number so admin can
+   approve you." with a "Verify phone" button (it cannot be closed), and the profile's
+   phone row shows "Verify". Design: [partner-phone-verification.md](../design/partner-phone-verification.md).
 2. All partner pages live under `/partner/`, the installed partner app's
    scope (see [pwa.md](pwa.md)). `/partner` sends each partner to their app: `/partner/rider` (Keke) or `/partner/driver`
    (tanker). Opening the other app's link redirects to their own.
@@ -70,6 +76,8 @@ with the customer's delivery code, and follow their sample earnings.
 | `frontend/src/domain/partner.ts` | Job, profile, earnings, notification, issue and decline types and labels |
 | `frontend/src/features/partner/partnerApi.ts` | Typed API functions: the mock, or the real API for the six account functions (#67); the rest still fail with `not_connected` |
 | `frontend/src/features/partner/real/account.ts` | Account adapters (#67): sign-up, profile and preferences, going online, notifications; converts with [partners.md](../api/partners.md#mapping-to-the-design-types) |
+| `frontend/src/features/partner/pages/PartnerVerifyPhone.tsx` | Verify the partner's phone by SMS code: send, enter the code, verified. The code steps are shared with the customer's `/verify-phone` (`features/auth/PhoneCodeParts.tsx`) |
+| `frontend/src/features/partner/components/VerifyPhoneNotice.tsx` | The not-verified notice on the rider and driver home |
 | `frontend/src/lib/api/partners.ts` | Zod-checked client for the partner account endpoints and `GET /service-zones` |
 | `frontend/src/features/partner/queries.ts` | Query hooks; pool and active jobs refresh every 30 s |
 | `frontend/src/features/partner/partnerContext.ts` | Which app (`/partner/rider` or `/partner/driver`), words per vehicle, `jobStepPath` |
@@ -309,9 +317,10 @@ they order (the customer mock); the partner app gets it only after unloading.
   contact you." and the server's message), not when the screen opens.
 - The history now also lists cancelled and failed jobs from the time they
   ended; it listed only delivered ones before.
-- Real API sign-up takes a typed area, not a zone list, so a partner must
-  spell the zone's name. The demo seed creates no zones; create one before
-  trying sign-up locally.
+- The demo seed creates no service zones, and sign-up needs an active one;
+  create one before trying sign-up locally.
+- Verifying the phone needs the SMS provider. If the code does not arrive,
+  the screen offers "Send a new code"; admin can approve only after it works.
 - Real API notifications list only the newest 50; the unread count covers
   them all.
 - Drivers made with the command-line tool before it asked for a delivery

@@ -117,7 +117,8 @@ export function PartnerSignup() {
     onSuccess: (session) => {
       qc.clear()
       qc.setQueryData(SESSION_KEY, session)
-      navigate('/partner', { replace: true })
+      // A new partner cannot be approved until the phone is verified (partners.md decision 9).
+      navigate('/partner/verify-phone', { replace: true, state: { afterSignup: true, from: '/partner' } })
     },
   })
   const {

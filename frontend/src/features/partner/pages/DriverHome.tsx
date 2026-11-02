@@ -15,6 +15,7 @@ import { formatNaira } from '../../../lib/format/money'
 import { AssignedSheet } from '../components/AssignedSheet'
 import { TankTypeChip } from '../components/JobParts'
 import { PartnerTabs } from '../components/PartnerChrome'
+import { VerifyPhoneNotice } from '../components/VerifyPhoneNotice'
 import { greeting } from '../greeting'
 import { PARTNER_PAY_ENABLED } from '../../../lib/features'
 import { deliveredToday, jobQuantity, kmSuffix, tankerTripLine } from '../jobHelpers'
@@ -69,6 +70,7 @@ export function DriverHome() {
               </div>
             </div>
 
+            <VerifyPhoneNotice from={base} className="rise-2" />
             {!approved ? (
               <Notice tone={p.approval === 'suspended' ? 'error' : 'note'} className="rise-2">
                 {p.approval === 'suspended' ? (

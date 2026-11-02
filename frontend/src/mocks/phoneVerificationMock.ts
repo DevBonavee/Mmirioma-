@@ -28,11 +28,22 @@ function tooMany(seconds: number) {
   return mockError(429, 'too_many_attempts', 'Too many attempts. Try again later.', { retry_after_seconds: Math.max(1, Math.ceil(seconds)) })
 }
 
-/** Only customers use these endpoints; admins and drivers get 403 (auth.md). */
+/** Phone change is for customers only; admins and drivers get 403 (auth.md). */
 function requireCustomer(): MockState['users'][number] {
   const id = requireUserId()
   const user = read().users.find((u) => u.id === id)!
   if (user.role !== 'customer') throw mockError(403, 'forbidden', 'Only customers can do this')
+  return user
+}
+
+/**
+ * Verifying the phone is open to drivers too, because an admin can approve a
+ * partner only once it is verified (partners.md decision 9). Admins get 403.
+ */
+function requireCustomerOrDriver(): MockState['users'][number] {
+  const id = requireUserId()
+  const user = read().users.find((u) => u.id === id)!
+  if (user.role === 'admin') throw mockError(403, 'forbidden', 'Only customers and drivers can do this')
   return user
 }
 
@@ -81,14 +92,14 @@ function checkCode(userId: string, purpose: MockPhoneCode['purpose'], code: stri
 
 export async function mockRequestPhoneVerification(): Promise<PhoneCodeSent> {
   await delay(null)
-  const user = requireCustomer()
+  const user = requireCustomerOrDriver()
   if (user.phone_verified) throw mockError(409, 'phone_already_verified', 'This phone number is already verified')
   return sendCode(user.id, 'verify', user.phone)
 }
 
 export async function mockVerifyPhone(code: string): Promise<User> {
   await delay(null)
-  const user = requireCustomer()
+  const user = requireCustomerOrDriver()
   checkCode(user.id, 'verify', code)
   return toUser(
     mutate((s) => {

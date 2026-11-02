@@ -176,7 +176,7 @@ All commands run on the VPS from the repository folder.
 | Restart everything | `deploy/prod.sh restart` |
 | Stop / start | `deploy/prod.sh stop` / `deploy/prod.sh up -d` |
 | Open a shell in the API | `deploy/prod.sh exec api sh` |
-| Database console | `deploy/prod.sh exec db psql -U mmirioma mmirioma` |
+| Database console | `deploy/prod.sh exec db psql -U mmirioma mmirioma` (customer and rider queries, and deleting a person: section 9) |
 | Disk used by Docker | `docker system df` |
 
 Logs rotate at 10 MB x 3 files per service. Caddy's access log holds client
@@ -307,6 +307,64 @@ Things to know:
 - **A mistyped name or location** cannot be edited with the command line. The
   admin `PATCH /admin/water-sources/{source_id}` endpoint edits the name,
   location and kind, and writes a `water_source_updated` audit row.
+
+### Looking up and deleting customer and rider data
+
+There is no separate customers or riders table. Customers, riders, drivers and
+admins are all rows in `users`, told apart by `role` (`customer`, `driver`,
+`admin`). Riders and drivers share the role `driver`; their plate, approval
+status and availability are in `driver_profiles`.
+
+Look up (read-only, `SELECT` only). Open the console, then run the queries at
+the `mmirioma=#` prompt; `\q` leaves it:
+
+```bash
+deploy/prod.sh exec db psql -U mmirioma mmirioma
+```
+
+```sql
+-- Customers
+SELECT id, name, phone, is_active, phone_verified_at, created_at
+FROM users WHERE role = 'customer' ORDER BY created_at DESC LIMIT 20;
+
+-- Riders and drivers, with their profile
+SELECT u.id, u.name, u.phone, u.is_active, d.approval_status, d.is_available, d.plate
+FROM users u JOIN driver_profiles d ON d.user_id = u.id
+WHERE u.role = 'driver' ORDER BY u.created_at DESC LIMIT 20;
+
+-- Accounts per role
+SELECT role, count(*) FROM users GROUP BY role;
+```
+
+`\dt` lists the tables and `\d users` lists a table's columns. The output holds
+real names and phone numbers: do not paste it into issues or chat.
+
+Delete. Never use SQL `DELETE` on a person: nearly every table that points at
+`users` (orders, payments, cash, assignments, delivery proofs, audit logs) is
+`ON DELETE RESTRICT`, and those records must be kept. Use the privacy tool,
+which anonymizes the account (name, phone, addresses, sessions, GPS points)
+and keeps the row. Without `--apply` it is a dry run that prints what would
+change and rolls back. `--by` is the phone of an active admin, recorded in the
+audit log.
+
+```bash
+# Customer
+deploy/prod.sh exec api python -m app.modules.privacy.cli anonymize-customer --by <admin phone> --customer <customer phone>
+deploy/prod.sh exec api python -m app.modules.privacy.cli anonymize-customer --by <admin phone> --customer <customer phone> --apply
+
+# Rider or driver
+deploy/prod.sh exec api python -m app.modules.privacy.cli anonymize-partner --by <admin phone> --partner <partner phone>
+deploy/prod.sh exec api python -m app.modules.privacy.cli anonymize-partner --by <admin phone> --partner <partner phone> --apply
+
+# After a customer's request made in the app is done
+deploy/prod.sh exec api python -m app.modules.privacy.cli set-deletion-status --by <admin phone> --request DR-XXXXXXXX --status completed
+```
+
+The tool refuses, changing nothing, while the person has a live or unfinished
+job or order, cash not reconciled, or an open hold, review or dispute. Cancel
+or finish those first. Anonymized accounts show as "Deleted customer" or
+"Former rider or driver" with a phone starting `+0`. The full rules are in
+`docs/features/privacy-tool.md` and `docs/process/privacy-retention.md`.
 
 ## 10. Backups
 

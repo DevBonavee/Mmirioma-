@@ -23,7 +23,8 @@ vi.mock('../partnerApi', () => ({
   },
   partnerSignup: async (input: unknown) => {
     server.signedUp.push(input)
-    throw server.refusal
+    if (server.refusal) throw server.refusal
+    return { user: { id: 'u1', name: 'Sample Rider', phone: '+2348031234567', role: 'driver', phone_verified: false } }
   },
 }))
 
@@ -39,6 +40,7 @@ function renderSignup() {
         <Routes>
           <Route path="/partner/signup" element={<PartnerSignup />} />
           <Route path="/partner" element={<p>Partner home</p>} />
+          <Route path="/partner/verify-phone" element={<p>Verify phone screen</p>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -80,6 +82,22 @@ describe('PartnerSignup server errors (#80)', () => {
   it('shows the message of a validation error without details', async () => {
     await submitForm(refused(null))
     expect(await screen.findByText('Request validation failed')).toBeInTheDocument()
+  })
+})
+
+describe('PartnerSignup after success', () => {
+  it('goes to the phone verification screen, because admin cannot approve an unverified phone', async () => {
+    server.areas = [{ id: 'zone-1', name: 'Zone One' }]
+    server.refusal = null
+    const user = userEvent.setup()
+    renderSignup()
+    await user.type(screen.getByLabelText('Full name'), 'Sample Rider')
+    await user.type(screen.getByLabelText('Phone number'), '08031234567')
+    await user.type(screen.getByLabelText('Plate number'), 'ENU 482 KK')
+    await user.selectOptions(await screen.findByLabelText('Area you work in'), 'zone-1')
+    await user.type(screen.getByLabelText('Password'), 'long-enough')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+    expect(await screen.findByText('Verify phone screen')).toBeInTheDocument()
   })
 })
 
