@@ -52,6 +52,7 @@ the legal pages. Anyone can open them, signed in or not.
 | `Landing.tsx`, `FaqPage.tsx`, `LegalPages.tsx` | The pages |
 | `MarketingParts.tsx` | Header with mobile menu, footer, install button, picture and heading helpers |
 | `frontend/src/components/brand/HomeLogo.tsx`, `logoTarget.ts` | The logo link every screen uses, and the rule for where it goes |
+| `seoTags.ts` | The search and sharing tags a page sets and restores: canonical, description, Open Graph, Twitter ([seo.md](seo.md), #331) |
 | `content.ts` | Copy shared by pages and tests: nav, areas, FAQs, worries (`OBJECTIONS`), `ORDER_CTA`, `filterFaqs`, `tileFill` (how high a size tile's water rises) |
 | `SiteExtras.tsx` | Floating WhatsApp and Back to top buttons |
 | `queries.ts`, `publicApi.ts` | The support contact: `useSupportContact`, `useWhatsappNumber` (mock or `GET /public/contact`) |
