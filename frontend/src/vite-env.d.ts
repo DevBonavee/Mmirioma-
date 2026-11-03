@@ -6,6 +6,8 @@ interface ImportMetaEnv {
   readonly VITE_USE_MOCKS?: string
   /** Public VAPID key for push subscriptions (docs/api/push.md). Public by design; the private key stays on the server. */
   readonly VITE_VAPID_PUBLIC_KEY?: string
+  /** The map style (tile provider) for the landing page's service-area map (#346). Public by design. */
+  readonly VITE_MAP_STYLE_URL?: string
 }
 
 interface ImportMeta {

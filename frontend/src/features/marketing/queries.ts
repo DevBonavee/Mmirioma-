@@ -2,9 +2,9 @@
 import { useQuery } from '@tanstack/react-query'
 import type { PublicContact } from '../../domain/publicSite'
 import { DEFAULT_SUPPORT_PHONE, DEFAULT_WHATSAPP } from '../../lib/whatsapp'
-import { getPublicContact } from './publicApi'
+import { getPublicContact, getServiceAreas } from './publicApi'
 
-export const publicKeys = { contact: ['public', 'contact'] as const }
+export const publicKeys = { contact: ['public', 'contact'] as const, serviceAreas: ['public', 'service-areas'] as const }
 
 /** Used while loading or when the server cannot be reached, so help is always reachable. */
 const FALLBACK: PublicContact = { phone: DEFAULT_SUPPORT_PHONE, whatsapp: DEFAULT_WHATSAPP }
@@ -22,4 +22,14 @@ export function useSupportContact(): PublicContact {
 /** The WhatsApp number to chat with (E.164), or `null` while WhatsApp support is off. */
 export function useWhatsappNumber(): string | null {
   return useSupportContact().whatsapp
+}
+
+/**
+ * The active service areas with their position (`GET /service-zones`, #346).
+ * Not retried: a failure shows the page's "Try again" at once. The server
+ * caches the list for a minute, so the same here (a zone just switched off
+ * should not stay on the map for long).
+ */
+export function useServiceAreas() {
+  return useQuery({ queryKey: publicKeys.serviceAreas, queryFn: getServiceAreas, staleTime: 60_000, retry: false })
 }

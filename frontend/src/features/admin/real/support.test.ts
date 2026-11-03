@@ -179,6 +179,13 @@ describe('audit log', () => {
     expect(auditEntryFromRead(row('driver_approved', { safe_payload_litres: 600 })).reason).toBeNull()
   })
 
+  it('words the deleted website contact message and shows no reason or contact detail (#364)', () => {
+    const entry = auditEntryFromRead(row('website_message_deleted', { status: 'open' }, { target_type: 'support_request', target_id: '6a8c0e11-2222-4333-8444-555566667777' }))
+    expect(entry.action).toBe('Deleted a website contact message')
+    expect(entry.reason).toBeNull()
+    expect(entry.target).toBe('Support request · 6a8c0e')
+  })
+
   it('shows no reason on any other action, even if its details hold one (#293)', () => {
     for (const action of ['support_request_resolved', 'price_list_saved', 'cash_received', 'order_confirmed', 'service_zone_updated']) {
       expect(auditEntryFromRead(row(action, { reason: 'A staff note that must stay off the screen' })).reason).toBeNull()

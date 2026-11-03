@@ -265,6 +265,10 @@ Two installable apps share one origin and one service worker
 - **Install state.** `installPrompt.ts` is imported first in `main.tsx`
   because `beforeinstallprompt` can fire before React renders. Components read
   it through `useInstallAction()`.
+- **Service-area map (#346).** `features/marketing/ServiceAreaMap.tsx`
+  loads MapLibre GL JS and its CSS on demand (`loadMapLibre.ts`) when the
+  landing page's areas section nears the viewport, so neither is in the first
+  load. The tile style is `VITE_MAP_STYLE_URL` (default OpenFreeMap).
 - **Push.** `push.ts` asks permission only on a tap, subscribes with
   `VITE_VAPID_PUBLIC_KEY` in real mode, and saves through `pushApi.ts`
   (mock or `not_connected`). Mock delivery: `src/mocks/db.ts` calls

@@ -295,12 +295,31 @@ class ServiceZoneList(BaseModel):
 
 
 class ServiceZoneOption(BaseModel):
-    """A zone someone can pick: ``id`` and ``name`` only (no fees, no geometry)."""
+    """A zone someone can pick or see on the map (docs/api/admin-directory.md, #346).
 
-    model_config = ConfigDict(from_attributes=True)
+    No fees: customers see the total only. ``centre`` is always present;
+    ``boundary`` is null when the administrator set none, and the landing
+    page then draws a pin at the centre.
+    """
 
     id: uuid.UUID
     name: str
+    centre: CentreRead
+    boundary: BoundaryRead | None
+
+    @classmethod
+    def from_view(cls, view: ZoneView) -> Self:
+        """Build the option from the service's view of an active zone."""
+        return cls(
+            id=view.zone.id,
+            name=view.zone.name,
+            centre=CentreRead(latitude=view.centre.latitude, longitude=view.centre.longitude),
+            boundary=(
+                BoundaryRead(coordinates=[[[lon, lat] for lon, lat in view.boundary]])
+                if view.boundary is not None
+                else None
+            ),
+        )
 
 
 class ServiceZoneOptionList(BaseModel):

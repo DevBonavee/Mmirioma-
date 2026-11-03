@@ -2,7 +2,8 @@ import { useState, type CSSProperties, type PointerEvent, type ReactNode } from 
 import { Link } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { whatsappLink } from '../../lib/whatsapp'
-import { LANDING_FAQS, OBJECTIONS, ORDER_CTA, SERVICE_AREAS, tileFill } from './content'
+import { OUTLINE_BUTTON, PRIMARY_BUTTON } from './buttonStyles'
+import { HOW_STEPS, LANDING_FAQS, OBJECTIONS, ORDER_CTA, tileFill } from './content'
 import {
   ArrowRightIcon,
   BigPinIcon,
@@ -11,7 +12,6 @@ import {
   DottedArrowIcon,
   DropCheckIcon,
   DropFilledIcon,
-  PinIcon,
   ShieldCheckIcon,
   TruckIcon,
   WhatsAppIcon,
@@ -19,13 +19,9 @@ import {
 import { InstallAppButton, Kicker, MarketingFooter, MarketingHeader, Oma, Pic, SectionHead } from './MarketingParts'
 import { formatPhone } from '../../lib/format/phone'
 import { useSupportContact } from './queries'
+import { CheckAreaLink, ServiceAreas } from './ServiceAreas'
 import { FloatingActions } from './SiteExtras'
 import { useMarketingPage } from './useMarketingPage'
-
-const PRIMARY_BUTTON =
-  'inline-flex items-center justify-center gap-2.5 rounded-[10px] bg-primary text-center font-bold text-white no-underline transition-colors duration-150 hover:bg-primary-dark hover:text-white'
-const OUTLINE_BUTTON =
-  'inline-flex items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-solid border-primary bg-white text-center font-bold text-primary no-underline transition-colors duration-150 hover:bg-mk-panel hover:text-primary-dark'
 
 /**
  * Public landing page at `/` (design/MmiriOma-landing-handoff, "Landing").
@@ -165,12 +161,14 @@ function Benefits() {
   )
 }
 
-const STEPS: { img: string; w: number; h: number; circle: string; title: string; text: string }[] = [
-  { img: 'step-order', w: 82, h: 122, circle: 'bg-primary', title: 'Order', text: 'Pick keke or tanker, the size and your address.' },
-  { img: 'step-deliver', w: 145, h: 92, circle: 'bg-primary', title: 'We bring it', text: 'A rider collects the water and heads to you.' },
-  { img: 'step-pour', w: 115, h: 122, circle: 'bg-mk-step3', title: 'We pour it', text: 'Into your drums, or your ground or overhead tank.' },
-  { img: 'step-code', w: 87, h: 108, circle: 'bg-mk-step4', title: 'Give your code', text: 'Share your delivery code once all the water is in.' },
+/** The pictures and circle colours of the four steps; the words are `HOW_STEPS` in content.ts. */
+const STEP_ART: { img: string; w: number; h: number; circle: string }[] = [
+  { img: 'step-order', w: 82, h: 122, circle: 'bg-primary' },
+  { img: 'step-deliver', w: 145, h: 92, circle: 'bg-primary' },
+  { img: 'step-pour', w: 115, h: 122, circle: 'bg-mk-step3' },
+  { img: 'step-code', w: 87, h: 108, circle: 'bg-mk-step4' },
 ]
+const STEPS = HOW_STEPS.map((step, i) => ({ ...STEP_ART[i], ...step }))
 
 function HowItWorks() {
   return (
@@ -493,7 +491,6 @@ const TEXT_LINK = 'inline-flex min-h-11 items-center gap-1.5 text-[15px] font-bo
 
 /** Service areas and FAQs. The "Our Partners" strip is left out until real partners are agreed (decision Q4). */
 function AreasAndFaqs() {
-  const { phone, whatsapp } = useSupportContact()
   return (
     <section className="bg-white">
       <div className="mk-wrap py-20">
@@ -501,38 +498,15 @@ function AreasAndFaqs() {
           <div id="areas" className="flex flex-col gap-[18px]">
             <Kicker>Where we deliver</Kicker>
             <h2 className="m-0 font-display text-[clamp(30px,3.4vw,40px)] font-extrabold tracking-[-1px] text-ink">Our service areas</h2>
-            <p className="m-0 max-w-[460px] text-[16px] leading-[1.6] text-slate">
-              The areas we plan to serve in Enugu. <b className="text-ink">Sample list:</b> our first zone is still being confirmed.
-            </p>
-            <ul aria-label="Service areas (sample)" className="m-0 flex list-none flex-wrap gap-2.5 p-0 pt-1">
-              {SERVICE_AREAS.map((a) => (
-                <li key={a} className="inline-flex min-h-[46px] items-center gap-2 rounded-xl bg-mk-chip px-4 text-[15px] font-semibold text-ink">
-                  <PinIcon className="text-ink" />
-                  {a}
-                </li>
-              ))}
-            </ul>
+            <p className="m-0 max-w-[460px] text-[16px] leading-[1.6] text-slate">The areas we deliver to during the pilot.</p>
+            <ServiceAreas />
             <div className="mt-2.5 flex flex-wrap items-center gap-4 rounded-[18px] bg-mk-chip px-6 py-[22px]">
               <BigPinIcon className="shrink-0" />
               <div className="min-w-0 flex-[1_1_200px]">
                 <p className="m-0 text-[16px] font-bold text-ink">Not on the list?</p>
                 <p className="mt-0.5 mb-0 text-[14px] text-slate">Ask us. We are adding new areas.</p>
               </div>
-              {whatsapp ? (
-                <a
-                  href={whatsappLink(whatsapp, 'Hello MmiriOma, do you deliver to my area?')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={TEXT_LINK}
-                >
-                  Check your area on WhatsApp
-                  <ArrowRightIcon size={15} />
-                </a>
-              ) : (
-                <a href={`tel:${phone}`} className={TEXT_LINK}>
-                  Call {formatPhone(phone)} to check your area
-                </a>
-              )}
+              <CheckAreaLink />
             </div>
           </div>
           <div id="faq" className="mk-split-divider flex flex-col gap-[18px]">

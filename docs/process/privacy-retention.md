@@ -158,6 +158,32 @@ number, or by email to an address the requester confirms on that call.
 6. **Confirm** the outcome to the requester on the confirmed number and
    record it. The app does not send it.
 
+### Deletion: website contact messages
+
+A person who sent a message through the website contact form has no account
+and no "Delete my account" button (notice section 9). They ask by the support
+line or the privacy email; confirm identity by call-back to the number they
+gave, as above, and ask which number they wrote from (#364).
+
+1. **Check what would go** with a dry run, which changes nothing:
+
+   ```bash
+   python -m app.modules.privacy.cli delete-website-messages --by <your admin phone> --phone <phone>
+   ```
+
+   It prints how many messages were sent from that number and how many staff
+   had not resolved yet. If some are unresolved, check the admin Support queue
+   first: the requester may want an answer before the message goes. It refuses,
+   with no change, when no website message was sent from the number.
+2. **Delete:** run the same command with `--apply`. It deletes each message whole
+   (name, phone and message) and writes one audit row per message with its id
+   and status only. Record the counts in the register.
+3. **If they are also a customer,** the account steps above do not touch
+   website messages (the form never links a message to an account): run this
+   command too, and `anonymize-customer` if they asked for the account.
+4. **Confirm** the outcome on the confirmed number and record it. The 3-year
+   review deletes resolved website messages by itself.
+
 ### Deletion: riders and drivers
 
 A rider or driver asks by the support line or the privacy email (the
@@ -236,6 +262,7 @@ restore in the register (notice section 10).
 
 Deactivation is `app.modules.auth.cli deactivate`. Anonymizing a customer
 or (with `anonymize-partner`) a rider or driver,
+deleting a website contact message by phone (`delete-website-messages`, #364),
 correcting a name, recording the outcome of a deletion request made in the
 app (`set-deletion-status`) and the monthly database steps are
 `app.modules.privacy.cli` (how it works:
@@ -283,7 +310,9 @@ admin account and writes an audit row.
 
 | Date | Change | By |
 | --- | --- | --- |
-| 2026-11-03 | Notice 5.0 (#332): adds the record of the acceptance at sign-up. Anonymizing an account also clears that record | @chidimmamogbo (+ Claude Code) |
+| 2026-11-03 | Notice 6.0 (#332): adds the record of the acceptance at sign-up. Anonymizing an account also clears that record | @chidimmamogbo (+ Claude Code) |
+| 2026-11-03 | "Deletion: website contact messages" with `delete-website-messages` (#364): a visitor with no account is found by phone number and their messages are deleted whole, with one audit row each. No change to the notice (section 9 already says to call or email) | @nnamdi-security (+ Claude Code), #364 |
+| 2026-11-03 | Notice 5.0 (#346): section 7 names OpenFreeMap, the map-tile provider of the landing page's service-area map (the visitor's IP address and the map tiles viewed, not any typed address), as agreed in #334 and the #346 review. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, #346 review) + Claude Code, #346 |
 | 2026-11-02 | Notice 4.0 (#339): messages sent through the website contact form are collected (section 2), seen by staff (section 7), kept 3 years after resolution (section 8) and found by phone number on request (section 9); the retention table row above. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, answer on the #339 contract) + Claude Code, #339 |
 | 2026-10-27 | "Deletion: riders and drivers" with `anonymize-partner`, by the rules the privacy contact confirmed on #119; open item 4 closed | @nnamdi-security (+ Claude Code), #119 |
 | 2026-10-27 | Copied into the fork from the main repo (`c4d972c`) and extended: deletion requests made in the app (`set-deletion-status`), what anonymizing also removes (saved addresses, in-app messages, support request messages, the deletion reason, feedback messages), never-verified accounts with audit rows anonymized, support requests in the monthly review, rider and driver accounts (open item 4), and the website copy of the notice. The notice question in #104 (section 8, never-verified accounts) is decided: the wording from PR #106, accepted by the privacy contact. Privacy contact's decisions (2026-10-27): the notice becomes 2.0, as the version rule asks when what is collected changes (it had been numbered 1.2 and was never published); section 9 names "Delete my account" in the app; rider and driver deletion gets its own issue (#119) | @nnamdi-security (+ Claude Code), #104 |

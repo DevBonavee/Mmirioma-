@@ -12,6 +12,9 @@
   took the next number.
 - **Fix / workaround:** merged `development` into the branch, renumbered this
   migration to `0025` after `0024`, and made the notice 5.0 with both changes kept.
+  #346 then also took 5.0, which git merged silently because both branches had the
+  same line, so the notice became 6.0 on a second merge. Check the version on
+  `development` before merging, not only the conflicts.
   The scratch test database was recreated, because it had the old `0024` applied.
   Before opening a PR with a migration, check the head on an up-to-date
   `development` with `git ls-tree origin/development --name-only backend/alembic/versions/`.
