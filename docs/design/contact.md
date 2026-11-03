@@ -10,12 +10,12 @@ NFR-020 · Contract: no change (`GET /public/contact` and `POST /public/contact`
 #339) · Visual system: [landing-v1.md](landing-v1.md) and
 [design-system.md](design-system.md)
 Designer: @Daveoski + Claude Code (text design; no visual mockup) · Reviewed by:
-(not yet) · Status: draft
+@nnamdi-security (2026-11-03) · Status: approved
 
 This is a written design: the page, every state and the exact wording. It
-becomes `Status: approved` when one reviewer who is not the author checks it
-against the SRS, the contract and the honesty rules (G2). The page is built in a
-separate pull request.
+was approved (G2) on 2026-11-03 by @nnamdi-security, who is not the author, after
+checking it against the SRS, the contract and the honesty rules, with the
+decisions under "Review decisions". The page is built in a separate pull request.
 
 A public page at `/contact` with the support phone, WhatsApp and email, and a
 form that sends a message to the team. The message is stored as a support
@@ -206,6 +206,31 @@ Each has a recommendation; the reviewer decides.
 5. **The email link.** The contract sends nothing by email, but the email is the
    contact block's privacy mailbox, already on the footer and the FAQ page.
    Recommendation: keep "Email support" in the card, as those pages do.
+
+## Review decisions
+
+Recommendations by @nnamdi-security, 2026-11-03, approved with the design:
+
+1. **Switching the form on:** agreed: a public build setting
+   `VITE_CONTACT_FORM_ENABLED`, off unless `true`. It holds no secret. The build
+   PR documents it in `frontend/.env.example` and in the deployment guide, and
+   says plainly that changing it needs a rebuild of the frontend. The page ships
+   with the contact card first; the form is switched on only after the four
+   conditions above are met.
+2. **Eight header links:** agreed, "Contact" after "FAQs". The build checks
+   960 to 1280 px and narrows the gaps; if eight still do not fit, the
+   reviewer picks the one to move to the footer.
+3. **Topic select:** show it, optional, with the app's labels. The privacy
+   notice row already lists "the type of question if you choose one".
+4. **Sent wording:** agreed. "Our team answers website messages by phone, on the
+   number you gave" matches the contract and promises no time. Staff must
+   actually call; that is an operating rule for the team, not the page.
+5. **Email link:** keep "Email support", as the footer and the FAQ page do. It
+   goes to the contact block's mailbox, which is the privacy mailbox today;
+   when a separate support mailbox exists, change it in the one contact block.
+6. **Condition:** the build tests that the honeypot stays empty on a normal
+   submit, that only a 201 clears the form, and that no name, phone or message
+   reaches the console, the URL or browser storage.
 
 ## Changes to the design system
 
