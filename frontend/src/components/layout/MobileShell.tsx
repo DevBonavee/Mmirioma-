@@ -6,6 +6,21 @@ import { HomeLogo } from '../brand/HomeLogo'
 import { BellIcon, ChevronLeftIcon, MenuIcon } from '../icons/icons'
 import { Avatar } from '../ui/Avatar'
 import { IconButton, IconLink } from '../ui/IconButton'
+import { useShellScope, usePane, type ShellWidth } from './shellContext'
+
+/**
+ * Frame classes by width. Below 768 px every width is the same phone screen.
+ * From 768 px: phone stays 430, customer is 720 and then up to 1120 from
+ * 1280 px, card is 480.
+ */
+const FRAME: Record<ShellWidth, string> = {
+  phone: 'max-w-phone',
+  customer: 'max-w-phone md:max-w-customer xl:max-w-customer-wide',
+  card: 'max-w-phone md:max-w-card',
+}
+
+/** Side padding that centres content in a 720 px column inside the 1120 px customer area (xl only). */
+const XL_COLUMN = 'xl:px-[max(18px,calc((100%_-_720px)/2))]'
 
 /**
  * Frame for every phone screen (`.ph` in the design, drawn at 390 × 844).
@@ -13,8 +28,12 @@ import { IconButton, IconLink } from '../ui/IconButton'
  * It fills the viewport height (`100dvh`, so the browser toolbar does not
  * hide the footer) with a fixed header, one scrolling area and a fixed footer
  * or tab bar. From 360 px up it stretches to the screen width; on tablets and
- * desktops it is a centred column at most 430 px wide on the page background,
- * so the phone layout keeps its proportions.
+ * desktops it is a centred column on the page background, so the phone layout
+ * keeps its proportions. The column is 430 px unless a `ShellScope` says
+ * otherwise (customer: 720 px, then up to 1120 px from 1280 px; see
+ * `docs/design/responsive.md`).
+ *
+ * Inside a `Pane` it does not draw the page at all: it fills the pane.
  */
 export function MobileShell({
   children,
@@ -26,13 +45,20 @@ export function MobileShell({
   background?: 'canvas' | 'white' | 'ink'
   className?: string
 }) {
+  const { width } = useShellScope()
+  const pane = usePane()
+  const fill = background === 'white' ? 'bg-white' : background === 'ink' ? 'bg-ink' : 'bg-canvas'
+  if (pane) {
+    return <div className={cx('relative flex min-h-0 flex-1 flex-col overflow-hidden text-body text-ink', fill, className)}>{children}</div>
+  }
   return (
     <div className="min-h-dvh bg-canvas">
       <div
         className={cx(
-          'relative mx-auto flex h-dvh max-w-phone flex-col overflow-hidden text-body text-ink',
+          'relative mx-auto flex h-dvh flex-col overflow-hidden text-body text-ink',
+          FRAME[width],
           'sm:border-x sm:border-line sm:shadow-card',
-          background === 'white' ? 'bg-white' : background === 'ink' ? 'bg-ink' : 'bg-canvas',
+          fill,
           className,
         )}
       >
@@ -56,21 +82,29 @@ export function TopBar({
   right?: ReactNode
   className?: string
 }) {
+  const { nav } = useShellScope()
+  const pane = usePane()
+  // The list pane of a two-pane layout has no bar of its own: the page header above both panes serves it.
+  if (pane === 'list') return null
   return (
-    <header
-      className={cx(
-        'mo-top',
-        className,
-      )}
-    >
-      {left ?? <TopBarSpacer />}
-      {center ?? (
-        <HomeLogo>
-          <Logo height={30} alt="" />
-        </HomeLogo>
-      )}
-      {right ?? <TopBarSpacer />}
-    </header>
+    <>
+      <header
+        className={cx(
+          'mo-top',
+          className,
+        )}
+      >
+        {left ?? <TopBarSpacer />}
+        {center ?? (
+          <HomeLogo>
+            <Logo height={30} alt="" />
+          </HomeLogo>
+        )}
+        {right ?? <TopBarSpacer />}
+      </header>
+      {/* Customer desktop (1280 px and up): the links that the tab bar carries on a phone. */}
+      {nav && pane === null && <div className="hidden shrink-0 xl:block">{nav}</div>}
+    </>
   )
 }
 
@@ -137,15 +171,23 @@ export function ScrollArea({
   children,
   className,
   style,
+  wide = false,
 }: {
   children: ReactNode
   /** Override padding or gap where a screen differs (e.g. `gap-3`). */
   className?: string
   style?: CSSProperties
+  /**
+   * Customer area from 1280 px: use the whole 1120 px instead of a centred
+   * 720 px column (the home screen). Forms and detail screens leave it off.
+   */
+  wide?: boolean
 }) {
+  const { width } = useShellScope()
+  const pane = usePane()
   return (
     <main
-      className={cx('mo-scroll', className)}
+      className={cx('mo-scroll', width === 'customer' && pane === null && !wide && XL_COLUMN, className)}
       style={style}
     >
       {children}
@@ -155,10 +197,13 @@ export function ScrollArea({
 
 /** Fixed footer for the main action (`.foot`), padded above the phone's home bar. */
 export function Footer({ children, row = false, className }: { children: ReactNode; row?: boolean; className?: string }) {
+  const { width } = useShellScope()
+  const pane = usePane()
   return (
     <div
       className={cx(
         'mo-foot',
+        width === 'customer' && pane === null && XL_COLUMN,
         row && 'flex-row gap-2.5',
         className,
       )}

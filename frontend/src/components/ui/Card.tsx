@@ -21,9 +21,19 @@ export function Card({ pad = false, className, children, ...rest }: CardProps) {
 }
 
 /** A whole card that is a link (recent orders, notifications, address card). */
-export function CardLink({ to, className, children }: { to: string; className?: string; children: ReactNode }) {
+export function CardLink({
+  to,
+  className,
+  children,
+  'aria-current': ariaCurrent,
+}: {
+  to: string
+  className?: string
+  children: ReactNode
+  'aria-current'?: 'page'
+}) {
   return (
-    <Link to={to} className={cx(CARD, 'text-ink no-underline hover:text-ink', className)}>
+    <Link to={to} aria-current={ariaCurrent} className={cx(CARD, 'text-ink no-underline hover:text-ink', className)}>
       {children}
     </Link>
   )

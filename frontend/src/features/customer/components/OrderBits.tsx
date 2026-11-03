@@ -33,8 +33,24 @@ export function StageChip({ stage, className }: { stage: DeliveryStage; classNam
   )
 }
 
-/** Order card of the "My orders" list (`c-orders`). */
-export function OrderListCard({ order, className }: { order: CustomerOrder; className?: string }) {
+/**
+ * Order card of the "My orders" list (`c-orders`).
+ *
+ * @param to - Where the card goes; default is the tracking page for an active order and the details otherwise.
+ *   The two-pane list passes the details page so the right pane shows it.
+ * @param selected - Marks the card whose details are open in the right pane.
+ */
+export function OrderListCard({
+  order,
+  className,
+  to,
+  selected = false,
+}: {
+  order: CustomerOrder
+  className?: string
+  to?: string
+  selected?: boolean
+}) {
   const choice = order.choice
   const keke = choice?.delivery_type === 'keke'
   const title =
@@ -42,7 +58,11 @@ export function OrderListCard({ order, className }: { order: CustomerOrder; clas
       ? `${describeChoice(choice)}, ${choice.tank_type}`
       : orderQuantityText(order)
   return (
-    <CardLink to={orderLink(order)} className={`flex items-center gap-3 p-3 ${className ?? ''}`}>
+    <CardLink
+      to={to ?? orderLink(order)}
+      aria-current={selected ? 'page' : undefined}
+      className={`flex items-center gap-3 p-3 ${selected ? 'border-2 border-primary' : ''} ${className ?? ''}`}
+    >
       <span className={`flex h-16 w-[82px] shrink-0 items-center justify-center rounded-icon ${keke ? 'bg-sky' : 'bg-mint'}`}>
         <Illustration name={orderIllustration(order)} className="w-[70px]" />
       </span>

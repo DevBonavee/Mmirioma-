@@ -85,7 +85,7 @@ Tailwind CSS v4 is enabled the way its official Vite guide describes: the
 | `src/styles/theme.css` | `@theme static` tokens: every colour, type size, radius, shadow and spacing from `tokens/mo.css` and `tokens.json`. Tailwind's default palette is removed (`--color-*: initial`), so only exact design colours exist (`bg-primary`, `text-mute`, `shadow-card`, `rounded-card`...). `static` emits every variable, so inline styles and SVG can use `var(--color-*)` |
 | `src/styles/fonts.css` | Offline copy of Plus Jakarta Sans (see below) |
 | `src/styles/motion.css` | Design keyframes and utilities: `rise-1`..`rise-5`, `animate-float`, `animate-drive`, `animate-ping`, `route-flow`, `animate-pop`, `animate-wave`, `animate-sway`, `confetti-piece`, `glow`, `blink`, `shine`, `animate-slide-in`, `animate-sheet`, `animate-shake`, `animate-grow-x/y`, `animate-donut` |
-| `src/styles/base.css` | Body defaults, link colours, visible focus ring, `hit-44` touch-target helper |
+| `src/styles/base.css` | Body defaults, link colours, visible focus ring, `hit-44` and `hit-48` touch-target helpers |
 | `src/styles/components.css` | Default looks of shared components (`mo-card`, `mo-btn-*`, `mo-chip-*`, `mo-scroll`...) ported from `mo.css`, in `@layer components` |
 
 Where `mo.css` and `tokens.json` disagree, `mo.css` wins, because the design
@@ -200,7 +200,9 @@ styles, with the exact values. Each exported component has TSDoc.
 | `components/ui/Admin.tsx` | `StatCard` (`.stat`), `DataTable` (`.tbl`), `MiniButton`, `MiniLink` (`.mini`) |
 
 Controls drawn under 44 px (pills, mini buttons, small buttons, segments,
-switches) use `hit-44` for an invisible 44 × 44 touch area.
+switches) use `hit-44` for an invisible 44 × 44 touch area. Text links and small
+buttons that sit below the design system's 48 px minimum ("View all", "Not now")
+use `hit-48`: the look stays, the touch area is 48 × 48.
 
 ## Layout shells
 
@@ -208,9 +210,19 @@ switches) use `hit-44` for an invisible 44 × 44 touch area.
   with `BackLink`, `MenuLink`, `NotificationsLink`, `ProfileLink`,
   `TopBarTitle`, `TopBarSpacer`; `ScrollArea` (`.scroll`) and `Footer`
   (`.foot`). The shell is `100dvh` tall with one scrolling area; from 360 px it
-  fills the screen, on tablets and desktops it is a centred column at most
-  430 px wide. Footer and tab bar pad above the phone's home bar
+  fills the screen. From 768 px it is a centred column whose width a `ShellScope`
+  (`ShellScope.tsx`, `shellContext.ts`) sets for the screens below it: 430 px
+  without one (rider and driver app), `customer` 720 px then up to 1120 px from
+  1280 px with the header navigation, `card` 480 px for the signed-out customer
+  screens. `CustomerArea` and the customer routes set it, so the partner files
+  need no change. Footer and tab bar pad above the phone's home bar
   (`env(safe-area-inset-bottom)`).
+- Two panes (customer Orders and Addresses, 1280 px and up): `pages/Splits.tsx`
+  draws a list `Pane` and a detail `Pane` side by side. A screen inside a pane
+  (`usePane()`) fills the pane instead of the page, and the list pane has no
+  top bar. Below 1280 px the same routes show the one screen, chosen with
+  `useMediaQuery` (`lib/useMediaQuery.ts`); everything else uses Tailwind
+  breakpoints.
 - `components/layout/BottomTabBar.tsx`: `.tabs`, current tab `aria-current`.
 - `components/layout/DrawerMenu.tsx`: slide-in menu screens (`c-menu`, `r-menu`,
   `t-menu`); closes on backdrop, close button or Escape. `tone="green"` gives

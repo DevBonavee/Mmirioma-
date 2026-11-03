@@ -280,8 +280,13 @@ are in [responsive.md](responsive.md).
 | Name | Width | Behaviour |
 | --- | --- | --- |
 | phone | under 768 px | One column, full-width buttons, bottom navigation. Admin tables show as stacked cards. |
-| tablet | 768 to 1279 px | One or two columns, no sidebar. Admin tables scroll inside their own box; an admin detail panel is a side sheet. |
-| desktop | 1280 px and up | Sidebar navigation for dispatchers. Admin content up to 1440 px wide, centred beside the sidebar. |
+| tablet | 768 to 1279 px | One or two columns, no sidebar. The customer app is a 720 px column. Admin tables scroll inside their own box; an admin detail panel is a side sheet. |
+| desktop | 1280 px and up | Customer: header navigation instead of the tab bar, content up to 1120 px, two panes for Orders and Addresses. Admin: sidebar navigation for dispatchers, content up to 1440 px wide, centred beside the sidebar. |
+
+The column widths of the phone-style apps are tokens: `--container-phone`
+(430 px, the rider and driver app and every phone), `--container-customer`
+(720 px, the customer tablet), `--container-customer-wide` (1120 px, the customer
+desktop) and `--container-card` (480 px, the signed-out customer screens).
 
 An admin table never widens the page: `DataTable` owns its horizontal scroll
 box. A detail panel sits beside a table only where the page content is at
