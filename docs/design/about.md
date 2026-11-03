@@ -8,10 +8,11 @@ Requirements: FR-055, PRD §3.2 (no water-quality claims) · Contract: no change
 (`GET /public/contact`, [public-site.md](../api/public-site.md), already agreed)
 · Visual system: [landing-v1.md](landing-v1.md) and
 [design-system.md](design-system.md)
-Designer: @Bonvee120 + Claude Code (text design; no visual mockup) · Status:
-**proposed**. It becomes `approved` (G2) when one reviewer who is not the author
-says so here. The page is built in a separate pull request that waits for that,
-and for the product owner's copy (see "Copy").
+Designer: @Bonvee120 + Claude Code (text design; no visual mockup) · Reviewed by:
+@nnamdi-security (2026-11-03) · Status: **approved** (G2) on 2026-11-03 by a
+reviewer who is not the author, with the decisions under "Review decisions". The
+page is built in a separate pull request. It does not wait for the owner's copy:
+the sections that need it are left out until it is linked on #338 (see "Copy").
 
 A public page at `/about` that says who MmiriOma is, how delivery works and who
 to contact. It is linked from the header, the footer and the sitemap. It reuses
@@ -150,6 +151,28 @@ Everything else is static.
 2. Are the email and the phone in the footer's contact block the ones to publish?
 3. Does the owner want a "Who we are" section if no copy is ready by launch? The
    design says the page ships without it.
+
+## Review decisions
+
+Recommendations by @nnamdi-security, 2026-11-03, approved with the design:
+
+1. **Copy for "Who we are" and "Where we deliver":** the product owner supplies
+   it by a comment on #338. Build now without it; the build adds each section
+   when its copy is linked, in a later PR. For "Where we deliver", the better
+   answer is not new copy: the link "See the areas we serve" (`/#areas`) stays
+   until #346 turns that section into the real active zones, so the page never
+   names an area itself.
+2. **Email and phone:** publish the contact block's. They are the same details as
+   the privacy notice's contact section (support phone +234 813 377 4902, privacy
+   email), so the page and the notice cannot disagree. The owner confirms on #338;
+   the phone and WhatsApp still come from `GET /public/contact`, not from the
+   page.
+3. **No "Who we are" copy at launch:** the page ships without that section, as
+   the design says. A page with four honest sections is better than one with a
+   placeholder.
+4. **Condition:** the build checks the header with seven links at 960 to 1280 px,
+   adds `/about` to `sitemap.xml` and changes the `/about` assertion in
+   `backend/tests/test_seo_files.py` in the same PR (#331 has merged).
 
 ## Changes to the design system
 
