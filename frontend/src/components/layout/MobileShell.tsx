@@ -34,6 +34,14 @@ const XL_COLUMN = 'xl:px-[max(18px,calc((100%_-_720px)/2))]'
  * `docs/design/responsive.md`).
  *
  * Inside a `Pane` it does not draw the page at all: it fills the pane.
+ *
+ * The `phone` width (the rider and driver app and the screens outside the
+ * customer area) lets the browser window scroll from 768 px, with the header and
+ * the footer or tab bar sticky, so a desktop browser shows one scrollbar, not a
+ * second one inside the column (`data-scroll="window"`, styled in
+ * `styles/components.css`). Below 768 px the frame is the viewport and the
+ * scrolling area scrolls, as it always did. A `background="ink"` screen (a drawer
+ * menu) keeps the viewport-high frame because its panel fills the screen.
  */
 export function MobileShell({
   children,
@@ -48,12 +56,14 @@ export function MobileShell({
   const { width } = useShellScope()
   const pane = usePane()
   const fill = background === 'white' ? 'bg-white' : background === 'ink' ? 'bg-ink' : 'bg-canvas'
+  const windowScroll = width === 'phone' && background !== 'ink'
   if (pane) {
     return <div className={cx('relative flex min-h-0 flex-1 flex-col overflow-hidden text-body text-ink', fill, className)}>{children}</div>
   }
   return (
     <div className="min-h-dvh bg-canvas">
       <div
+        data-scroll={windowScroll ? 'window' : undefined}
         className={cx(
           'relative mx-auto flex h-dvh flex-col overflow-hidden text-body text-ink',
           FRAME[width],

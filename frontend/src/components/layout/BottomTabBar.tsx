@@ -28,7 +28,7 @@ export function BottomTabBar({
   return (
     <nav
       aria-label={label}
-      className={cx('grid shrink-0 grid-cols-4 border-t border-line bg-white px-1.5 pt-2 pb-[max(12px,env(safe-area-inset-bottom))]', className)}
+      className={cx('mo-tabs grid shrink-0 grid-cols-4 border-t border-line bg-white px-1.5 pt-2 pb-[max(12px,env(safe-area-inset-bottom))]', className)}
     >
       {items.map((item) => {
         const on = item.to === current

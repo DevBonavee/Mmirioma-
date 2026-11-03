@@ -28,7 +28,7 @@ export function AssignedSheet({ job }: { job: PartnerJob }) {
   }, [job.reference])
 
   return (
-    <div className="absolute inset-0 z-20">
+    <div className="absolute inset-0 z-20 md:fixed md:mx-auto md:max-w-phone">
       <div className="rise-1 absolute inset-0 bg-[rgba(10,37,64,.55)]" aria-hidden="true" />
       <div
         ref={sheetRef}
