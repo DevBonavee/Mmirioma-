@@ -1,5 +1,48 @@
 {
   "items": [
-    { "id": "9e8d7c6b-5a4f-4e3d-8c1b-0a9f8e7d6c5b", "name": "Independence Layout" }
+    {
+      "id": "9e8d7c6b-5a4f-4e3d-8c1b-0a9f8e7d6c5b",
+      "name": "Independence Layout",
+      "centre": {
+        "latitude": 6.4447,
+        "longitude": 7.5108
+      },
+      "boundary": null
+    },
+    {
+      "id": "5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d",
+      "name": "Ogui Road",
+      "centre": {
+        "latitude": 6.45,
+        "longitude": 7.51
+      },
+      "boundary": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              7.5,
+              6.44
+            ],
+            [
+              7.52,
+              6.44
+            ],
+            [
+              7.52,
+              6.46
+            ],
+            [
+              7.5,
+              6.46
+            ],
+            [
+              7.5,
+              6.44
+            ]
+          ]
+        ]
+      }
+    }
   ]
 }

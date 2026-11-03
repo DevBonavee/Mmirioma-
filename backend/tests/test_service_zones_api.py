@@ -64,18 +64,30 @@ def example(name: str) -> Any:
     return json.loads((EXAMPLES / name).read_text(encoding="utf-8"))
 
 
-def zone_view() -> ZoneView:
+#: One outer ring, closed, as ``[longitude, latitude]`` positions (SAMPLE DATA).
+BOUNDARY = [(7.50, 6.44), (7.52, 6.44), (7.52, 6.46), (7.50, 6.46), (7.50, 6.44)]
+OTHER_CENTRE = Coordinates(latitude=6.4500, longitude=7.5100)
+OTHER_ZONE_ID = uuid.UUID("5b1c2d3e-4f50-4a6b-8c7d-9e0f1a2b3c4d")
+
+
+def zone_view(
+    *,
+    boundary: list[tuple[float, float]] | None = None,
+    name: str = "Independence Layout",
+    zone_id: uuid.UUID = ZONE_ID,
+    centre: Coordinates = Coordinates(latitude=6.4447, longitude=7.5108),
+) -> ZoneView:
     zone = ServiceZone(
-        id=ZONE_ID,
-        name="Independence Layout",
+        id=zone_id,
+        name=name,
         is_active=True,
         created_at=NOW,
         updated_at=NOW,
     )
     return ZoneView(
         zone=zone,
-        centre=Coordinates(latitude=6.4447, longitude=7.5108),
-        boundary=None,
+        centre=centre,
+        boundary=boundary,
         fees=[ZoneFee(CATEGORY_ID, "Potable Water", 300_000)],
     )
 
@@ -103,6 +115,15 @@ class Fake:
         self._record("list_active_zones", {})
         return [zone_view().zone]
 
+    async def list_active_zone_geometry(self, _: object) -> list[ZoneView]:
+        self._record("list_active_zone_geometry", {})
+        return [
+            zone_view(),
+            zone_view(
+                boundary=BOUNDARY, name="Ogui Road", zone_id=OTHER_ZONE_ID, centre=OTHER_CENTRE
+            ),
+        ]
+
     async def create_zone(self, _: object, **kwargs: Any) -> ZoneView:
         self._record("create_zone", kwargs)
         return zone_view()
@@ -118,7 +139,13 @@ class Fake:
 @pytest.fixture
 def fake(monkeypatch: pytest.MonkeyPatch) -> Fake:
     fake = Fake()
-    for name in ("list_zones", "list_active_zones", "create_zone", "update_zone"):
+    for name in (
+        "list_zones",
+        "list_active_zones",
+        "list_active_zone_geometry",
+        "create_zone",
+        "update_zone",
+    ):
         monkeypatch.setattr(zones_service, name, getattr(fake, name))
     monkeypatch.setattr(quotes, "pilot_category", fake.pilot_category)
     return fake
@@ -218,9 +245,35 @@ def test_the_zone_list_needs_no_session(api: TestClient, fake: Fake, role: UserR
         sign_in(api, role)
     response = api.get(PUBLIC_LIST)
     assert response.status_code == 200
-    # id and name only: no fees, coordinates or boundary.
-    assert response.json() == {"items": [{"id": str(ZONE_ID), "name": "Independence Layout"}]}
-    assert fake.calls == [("list_active_zones", {})]
+    assert response.json() == example("service-zones.json")
+    assert fake.calls == [("list_active_zone_geometry", {})]
+
+
+def test_the_zone_list_carries_the_position_and_no_fees(api: TestClient, fake: Fake) -> None:
+    body = api.get(PUBLIC_LIST).json()
+    # Every zone has a centre; the boundary is null when the admin set none (#346).
+    assert [(z["name"], z["boundary"]) for z in body["items"]] == [
+        ("Independence Layout", None),
+        (
+            "Ogui Road",
+            {
+                "type": "Polygon",
+                "coordinates": [[[lon, lat] for lon, lat in BOUNDARY]],
+            },
+        ),
+    ]
+    assert [z["centre"] for z in body["items"]] == [
+        {"latitude": 6.4447, "longitude": 7.5108},
+        {"latitude": 6.45, "longitude": 7.51},
+    ]
+    for zone in body["items"]:
+        # id, name, centre and boundary only: no fees or admin fields.
+        assert set(zone) == {"id", "name", "centre", "boundary"}
+
+
+def test_the_zone_list_is_cached_for_a_minute(api: TestClient) -> None:
+    response = api.get(PUBLIC_LIST)
+    assert response.headers["Cache-Control"] == "public, max-age=60"
 
 
 # --- Admin list and create ------------------------------------------------------------

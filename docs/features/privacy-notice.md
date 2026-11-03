@@ -75,6 +75,11 @@ None. The text ships with the frontend.
   requests, order feedback and deletion requests. It is 2.0, not 1.2,
   because what is collected changed (the procedure's version rule;
   privacy contact, 2026-10-27, #104).
+- Version 5.0 (3 November 2026, #346) names OpenFreeMap (Hyperknot Software
+  Kft., Hungary) in section 7 as the provider of the landing page's service-area
+  map: it receives the visitor's IP address and the map tiles they view, not any
+  typed address, and may use Cloudflare as a CDN. The operator and the CDN are
+  named because OpenFreeMap's privacy policy (read 2 November 2026) says so.
 - Version 4.0 (2 November 2026, #339) adds the website contact form: the
   name, phone number and message of a visitor (section 2), staff seeing them
   (section 7), 3 years after resolution (section 8) and deletion by phone

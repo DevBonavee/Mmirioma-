@@ -702,7 +702,7 @@ Inactive zones are never listed.
 
 **Status: agreed** (G3) on 2026-11-03 by @nnamdi-security (technical lead),
 who is not the author, with the changes in "Reviewer's decisions" below.
-Nothing is built yet. The landing page's service-area map
+**Built in #346.** The landing page's service-area map
 ([design](../design/landing-service-areas.md)) needs each active zone's
 position, and the endpoint above says it holds "no coordinates or boundary".
 Zones already have both: `centre` is required and `boundary` is optional
