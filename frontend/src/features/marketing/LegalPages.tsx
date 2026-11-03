@@ -234,11 +234,11 @@ function Rows({ rows }: { rows: [ReactNode, ReactNode][] }) {
 }
 
 /*
- * The Privacy page mirrors PRIVACY_NOTICE.md (version 6.0) section by
+ * The Privacy page mirrors PRIVACY_NOTICE.md (version 7.0) section by
  * section, with the same facts (#93). Change both together; the notice is the
  * source.
  */
-const PRIVACY_VERSION = 'Version 6.0, last updated 3 November 2026.'
+const PRIVACY_VERSION = 'Version 7.0, last updated 3 November 2026.'
 
 const PRIVACY: Section[] = [
   {
@@ -290,6 +290,10 @@ const PRIVACY: Section[] = [
             [
               'Saved addresses: a name you give each one (for example "Home"), the address, landmark and the delivery area you choose',
               'To let you reuse an address when you order; the area tells us whether we can deliver there.',
+            ],
+            [
+              "A map location (latitude and longitude) of your delivery address, only if you choose to share your phone's location or place a pin on the map. It is saved with the address or order you add it to",
+              'To help the rider find your gate. When we price deliveries by road distance, it will also be used to work out the distance.',
             ],
             [
               'If you deliver for us as a rider or driver: your name, mobile number, password, vehicle type (keke or tanker), plate number, the tank capacity you declare, the area you serve, your approval status and whether you are available for work',
@@ -374,9 +378,12 @@ const PRIVACY: Section[] = [
     title: '5. Addresses and location data',
     body: (
       <p>
-        We use the address, landmark and instructions you type to decide whether we can deliver, agree the price and find you. The app does not ask
-        for your phone's location. The only location we record is the optional GPS position of the <b>driver's</b> phone at arrival and at
-        delivery, with the driver's consent (section 2). We do not track you or show live vehicle locations.
+        We use the address, landmark and instructions you type to decide whether we can deliver, agree the price and find you. The app asks for your
+        phone's location <b>only when you choose "Use my location"</b>, after telling you why. You can refuse and type your address instead, or
+        place a pin on the map by hand; nothing else changes. A map location is saved only if you add it to an address or an order. We use it to
+        help the rider find you and, when we price by road distance, to work out the distance. We never use it to track you. The other location
+        we record is the optional GPS position of the <b>driver's</b> phone at arrival and at delivery, with the driver's consent (section 2).
+        We do not show live vehicle locations.
       </p>
     ),
   },
@@ -411,10 +418,10 @@ const PRIVACY: Section[] = [
         <p>We share only what is needed to run the service:</p>
         <List
           items={[
-            "The driver assigned to your order sees the contact's first name and last initial, phone number, delivery address, landmark, instructions and quantity, and only while they are assigned to the delivery.",
+            "The driver assigned to your order sees the contact's first name and last initial, phone number, delivery address, the map location if you gave one, landmark, instructions and quantity, and only while they are assigned to the delivery.",
             "Our authorized staff (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers. They also see the messages sent through the website contact form, to answer them.",
             'Termii, our SMS provider, receives your phone number and the text of each message we send you.',
-            "OpenFreeMap (Hyperknot Software Kft., Hungary), our map provider, receives your IP address and the parts of the map your device downloads when you look at the map of our service areas on our website. It does not receive any address you type. It may use Cloudflare to deliver the map, under Cloudflare's own privacy policy.",
+            "OpenFreeMap (Hyperknot Software Kft., Hungary), our map provider, receives your IP address and the parts of the map your device downloads when you look at the map of our service areas on our website or place a pin on the map when you add an address. It does not receive any address you type. It may use Cloudflare to deliver the map, under Cloudflare's own privacy policy.",
             "Hostinger (HOSTINGER Global S.à r.l., Luxembourg), our hosting provider, runs the server and stores the service's data and backups in its data centre in Paris, France.",
             'Backblaze (Backblaze, Inc., United States) stores an off-site copy of our backups in its data centre in Amsterdam, the Netherlands.',
           ]}
@@ -457,10 +464,10 @@ const PRIVACY: Section[] = [
               'Your account and profile: while your account is open and needed for the service',
               'Deleted or anonymized after a verified deletion request (section 9), subject to the exceptions in section 10.',
             ],
-            ['Saved addresses: while your account is open', 'Deleted when your account is closed.'],
+            ['Saved addresses, including any map location: while your account is open', 'Deleted when your account is closed.'],
             ['Messages in the app: as long as the order they are about', 'Deleted when your account is closed.'],
             [
-              'Order and delivery records, including delivery addresses: 3 years after the order is completed',
+              'Order and delivery records, including delivery addresses and map locations: 3 years after the order is completed',
               'Personal details deleted or anonymized; the payment subset is kept as below.',
             ],
             [

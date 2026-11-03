@@ -400,7 +400,7 @@ Decided by @chidimmamogbo on 2026-11-02:
   branch, and the two merge back to back, with no deploy or promotion to `main`
   in between.
 - **Privacy notice:** the #332 build adds the acceptance record to
-  `PRIVACY_NOTICE.md` and the `/privacy` page, as version 6.0, and `TERMS_VERSION`
+  `PRIVACY_NOTICE.md` and the `/privacy` page, as version 7.0, and `TERMS_VERSION`
   takes that version's date. The notice's legal review is still open.
 - **Change password screen:** the #332 build tightens `newPasswordField` in
   `frontend/src/lib/forms.ts` to this rule, because #336 covers only the sign-up
@@ -435,7 +435,7 @@ Decided by @chidimmamogbo on 2026-11-02:
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
-| 2026-11-03 | #332 build, amending what was agreed on 2026-11-02: the acceptance message names the pages as they call themselves, "Terms of Service" and "Privacy Notice", and the notice becomes version 6.0, not 3.1, because the privacy procedure asks for a major version when new data is collected, and #339 and #346 had already taken 4.0 and 5.0 | @chidimmamogbo's decision; needs the reviewer's agreement in the PR |
+| 2026-11-03 | #332 build, amending what was agreed on 2026-11-02: the acceptance message names the pages as they call themselves, "Terms of Service" and "Privacy Notice", and the notice becomes version 7.0, not 3.1, because the privacy procedure asks for a major version when new data is collected, and #339, #346 and #340 had already taken 4.0, 5.0 and 6.0 | @chidimmamogbo's decision; needs the reviewer's agreement in the PR |
 | 2026-11-02 | Proposed (#332): new passwords need 8-128 characters, an uppercase letter, a number and a symbol; `accepted_terms` required on `POST /auth/register` and `POST /auth/partner-register`, with the time and terms version stored. **Breaking** for clients that do not send `accepted_terms`, and for clients that send weak passwords | @nnamdi-security (technical lead, G3, 2026-11-02) |
 | 2026-10-31 | Additive: `delivery_status` on `PhoneCodeSent`, and `GET /auth/phone-verification/status` and `GET /auth/phone-change/status` (Termii delivery reports). No existing field, status or error code changes | Proposed in the `fix/termii-otp-and-driver-area` branch; needs one reviewer's agreement in the PR |
 | 2026-10-26 | Change password (#8): `POST /auth/password`; a change ends the account's other sessions | @nnamdi-security (technical lead, #36), with @chidimmamogbo's decisions on #8 |

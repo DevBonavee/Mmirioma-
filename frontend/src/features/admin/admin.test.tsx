@@ -636,4 +636,18 @@ describe('mock-only admin actions in mock mode (#221)', () => {
     renderAt('/admin/payments')
     expect(await screen.findByRole('heading', { name: 'Customer payments' }, { timeout: WAIT })).toBeInTheDocument()
   }, SLOW)
+
+  it('shows the sample website message in the mock: tagged, no order, and only the close-after-a-call choice (#365)', async () => {
+    const user = userEvent.setup()
+    await mockLogin({ phone: '0800 000 0100', password: DEMO_PASSWORD })
+    renderAt('/admin/support')
+    await user.click(await screen.findByRole('button', { name: /Website message/ }, { timeout: WAIT }))
+    expect(await screen.findByRole('heading', { name: 'Sender' }, { timeout: WAIT })).toBeInTheDocument()
+    expect(screen.getByText('Topic: Other')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Order timeline' })).toBeNull()
+    // No points and no order action for a message with no account and no order.
+    expect(screen.getByRole('tab', { name: 'Call both and close' })).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /points|cancel|reassign|without the code/i })).toBeNull()
+    expect(await screen.findByRole('link', { name: 'Call' }, { timeout: WAIT })).toHaveAttribute('href', 'tel:+2348000000001')
+  }, SLOW)
 })

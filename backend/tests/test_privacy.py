@@ -97,6 +97,7 @@ def test_anonymize_output_has_ids_and_counts_but_no_phone(
         return service.AnonymizeResult(
             customer_id=CUSTOMER_ID,
             orders_anonymized=2,
+            order_locations_cleared=1,
             gps_points_cleared=1,
             addresses_removed=2,
             support_messages_removed=1,
@@ -229,6 +230,7 @@ def test_review_output_lists_the_manual_checks(
             unverified_accounts_anonymized=1,
             gps_points_cleared=0,
             orders_anonymized=0,
+            order_locations_cleared=0,
             support_requests_deleted=5,
             deletion_requests_deleted=2,
             applied=True,

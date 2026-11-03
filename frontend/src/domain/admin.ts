@@ -464,6 +464,13 @@ export interface AdminIssue {
   reference: string | null
   reported_by: 'customer' | 'rider' | 'driver'
   reporter_name: string
+  /**
+   * `website`: a visitor's message from the public contact form, with no order (#365). Absent for a signed-in
+   * user's report: the real adapter sets it only for a website message, so an app request is exactly as before.
+   */
+  source?: 'website'
+  /** A website message's topic as the server sent it (`late`, `wrong_quantity`, `payment`, `rider` or `other`); absent otherwise. */
+  topic?: string
   at: string
   urgent: boolean
   status: 'open' | 'resolved'

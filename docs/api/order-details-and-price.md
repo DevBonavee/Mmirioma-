@@ -326,6 +326,10 @@ FR-038) before confirming." How each item is covered:
 
 ## `POST /orders` changes
 
+> **Amended by [delivery-location.md](delivery-location.md) (#340):** `OrderCreate` gains an
+> optional `delivery_location`, stored as the order's own copy and compared on an
+> idempotent retry. It is not compared with the quote.
+
 `OrderCreate` gains the [delivery details](#delivery-details) and an optional
 `quote_id`. Like `POST /quotes`, it has no category field
 ([order-create-with-quote-request.json](examples/order-create-with-quote-request.json)):
@@ -429,6 +433,9 @@ FR-012 gate is per source and category, not per station).
 
 ## `OrderRead` changes
 
+> **Amended by [delivery-location.md](delivery-location.md) (#340):** the customer's `OrderRead`
+> gains `delivery_location` (the stored copy, or `null`). Staff views do not return it.
+
 Every endpoint that returns `OrderRead` gains
 ([order-with-details.json](examples/order-with-details.json)):
 
@@ -495,6 +502,254 @@ For #9 (adapters) and `docs/architecture/api-mapping.md`:
 | `QuoteRead` `quote_available` | `Quote` `quote_available`: `total_minor_units` and `price_valid_until` only. The design's `water` and `delivery` lines have no source (total only, open question 6), so the Keke and Tanker summaries lose those lines in #9. `points_estimate` and `is_sample` have no source either ([open question 9](#open-questions)) |
 | `QuoteRead` `manual_quote_required` | `Quote` `manual_quote_required`: `reason` text chosen by the client from the code |
 | `service_zone_id` (request), `service_zone` (`OrderRead`) | No design field yet. The customer's address step needs a zone picker with a "my area is not listed" choice (sent as no zone), a screen change that needs G2 in #9 |
+
+## Amendment #385: road-distance pricing
+
+**Status: agreed** (G3) on 2026-11-03 by @nnamdi-security (technical lead and
+privacy contact), who is not the author, with the decisions and the privacy
+condition under "Reviewer's decisions" at the end of this amendment. Nothing is
+built yet. Requirements: FR-020, FR-022, FR-024,
+T-18, SRS §8 "Road distance unavailable". Builds on
+[delivery-location.md](delivery-location.md) (agreed, #340) and the OSRM
+decision ([maps.md](../architecture/maps.md), option R1, #334). OSRM is not
+deployed yet (#384), so **nothing changes for customers until it is**: with no
+OSRM address configured, every quote is priced exactly as today.
+
+Everything here is **additive**. A client that sends today's `QuoteCreate`
+gets today's answer.
+
+### What changes
+
+FR-022: the delivery cost is **base delivery fee + distance charge +
+additional-trip charges**, the distance charge using the **actual road
+distance** between the water source and the delivery location, from OSRM.
+Straight-line distance is never used. Today the zone's fee replaces the whole
+delivery cost because there is no road distance ([Pilot note](#response-200-quoteread)).
+This amendment adds the road-distance path and keeps the zone fee as the
+fallback.
+
+### `POST /quotes` takes `delivery_location`
+
+`QuoteCreate` gains an optional `delivery_location`: the
+[location object](delivery-location.md#location-object) of #340
+(`latitude`, `longitude`, `source`), with the same rules and the same
+[bounds](delivery-location.md#delivery-bounds), or `null` / absent for "no
+pin". Errors are the same 422 `validation_error`, with `loc` naming
+`delivery_location`.
+
+The response is unchanged: customers still see the total only, never the
+distance, the rates or whether road distance was used.
+
+### When a quote uses road distance
+
+All of these must hold; otherwise the quote uses the fallback below.
+
+1. The request carries a `delivery_location`.
+2. The picked zone is active (as today).
+3. OSRM is configured and answers within its timeout with a route.
+4. **Every source the quote could use has a `location`** (see
+   [Which source](#which-source-decides-the-distance) and
+   [Source location](#source-location)).
+5. A price rule matches the zone, category and litres (as today).
+
+The road-distance delivery cost is, in integer kobo (BR-01):
+
+```
+delivery = base_delivery_fee
+         + distance charge                       (rate per km x road km)
+         + (trips - 1) x additional_trip_charge
+```
+
+The three rates come from the **price rule that already supplies handling and
+margin** ([admin-directory.md](admin-directory.md#price-lists)): its
+`base_delivery_fee_minor_units`, `distance_rate_minor_units_per_km` and
+`additional_trip_minor_units`. The vehicle plan supplies `trips` (1 or 2,
+FR-013). The distance charge is the rate times the road distance in
+kilometres, computed with `Decimal` from OSRM's metres and rounded
+**half-up to whole kobo**; nothing else is rounded, and the total is then
+rounded **up** to whole naira as before. The zone's fallback fee is **not**
+added: in this path the price rule's delivery rates replace it.
+
+### Which source decides the distance
+
+A quote does not know which source staff will pick at confirmation, and the
+water price already assumes the **dearest** eligible source (decision 3 under
+[How the total is computed](#how-the-total-is-computed)). So the distance uses
+the **longest** road distance from the delivery location to any eligible source
+of the preferred kind (Keke: any kind). Whichever eligible source staff pick, the
+price covers the trip, the same way the water price does. OSRM answers all the
+sources in one request (its `table` service), so the number of sources does not
+change the number of calls.
+
+### Source location
+
+A water source has only a text `approximate_location` (no coordinates), and
+road distance needs a point. **Decided in this proposal** (the issue's
+recommendation): add an optional `location` to a water source, set by an
+administrator.
+
+- `location` is `{ "latitude", "longitude" }` (WGS 84, inside the same
+  bounds) or `null`. It is a new nullable `geography(POINT, 4326)` column on
+  `water_sources`, one reversible migration.
+- It is returned by `GET /admin/water-sources` and written by
+  `POST` / `PATCH /admin/water-sources` and the `add-source` command
+  ([admin-water-sources.md](admin-water-sources.md)). It is **never** sent to a
+  customer or a driver.
+- A source with `location: null` is allowed and is the default: it keeps
+  working, and any quote that could use it uses the fallback. Nothing is
+  guessed from the text or from the zone centre ("No fabricated route
+  estimates", FR-022).
+
+The admin Water sources screen gets no latitude and longitude fields in this
+issue (a screen change needs its own design, G2); the endpoint and the command
+come first.
+
+### Fallback: when road distance is not used
+
+The quote is priced exactly as today (T-18, SRS §8):
+
+| Delivery cost | When |
+| --- | --- |
+| The zone's fee for the category, once per order | Any condition above fails, and the zone has a fee for the category |
+| `manual_quote_required` / `delivery_cost_unavailable` | Any condition above fails, and the zone has no fee for the category |
+
+`outside_service_zone` and the other reasons keep their order and meaning.
+OSRM being down, slow or unable to find a route never refuses an order and
+never produces a made-up distance; it only moves the quote to the fallback.
+The reason road distance was not used is kept in the snapshot
+([below](#what-the-quote-records)), not sent to the customer.
+
+### The OSRM call
+
+- **One request per quote** at most, to `GET {OSRM_BASE_URL}/table/v1/driving/…`
+  with the sources and the delivery point and `annotations=distance`
+  (metres). No request is made when conditions 1 to 2, 4 or 5 already fail.
+- **A short timeout counts as down.** `OSRM_TIMEOUT_SECONDS`, a server setting;
+  recommended default 2 seconds. A slow server never holds a customer's quote.
+- **Configured through `get_settings()`**: `OSRM_BASE_URL` (empty means off).
+  No new library: the existing HTTP client is used. Nothing is cached in
+  this version.
+- **No route for any needed source** (OSRM returns no distance for it) is the
+  same as down.
+- OSRM receives only coordinates. No name, phone, address or order data is sent.
+
+### What the quote records
+
+FR-024: a quote freezes how its delivery cost was found. The `quotes` row
+gains (one reversible migration; existing rows are zone-fee quotes):
+
+| Column | Rule |
+| --- | --- |
+| `delivery_basis` | `road_distance` or `zone_fee`. Existing rows: `zone_fee` |
+| `road_distance_metres` | The longest distance used, whole metres; set exactly when `delivery_basis` is `road_distance` |
+| `distance_source_id` | The source that distance belongs to; same rule |
+| `distance_fallback_reason` | Set exactly when `delivery_basis` is `zone_fee` and a location was sent: `no_source_location`, `osrm_unavailable`, `no_route` or `timeout`. Null when no location was sent or OSRM is off (`no_delivery_location` is not stored: the absent location says it) |
+| `base_delivery_fee_minor_units`, `distance_rate_minor_units_per_km`, `additional_trip_minor_units` | The rates applied, set with `road_distance` (FR-024: "the rates applied") |
+| `delivery_location`, `delivery_location_source` | The point the quote was priced for, as the order stores it ([Storage](delivery-location.md#storage)); null when none was sent |
+
+`delivery_minor_units` keeps meaning the whole delivery cost, whichever path.
+An order keeps the quote it was placed with; a later change to OSRM, a source
+location or the price list never changes an existing quote or order (T-09).
+
+### The quote must match the order's location
+
+[When a quote matches the order](#when-a-quote-matches-the-order) gains one
+row:
+
+| Field | Comparison |
+| --- | --- |
+| `delivery_location` | If the **quote** was priced with a location, the order's `delivery_location` must be present and have the same latitude and longitude at 6 decimal places (`source` is not compared); otherwise `quote_mismatch`. If the quote carries none, the order's location is not compared (the price did not depend on it) |
+
+The idempotency comparison of #340 is unchanged.
+
+### Tests the build must have (with a fake OSRM)
+
+Road distance used and the exact kobo (including the half-up rounding and the
+whole-naira total); the **longest** of several sources used; OSRM down, timeout
+and no route each falling back; a source with no location; no delivery
+location; OSRM off; no zone fee (manual quote); a changed location is
+`quote_mismatch` and an unchanged one matches; the snapshot recording
+`delivery_basis`, the distance, the source, the reason and the rates; **no
+straight-line distance anywhere in pricing** (a test that the code never
+computes distance from coordinates itself); a quote never changing an existing
+order; and that no name, phone or address reaches OSRM.
+
+### Decisions proposed in #385
+
+1. **Longest distance across the eligible sources**, mirroring the water price.
+   Alternatives: the nearest source (could under-price), or asking staff to
+   pick the source before quoting (not how the flow works).
+2. **A source location on the source**, not the zone centre, and any eligible
+   source without one sends the quote to the fallback.
+3. **The rates come from the matching price rule**, replacing the zone fee in
+   the road-distance path.
+4. **The distance is one way** (source to delivery location), charged **once**
+   per order; extra trips are charged by `additional_trip_minor_units`, not by
+   multiplying the distance. FR-022 says "the actual road distance between
+   source and delivery location" and does not mention a return leg.
+5. **Exact distance**: no rounding of kilometres; only the charge is rounded
+   (half-up to kobo).
+6. **A quote with a location must match the order's location**; a quote
+   without one does not constrain it.
+7. **Timeout default 2 seconds**, no cache, one `table` request per quote.
+
+### Open questions for #385
+
+1. Decision 4 (one way, once per order) and decision 1 (longest) are business
+   rules the SRS does not spell out. The technical lead should confirm them.
+2. OSRM snaps a point to the nearest road. A pin far from any road still gets a
+   distance, from where it snapped. Should the quote fall back when the snap
+   distance is large (for example over 500 m)? Recommendation: not in the first
+   version; record OSRM's snap distances when measuring the deployment (#384).
+3. Should the admin order detail show the road distance and the basis? Not
+   proposed: the contract keeps the breakdown out of customer views, and
+   `AdminOrderRead` is not changed here.
+4. The Water sources screen needs latitude and longitude fields. Follow-up
+   issue with its own design.
+
+### Reviewer's decisions
+
+By @nnamdi-security, 2026-11-03 (recommendations, approved with the amendment):
+
+1. **Longest road distance across the eligible sources:** agreed. It mirrors the
+   water price, which takes the dearest eligible source, so whichever source
+   staff pick the price covers the trip, and the rule is written down (PRD §7:
+   adjacent orders must not vary without a documented rule). The nearest source
+   could under-price.
+2. **One-way distance, charged once per order, extra trips through
+   `additional_trip_minor_units`:** agreed. It is the plain reading of FR-022 and
+   FR-013. Consequence for whoever sets the price list: the per-km rate has to
+   cover the return leg, because none is charged separately. The admin price-list
+   guide says so in the build.
+3. **A location on the source, set by an administrator; any eligible source
+   without one sends the quote to the fallback:** agreed. Nothing is guessed from
+   text or from the zone centre.
+4. **The rates come from the matching price rule and replace the zone fee on the
+   road-distance path:** agreed.
+5. **A quote priced with a location must match the order's location (6 decimal
+   places); a quote without one does not constrain it:** agreed.
+6. **Timeout default 2 seconds, one `table` request, no cache, no snap-distance
+   check in version 1:** agreed. Condition: the #384 measurement records OSRM's
+   snapped distance for a set of real Enugu pins, and the result is written down
+   **before road-distance pricing is switched on**. If real pins snap far from
+   their road, a threshold is added by a contract change.
+7. **Open question 3 (admin order detail):** agreed, not shown in this issue.
+   **Open question 4:** a follow-up issue with its own design (G2).
+8. **Privacy condition (added in the agreement).** The quote stores the
+   customer's pin (`delivery_location`), which is personal data like the order's
+   copy, and the privacy tool does not touch quotes today. So the build must also:
+   (a) make `anonymize-customer` clear `delivery_location` and its source on that
+   customer's quotes; (b) make the retention review clear it on a quote that
+   became an order when the order's own copy is cleared (3 years after the order
+   finishes), and on a quote that never became an order **90 days after its price
+   stopped being valid** (the same period as GPS points; an expired offer has no
+   further use); (c) add the quote row to `PRIVACY_NOTICE.md` sections 2 and 8
+   (version bump per the procedure) and to `docs/process/privacy-retention.md`;
+   (d) test all three, and that the snapshot's `distance_source_id` and rates
+   carry no personal data.
+9. **Configuration:** `OSRM_BASE_URL` is empty by default and stays empty in
+   production until #384 passes its measurement, so merging the build changes
+   nothing for customers.
 
 ## Open questions
 
@@ -588,6 +843,7 @@ questions are settled; the contract is agreed.
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-03 | Proposed (#385): `delivery_location` on `POST /quotes` and in the quote match, road-distance delivery cost from OSRM with the zone fee as fallback, the longest eligible-source distance, an optional source `location`, and what the quote records ([amendment](#amendment-385-road-distance-pricing)) | @nnamdi-security (technical lead and privacy contact, G3, 2026-11-03), with the decisions and the privacy condition in the amendment |
 | 2026-10-26 | Built in #21: reason `no_price_rule` added (additive); the reason order; the zone fee replaces the whole delivery cost; the rounding rule ([How the total is computed](#how-the-total-is-computed)); quote rate limits 30 per customer per 10 minutes and 120 per IP per hour; question 14's confirm change written into [deliveries.md](deliveries.md#confirmation-rules) | @nnamdi-security (technical lead, decisions A-F on #21) |
 | 2026-10-26 | Agreed (G3): questions 12 and 13 confirmed (pilot fallbacks F3 and F5); question 14 decided (#21 extends the confirm endpoint to accept `awaiting_confirmation`, additive) | @nnamdi-security (technical lead, #36), with @chidimmamogbo's decisions on #42 |
 | 2026-10-26 | Open questions 12 and 13 resolved by the agreed pilot fallbacks F3 (window agreed on the confirmation call) and F5 (no cancellation or redelivery charge); FR-023 table updated; the proposed `delivery_charge_minor_units` dropped; new question 14 (quoted orders cannot be confirmed with the agreed confirm endpoint; #21 extends it) | Applies agreed fallbacks; @nnamdi-security to confirm on PR #59 |

@@ -2,8 +2,8 @@
 
 **Status: agreed** (G3) on 2026-11-03 by @nnamdi-security (technical lead), who
 is not the author, with the decisions under "Reviewer's decisions" at the end.
-Proposed for #340 by @Daveoski (+ Claude Code) on 2026-11-03. Nothing is built
-to it yet. It follows the maps decision (#334,
+Proposed for #340 by @Daveoski (+ Claude Code) on 2026-11-03. Built in #340
+(backend; the screen is #345). It follows the maps decision (#334,
 [maps.md](../architecture/maps.md)) and the technical lead's decisions on the
 issue ([decisions](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment-6589913114)
 and the [handover](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment-6590449932)
