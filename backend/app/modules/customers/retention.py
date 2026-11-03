@@ -12,6 +12,10 @@ the caller's transaction and never commit, so a dry run can roll them back.
   (docs/api/admin-operations.md, "Data needed"; privacy contact, 2026-10-27,
   #117); an account deleted by the review loses them; resolved requests over
   3 years old are deleted (technical lead, 2026-10-27, #82).
+- A website contact message (``source`` ``website``, no account; #339) is
+  deleted whole, by the visitor's phone, when the visitor asks (#364): without
+  the name, phone and message nothing useful is left. Anonymizing a customer
+  never reaches it, because a website message is never linked to an account.
 - A deletion request's reason is blanked when the account is anonymized;
   the request itself is kept as the record of what was asked and done, and
   deleted 3 years after it was completed or refused (#118).
@@ -23,7 +27,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, cast
 
-from sqlalchemy import CursorResult, delete, func, or_, update
+from sqlalchemy import CursorResult, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.customers.models import (
@@ -31,6 +35,7 @@ from app.modules.customers.models import (
     DeletionRequest,
     DeletionRequestStatus,
     SupportRequest,
+    SupportRequestSource,
     SupportRequestStatus,
 )
 
@@ -135,6 +140,60 @@ async def delete_requests(session: AsyncSession, *, customer_ids: Collection[uui
     return _rowcount(
         await session.execute(
             delete(SupportRequest).where(SupportRequest.user_id.in_(customer_ids))
+        )
+    )
+
+
+async def website_requests_by_phone(
+    session: AsyncSession, *, phone: str
+) -> list[tuple[uuid.UUID, SupportRequestStatus]]:
+    """Find the website contact messages sent from a phone number (#364).
+
+    Matches the normalized ``contact_phone`` exactly and only ``website``
+    requests: an app request has a user, not a contact phone.
+
+    Args:
+        session: Database session.
+        phone: The visitor's phone in E.164 form.
+
+    Returns:
+        ``(id, status)`` of each message, oldest first. Ids and statuses only,
+        so the result can be reported and audited without personal data.
+    """
+    rows = await session.execute(
+        select(SupportRequest.id, SupportRequest.status)
+        .where(
+            SupportRequest.source == SupportRequestSource.WEBSITE,
+            SupportRequest.contact_phone == phone,
+        )
+        .order_by(SupportRequest.created_at, SupportRequest.id)
+    )
+    return [(row.id, row.status) for row in rows]
+
+
+async def delete_website_requests(
+    session: AsyncSession, *, request_ids: Collection[uuid.UUID]
+) -> int:
+    """Delete these website contact messages. Does not commit.
+
+    Only ``website`` requests are deleted, whatever ids are passed, so this can
+    never remove a customer's own support request.
+
+    Args:
+        session: Database session (the caller's transaction).
+        request_ids: Ids found by :func:`website_requests_by_phone`.
+
+    Returns:
+        How many were deleted.
+    """
+    if not request_ids:
+        return 0
+    return _rowcount(
+        await session.execute(
+            delete(SupportRequest).where(
+                SupportRequest.id.in_(request_ids),
+                SupportRequest.source == SupportRequestSource.WEBSITE,
+            )
         )
     )
 

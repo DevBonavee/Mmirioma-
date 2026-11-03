@@ -146,8 +146,10 @@ cd ../frontend && npx vitest run src/lib/api/adminSupport.test.ts \
 - **The admin Support screen shows a website request like any other.** The
   "Website" tag and a layout without a customer record are a follow-up with a
   design amendment (G2).
-- **Deleting a visitor's messages on request is by hand.** The privacy tool
-  cannot yet find a request by phone; a follow-up issue must land before the
-  form is switched on (technical lead's answer on the contract).
+- **Deleting a visitor's messages on request** uses
+  `python -m app.modules.privacy.cli delete-website-messages` (#364; see
+  [privacy-tool.md](privacy-tool.md)). It finds messages by exact phone number
+  and deletes them whole; the form must not be switched on before it is merged
+  (technical lead's answer on the contract).
 - The privacy notice (version 4.0) and `/privacy` page change in this release
   and must merge before the form is switched on.
