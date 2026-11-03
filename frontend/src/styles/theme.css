@@ -124,6 +124,7 @@
   --spacing-input: 48px;
   --spacing-sidebar: 248px;        /* admin sidebar */
   --container-phone: 430px;        /* max mobile column on tablet/desktop */
+  --container-admin-content: 1440px; /* admin page content cap (responsive.md) */
 
   /* ---------- Motion (keyframes in motion.css) ---------- */
   --ease-rise: cubic-bezier(0.2, 0.8, 0.2, 1);

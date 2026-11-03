@@ -129,50 +129,48 @@ function ReceiveForm({ driverId, driverName, records, onReceived, onChanged }: R
     <>
       {receive.isError && <Notice tone="error">{cashErrorMessage(receive.error)}</Notice>}
       <Panel title="The driver's records">
-        <div className="overflow-x-auto">
-          <DataTable<AdminCashCollection>
-            caption={`Cash records of ${driverName}`}
-            rows={records}
-            rowKey={(row) => row.id}
-            columns={[
-              {
-                header: 'Order',
-                cell: (row) => (
-                  <label className="flex cursor-pointer items-center gap-2 font-extrabold">
-                    <input type="checkbox" checked={!unticked.has(row.id)} onChange={() => toggle(row.id)} aria-label={`Include ${row.order_reference}`} />
-                    {row.order_reference}
-                  </label>
-                ),
-              },
-              { header: 'Customer', cell: (row) => row.customer.name },
-              { header: 'Amount due', cell: (row) => formatCash(row.amount_due_minor_units) },
-              {
-                header: 'Recorded',
-                cell: (row) => (
-                  <span>
-                    {formatCash(row.amount_minor_units)}
-                    {row.original_amount_minor_units !== null && (
-                      <span className="block text-caption text-mute">
-                        Corrected from {formatCash(row.original_amount_minor_units)} by {row.corrected_by?.name ?? 'staff'}.
-                        {row.correction_reason && ` ${row.correction_reason}`}
-                      </span>
-                    )}
-                  </span>
-                ),
-              },
-              { header: 'Status', cell: (row) => custodyLabel(row) },
-              { header: "Driver's note", cell: (row) => row.note ?? <span className="text-mute">None</span> },
-              {
-                header: 'Action',
-                cell: (row) => (
-                  <MiniButton tone="alt" onClick={() => setCorrecting(row)}>
-                    Correct amount
-                  </MiniButton>
-                ),
-              },
-            ]}
-          />
-        </div>
+        <DataTable<AdminCashCollection>
+          caption={`Cash records of ${driverName}`}
+          rows={records}
+          rowKey={(row) => row.id}
+          columns={[
+            {
+              header: 'Order',
+              cell: (row) => (
+                <label className="flex cursor-pointer items-center gap-2 font-extrabold">
+                  <input type="checkbox" checked={!unticked.has(row.id)} onChange={() => toggle(row.id)} aria-label={`Include ${row.order_reference}`} />
+                  {row.order_reference}
+                </label>
+              ),
+            },
+            { header: 'Customer', cell: (row) => row.customer.name },
+            { header: 'Amount due', cell: (row) => formatCash(row.amount_due_minor_units) },
+            {
+              header: 'Recorded',
+              cell: (row) => (
+                <span>
+                  {formatCash(row.amount_minor_units)}
+                  {row.original_amount_minor_units !== null && (
+                    <span className="block text-caption text-mute">
+                      Corrected from {formatCash(row.original_amount_minor_units)} by {row.corrected_by?.name ?? 'staff'}.
+                      {row.correction_reason && ` ${row.correction_reason}`}
+                    </span>
+                  )}
+                </span>
+              ),
+            },
+            { header: 'Status', cell: (row) => custodyLabel(row) },
+            { header: "Driver's note", cell: (row) => row.note ?? <span className="text-mute">None</span> },
+            {
+              header: 'Action',
+              cell: (row) => (
+                <MiniButton tone="alt" onClick={() => setCorrecting(row)}>
+                  Correct amount
+                </MiniButton>
+              ),
+            },
+          ]}
+        />
       </Panel>
       <Panel title="Count the cash">
         <p className="m-0">

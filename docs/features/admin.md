@@ -170,12 +170,23 @@ every call (403 `forbidden`). There are no separate staff permissions yet
   an unchanged price list, and resolving an issue twice give clear messages.
 - Orders and support refresh every 30 seconds; the panel stays on the order
   you acted on.
-- Every admin page works on desktop (the main use), tablet and phone. From
-  1024 px the sidebar and detail panels sit beside the content; below that
-  the sidebar is a drawer and details stack under the list, and picking an
-  item scrolls its details into view. Tables become one card per row below
-  768 px; the service area and price editors become labelled cards. Checked
-  at 390, 768, 1024 and 1440 px with no sideways page scroll.
+- Every admin page works on desktop (the main use), tablet and phone, by the
+  rules in `docs/design/responsive.md` (#343). The widths are Tailwind's `md`
+  (768 px) and `xl` (1280 px):
+  - **Sidebar:** from 1280 px; below that a menu button opens it as a drawer.
+    The page content is capped at 1440 px and centred beside the sidebar.
+  - **Tables:** `DataTable` owns its horizontal scroll box, so a table wider
+    than its column scrolls inside the box and never widens the page. Below
+    768 px each row is a card, as before.
+  - **Detail panels** (Orders, Riders, Refill stations, `SplitLayout`): beside
+    the table only when the page content area is at least 1400 px wide. Below
+    that the panel is closed until an item is picked, then opens as a side
+    sheet (420 px from the right, full screen on a phone) that closes with its
+    Close button, a click outside, or Escape. Customers and Support keep their
+    list-and-detail layout, which stacks under 1024 px and scrolls the details
+    into view.
+  - Checked at 360, 768, 1280 and 1920 px with no sideways page scroll
+    (`/admin/cash` overflowed the page by 70 px at 768 px before).
 
 ## 9. Testing instructions
 

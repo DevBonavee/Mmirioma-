@@ -59,22 +59,29 @@ interface DataTableProps<Row> {
   selectedKey?: string
   /** Shown instead of the body when there are no rows. */
   empty?: ReactNode
+  /** Extra classes for a row, in both the table and the stacked card (for example a "changed" tint). */
+  rowClassName?: (row: Row) => string | false | undefined
 }
 
 /**
- * Admin table (`.tbl`): 13 px text, muted bold headers, light row lines. Wrap
- * it in a card with `overflow-x-auto` for tablets.
+ * Admin table (`.tbl`): 13 px text, muted bold headers, light row lines.
+ *
+ * The table sits in its own horizontal scroll box, so a table wider than its
+ * column (a tablet, or a desktop with a side sheet) scrolls inside the box and
+ * never widens the page. Callers do not add a box of their own (#343;
+ * docs/design/responsive.md).
  *
  * Below 768 px (phones) the same rows show as stacked cards instead: the
  * first column is the card's title and every other column is a
  * "label: value" line, so staff on a phone never scroll a table sideways.
  * The selected row is highlighted in both views.
  */
-export function DataTable<Row>({ columns, rows, rowKey, caption, selectedKey, empty }: DataTableProps<Row>) {
+export function DataTable<Row>({ columns, rows, rowKey, caption, selectedKey, empty, rowClassName }: DataTableProps<Row>) {
   const [first, ...rest] = columns
   return (
     <>
-      <table className="hidden w-full border-collapse text-[13px] md:table">
+      <div data-table-scroll className="hidden overflow-x-auto md:block">
+      <table className="w-full border-collapse text-[13px]">
         <caption className="sr-only">{caption}</caption>
         <thead>
           <tr>
@@ -101,7 +108,7 @@ export function DataTable<Row>({ columns, rows, rowKey, caption, selectedKey, em
               const key = rowKey(row)
               const selected = key === selectedKey
               return (
-                <tr key={key} aria-selected={selectedKey === undefined ? undefined : selected} className={cx(selected && 'bg-sky')}>
+                <tr key={key} aria-selected={selectedKey === undefined ? undefined : selected} className={cx(selected && 'bg-sky', rowClassName?.(row))}>
                   {columns.map((c) => (
                     <td key={c.header} className={cx('border-b border-row-line px-3 py-[11px] whitespace-nowrap', c.className)}>
                       {c.cell(row)}
@@ -113,6 +120,7 @@ export function DataTable<Row>({ columns, rows, rowKey, caption, selectedKey, em
           )}
         </tbody>
       </table>
+      </div>
       <ul aria-label={caption} className="m-0 flex list-none flex-col gap-2 p-1 md:hidden">
         {rows.length === 0 && empty ? (
           <li className="px-3 py-5 text-center text-mute">{empty}</li>
@@ -124,7 +132,7 @@ export function DataTable<Row>({ columns, rows, rowKey, caption, selectedKey, em
               <li
                 key={key}
                 aria-current={selected ? 'true' : undefined}
-                className={cx('flex flex-col gap-1 rounded-input border border-solid px-3 py-2.5 text-[13.5px]', selected ? 'border-primary bg-sky' : 'border-line bg-white')}
+                className={cx('flex flex-col gap-1 rounded-input border border-solid px-3 py-2.5 text-[13.5px]', selected ? 'border-primary bg-sky' : 'border-line bg-white', rowClassName?.(row))}
               >
                 <div className="font-extrabold">{first.cell(row)}</div>
                 {rest.map((c) => (
