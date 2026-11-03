@@ -535,7 +535,7 @@ read the screen.
 
    ```bash
    curl -i https://mmiriomadelivery.com/robots.txt     # 200, text/plain, starts "# MmiriOma"
-   curl -i https://mmiriomadelivery.com/sitemap.xml    # 200, text/xml, four <loc> entries
+   curl -i https://mmiriomadelivery.com/sitemap.xml    # 200, text/xml, five <loc> entries
    ```
 
    If either answers with HTML (the app's page), the release does not include the
@@ -555,7 +555,7 @@ read the screen.
    the repository.
 
 4. **Submit the sitemap.** In Search Console, open Sitemaps and enter
-   `sitemap.xml`. The status should change to "Success" and list four pages. If it
+   `sitemap.xml`. The status should change to "Success" and list five pages. If it
    says it could not fetch the file, run the `curl` check again.
 
 5. **Ask for the landing page to be looked at.** Use URL inspection on
@@ -563,7 +563,7 @@ read the screen.
    canonical `https://mmiriomadelivery.com/`. Indexing takes days, not minutes, so
    do not expect results the same day.
 
-Then keep this up to date: when `/about` and `/contact` exist, add them to
+Then keep this up to date: when `/contact` exists, add it to
 `frontend/public/sitemap.xml` and redeploy, and Search Console reads the new
 file on its own schedule. If the domain ever changes, change the four places
 listed in [seo.md](../features/seo.md) (section 6) first.

@@ -38,7 +38,7 @@ APP_AND_ACCOUNT = (
     "/signup",
     "/forgot-password",
 )
-PUBLIC_PAGES = ("/", "/faq", "/terms", "/privacy")
+PUBLIC_PAGES = ("/", "/about", "/faq", "/terms", "/privacy")
 
 
 def robots_rules() -> tuple[list[str], list[str], list[str]]:
@@ -147,8 +147,7 @@ def test_sitemap_lists_no_private_or_blocked_path() -> None:
 
 
 def test_sitemap_has_no_page_that_does_not_exist_yet() -> None:
-    # /about and /contact are added when those pages are built.
-    assert "/about" not in sitemap_paths()
+    # /contact is added when that page is built (#344).
     assert "/contact" not in sitemap_paths()
 
 
@@ -182,7 +181,8 @@ def test_the_server_sends_robots_txt_as_a_file_not_the_app_page(served: TestClie
     response = served.get("/robots.txt")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/plain")
-    assert response.text == (PUBLIC / "robots.txt").read_text(encoding="utf-8")
+    # Bytes, not text: a Windows checkout has CRLF line endings, and the file is sent as it is.
+    assert response.content == (PUBLIC / "robots.txt").read_bytes()
     assert response.text != INDEX
     assert "User-agent: *" in response.text
 

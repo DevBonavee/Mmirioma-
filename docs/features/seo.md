@@ -68,8 +68,8 @@ No new endpoint. Two static files, answered by the server that serves the app:
   `/apple-touch-icon.png` is not caught by the prefix.
 - **`/partner/signup`, the page for new drivers, is blocked with the rest of
   `/partner`**, as #331 asked. Say so if it should be found by search.
-- **The sitemap lists only public pages**: `/`, `/faq`, `/terms` and `/privacy`.
-  `/about` and `/contact` are added when those pages exist. There is no
+- **The sitemap lists only public pages**: `/`, `/about`, `/faq`, `/terms` and
+  `/privacy`. `/contact` is added when that page exists (#344). There is no
   `lastmod`, `changefreq` or `priority`, since nothing here knows when a page
   last changed.
 - **Every address is absolute on `https://mmiriomadelivery.com`.** It is written
@@ -109,10 +109,10 @@ cd backend && source .venv/bin/activate && pytest tests/test_seo_files.py
 cd frontend && npm test -- src/features/marketing/seoTags.test.tsx
 ```
 
-`test_seo_files.py` (32 tests): the three private paths and the customer and
+`test_seo_files.py` (33 tests): the three private paths and the customer and
 account paths are in `robots.txt`; the public pages and the files a crawler needs
 are not blocked; `/orders` is caught by the `/order` prefix; `/app` is blocked
-but `/apple-touch-icon.png` is not; the sitemap lists the four public pages, all
+but `/apple-touch-icon.png` is not; the sitemap lists the five public pages, all
 absolute, none blocked, no `lastmod`; the server sends both files as files with
 the right content type, `no-cache`, and `HEAD`.
 
@@ -151,7 +151,7 @@ page's tags in the raw HTML. Nothing has been checked against Google itself yet.
 - **The tab title on a first load of an app page** (sign-in, admin) is the
   landing page's title, because it is in the HTML the server sends. Leaving a
   public page sets it back to "MmiriOma".
-- **No `/about` or `/contact` yet**; they join the sitemap with those pages.
+- **No `/contact` yet**; it joins the sitemap with that page.
 - **No result is claimed from Google.** Verifying the domain and submitting the
   sitemap are steps for a person with the Hostinger and Google accounts; see the
   guide.

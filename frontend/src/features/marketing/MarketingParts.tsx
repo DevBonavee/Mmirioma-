@@ -5,7 +5,7 @@ import { cx } from '../../lib/cx'
 import { InstallHowToSheet } from '../pwa/InstallParts'
 import { appFor, type AppKind } from '../pwa/manifest'
 import { useInstallAction } from '../pwa/useInstallAction'
-import { CONTACT, NAV_LINKS, ORDER_CTA } from './content'
+import { BRAND_LINE, CONTACT, NAV_LINKS, ORDER_CTA } from './content'
 import { MailIcon, MenuBarsIcon, PhoneIcon, PinIcon } from './icons'
 
 /**
@@ -96,7 +96,7 @@ export function Oma() {
  * any navigation, and the page behind it does not scroll while it is open
  * (README "Behaviour").
  */
-export function MarketingHeader({ current }: { current: 'home' | 'faq' }) {
+export function MarketingHeader({ current }: { current: 'home' | 'faq' | 'about' }) {
   const location = useLocation()
   // The menu belongs to the location it was opened on, so any navigation
   // (a link, Back) closes it without an effect.
@@ -115,22 +115,22 @@ export function MarketingHeader({ current }: { current: 'home' | 'faq' }) {
     }
   }, [open])
 
-  const isCurrent = (to: string) => (current === 'faq' ? to === '/faq' : to === '/')
+  const isCurrent = (to: string) => to === { home: '/', faq: '/faq', about: '/about' }[current]
 
   return (
     <header className="sticky top-0 z-30 border-0 border-b border-solid border-[#E6EEF7] bg-white/95 backdrop-blur-sm">
       <div className="mk-wrap flex min-h-[76px] items-center justify-between gap-6">
         <HomeLogo className="shrink-0">
-          <BrandLogo className="h-11" />
+          <BrandLogo className="h-9 min-[1100px]:h-11" />
         </HomeLogo>
-        <nav aria-label="Main" className="flex items-center gap-[30px] text-[15px] font-medium max-[960.98px]:hidden">
+        <nav aria-label="Main" className="flex items-center gap-3 text-[14px] font-medium min-[1100px]:gap-5 min-[1100px]:text-[15px] min-[1180px]:gap-[30px] max-[960.98px]:hidden">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.label}
               to={l.to}
               aria-current={isCurrent(l.to) ? 'page' : undefined}
               className={cx(
-                'inline-flex min-h-11 items-center no-underline',
+                'inline-flex min-h-11 items-center whitespace-nowrap no-underline',
                 isCurrent(l.to) ? 'font-bold text-primary hover:text-primary' : 'text-slate hover:text-ink',
               )}
             >
@@ -218,10 +218,10 @@ export function MarketingFooter({ variant }: { variant: 'full' | 'short' }) {
             <HomeLogo className="self-start">
               <BrandLogo dark className="h-[46px]" />
             </HomeLogo>
-            <p className="m-0 text-[15px] leading-[1.65]">Water delivery for homes, offices and businesses in Enugu. Poured into your drums or tank.</p>
+            <p className="m-0 text-[15px] leading-[1.65]">{BRAND_LINE}</p>
           </div>
           <FootColumn label="Quick Links">
-            {(full ? NAV_LINKS : NAV_LINKS.filter((l) => l.to === '/' || l.to === '/faq')).map((l) => (
+            {(full ? NAV_LINKS : NAV_LINKS.filter((l) => l.to === '/' || l.to === '/about' || l.to === '/faq')).map((l) => (
               <Link key={l.label} to={l.to} className={FOOT_LINK}>
                 {l.label}
               </Link>
