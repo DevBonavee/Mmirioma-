@@ -74,7 +74,7 @@ export function Payments() {
       {list.isPending && <LoadingBlock label="Loading payments" />}
       {list.isError && <ErrorBlock error={list.error} onRetry={() => list.refetch()} />}
       {list.isSuccess && (
-        <Card className="overflow-x-auto px-1 py-1.5">
+        <Card className="px-1 py-1.5">
           <DataTable<AdminPayment>
             caption="Customer payments"
             rows={list.data.payments}

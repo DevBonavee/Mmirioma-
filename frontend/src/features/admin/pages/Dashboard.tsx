@@ -193,39 +193,37 @@ export function Dashboard() {
           }
         >
           {recent.isError && <ErrorBlock error={recent.error} onRetry={() => recent.refetch()} />}
-          <div className="overflow-x-auto">
-            <DataTable<AdminOrder>
-              caption="Recent orders"
-              rows={recent.data?.orders.slice(0, 5) ?? []}
-              rowKey={(o) => o.reference}
-              empty="No orders yet."
-              columns={[
-                { header: 'Order', cell: (o) => <span className="font-extrabold">{o.reference}</span> },
-                { header: 'Customer', cell: (o) => o.customer_name },
-                {
-                  header: 'Type',
-                  cell: (o) =>
-                    o.choice ? (
-                      <span className={o.choice.delivery_type === 'keke' ? 'font-bold text-primary' : 'font-bold text-violet'}>{o.choice.delivery_type === 'keke' ? 'Keke' : 'Tanker'}</span>
-                    ) : (
-                      <span className="text-mute">Not recorded</span>
-                    ),
-                },
-                { header: 'Quantity', cell: (o) => o.quantity },
-                { header: 'Amount', cell: (o) => (o.total_minor_units === null ? 'Quote' : formatNaira(o.total_minor_units)) },
-                { header: 'Status', cell: (o) => <StatusChip status={o.status} /> },
-                { header: 'Rider', cell: (o) => o.partner?.name ?? <span className="text-mute">None yet</span> },
-                {
-                  header: 'Action',
-                  cell: (o) => (
-                    <MiniLink to={`/admin/orders?ref=${o.reference}`} tone={o.status === 'awaiting_rider' ? 'primary' : 'alt'}>
-                      {o.status === 'awaiting_rider' ? 'Assign' : 'View'}
-                    </MiniLink>
+          <DataTable<AdminOrder>
+            caption="Recent orders"
+            rows={recent.data?.orders.slice(0, 5) ?? []}
+            rowKey={(o) => o.reference}
+            empty="No orders yet."
+            columns={[
+              { header: 'Order', cell: (o) => <span className="font-extrabold">{o.reference}</span> },
+              { header: 'Customer', cell: (o) => o.customer_name },
+              {
+                header: 'Type',
+                cell: (o) =>
+                  o.choice ? (
+                    <span className={o.choice.delivery_type === 'keke' ? 'font-bold text-primary' : 'font-bold text-violet'}>{o.choice.delivery_type === 'keke' ? 'Keke' : 'Tanker'}</span>
+                  ) : (
+                    <span className="text-mute">Not recorded</span>
                   ),
-                },
-              ]}
-            />
-          </div>
+              },
+              { header: 'Quantity', cell: (o) => o.quantity },
+              { header: 'Amount', cell: (o) => (o.total_minor_units === null ? 'Quote' : formatNaira(o.total_minor_units)) },
+              { header: 'Status', cell: (o) => <StatusChip status={o.status} /> },
+              { header: 'Rider', cell: (o) => o.partner?.name ?? <span className="text-mute">None yet</span> },
+              {
+                header: 'Action',
+                cell: (o) => (
+                  <MiniLink to={`/admin/orders?ref=${o.reference}`} tone={o.status === 'awaiting_rider' ? 'primary' : 'alt'}>
+                    {o.status === 'awaiting_rider' ? 'Assign' : 'View'}
+                  </MiniLink>
+                ),
+              },
+            ]}
+          />
         </Panel>
         <Panel
           title="Refill stations"

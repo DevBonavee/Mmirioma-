@@ -48,6 +48,16 @@ describe('AdminShell', () => {
     expect(MONEY_TABS.map((t) => t.label)).not.toContain('Loyalty points')
   })
 
+  // docs/design/responsive.md (#343): the sidebar is a desktop (1280 px, Tailwind xl) layout; below that it is a drawer.
+  it('shows the sidebar from 1280 px, not 1024 px, and caps the page content at 1440 px', () => {
+    renderShell('/admin')
+    const sidebar = screen.getAllByRole('navigation', { name: 'Admin' })[0].parentElement
+    expect(sidebar).toHaveClass('hidden', 'xl:flex')
+    expect(screen.getByRole('button', { name: 'Open menu' })).toHaveClass('xl:hidden')
+    const content = screen.getByText('Page content').closest('main')
+    expect(content).toHaveClass('mx-auto', 'max-w-admin-content')
+  })
+
   it('opens the menu drawer on small screens and closes it with Escape', async () => {
     const user = userEvent.setup()
     renderShell('/admin')

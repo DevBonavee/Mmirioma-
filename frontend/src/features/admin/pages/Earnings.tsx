@@ -31,53 +31,49 @@ export function Earnings() {
           <Panel title={`Payout requests (${requested.length})`} className="rise-2">
             {requested.length === 0 && <p className="m-0 text-mute">No payout requests waiting.</p>}
             {requested.length > 0 && (
-              <div className="overflow-x-auto">
-                <DataTable<AdminPayout>
-                  caption="Payout requests"
-                  rows={requested}
-                  rowKey={(p) => p.id}
-                  columns={[
-                    { header: 'Rider', cell: (p) => <span className="font-extrabold">{p.partner_name} · {p.code}</span> },
-                    { header: 'Requested', cell: (p) => formatDateTime(p.at) },
-                    { header: 'Amount', cell: (p) => formatNaira(p.amount_minor_units) },
-                    { header: 'Account', cell: (p) => (p.account_ending ? `Ending ${p.account_ending}` : <span className="text-red">No account</span>) },
-                    {
-                      header: 'Action',
-                      cell: (p) => (
-                        <MiniButton disabled={send.isPending} onClick={() => send.mutate({ partnerId: p.partner_id, payoutId: p.id })}>
-                          Mark as sent
-                        </MiniButton>
-                      ),
-                    },
-                  ]}
-                />
-              </div>
+              <DataTable<AdminPayout>
+                caption="Payout requests"
+                rows={requested}
+                rowKey={(p) => p.id}
+                columns={[
+                  { header: 'Rider', cell: (p) => <span className="font-extrabold">{p.partner_name} · {p.code}</span> },
+                  { header: 'Requested', cell: (p) => formatDateTime(p.at) },
+                  { header: 'Amount', cell: (p) => formatNaira(p.amount_minor_units) },
+                  { header: 'Account', cell: (p) => (p.account_ending ? `Ending ${p.account_ending}` : <span className="text-red">No account</span>) },
+                  {
+                    header: 'Action',
+                    cell: (p) => (
+                      <MiniButton disabled={send.isPending} onClick={() => send.mutate({ partnerId: p.partner_id, payoutId: p.id })}>
+                        Mark as sent
+                      </MiniButton>
+                    ),
+                  },
+                ]}
+              />
             )}
             <p className="m-0 text-caption text-mute">Send the money from the bank first, then mark it sent. The rider is told in their app.</p>
           </Panel>
           <Panel title="Wallets" className="rise-3">
-            <div className="overflow-x-auto">
-              <DataTable<AdminPartnerEarnings>
-                caption="Rider wallets"
-                rows={data.data.partners}
-                rowKey={(p) => p.partner_id}
-                columns={[
-                  {
-                    header: 'Rider',
-                    cell: (p) => (
-                      <Link to={`/admin/riders?id=${p.partner_id}`} className="font-extrabold text-primary-dark no-underline hover:underline">
-                        {p.name}
-                      </Link>
-                    ),
-                  },
-                  { header: 'Code', cell: (p) => p.code },
-                  { header: 'Vehicle', cell: (p) => (p.vehicle === 'keke' ? 'Keke' : 'Tanker') },
-                  { header: 'Trips done', cell: (p) => p.trips },
-                  { header: 'Last 7 days', cell: (p) => formatNaira(p.week_minor_units) },
-                  { header: 'Wallet (due)', cell: (p) => <b>{formatNaira(p.wallet_minor_units)}</b> },
-                ]}
-              />
-            </div>
+            <DataTable<AdminPartnerEarnings>
+              caption="Rider wallets"
+              rows={data.data.partners}
+              rowKey={(p) => p.partner_id}
+              columns={[
+                {
+                  header: 'Rider',
+                  cell: (p) => (
+                    <Link to={`/admin/riders?id=${p.partner_id}`} className="font-extrabold text-primary-dark no-underline hover:underline">
+                      {p.name}
+                    </Link>
+                  ),
+                },
+                { header: 'Code', cell: (p) => p.code },
+                { header: 'Vehicle', cell: (p) => (p.vehicle === 'keke' ? 'Keke' : 'Tanker') },
+                { header: 'Trips done', cell: (p) => p.trips },
+                { header: 'Last 7 days', cell: (p) => formatNaira(p.week_minor_units) },
+                { header: 'Wallet (due)', cell: (p) => <b>{formatNaira(p.wallet_minor_units)}</b> },
+              ]}
+            />
           </Panel>
           <Panel title="Payouts sent" className="rise-4">
             <ul className="m-0 flex list-none flex-col p-0 text-[14px]">

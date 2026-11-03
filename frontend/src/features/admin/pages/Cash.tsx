@@ -151,41 +151,39 @@ function ReconcilePanel({ rows, onChanged }: { rows: AdminCashCollection[]; onCh
     >
       {done !== null && <Notice tone="success">Reconciled {done} {done === 1 ? 'record' : 'records'}.</Notice>}
       {reconcile.isError && <Notice tone="error">{cashErrorMessage(reconcile.error)}</Notice>}
-      <div className="overflow-x-auto">
-        <DataTable<AdminCashCollection>
-          caption="Received cash waiting to be reconciled"
-          rows={rows}
-          rowKey={(row) => row.id}
-          empty="Nothing waiting to be reconciled."
-          columns={[
-            {
-              header: 'Order',
-              cell: (row) => (
-                <label className="flex cursor-pointer items-center gap-2 font-extrabold">
-                  <input type="checkbox" checked={ticked.has(row.id)} onChange={() => toggle(row.id)} aria-label={`Select ${row.order_reference}`} />
-                  {row.order_reference}
-                </label>
-              ),
-            },
-            { header: 'Customer', cell: (row) => row.customer.name },
-            { header: 'Amount due', cell: (row) => formatCash(row.amount_due_minor_units) },
-            { header: 'Recorded', cell: (row) => formatCash(row.amount_minor_units) },
-            {
-              header: 'Received',
-              cell: (row) => (row.remitted_at ? `${row.received_by?.name ?? 'Staff'}, ${formatDateTime(row.remitted_at)}` : 'None'),
-            },
-            { header: 'Payment', cell: (row) => paymentAtReceipt(row) },
-            {
-              header: 'Action',
-              cell: (row) => (
-                <MiniButton disabled={reconcile.isPending} onClick={() => setPending([row.id])}>
-                  Reconcile
-                </MiniButton>
-              ),
-            },
-          ]}
-        />
-      </div>
+      <DataTable<AdminCashCollection>
+        caption="Received cash waiting to be reconciled"
+        rows={rows}
+        rowKey={(row) => row.id}
+        empty="Nothing waiting to be reconciled."
+        columns={[
+          {
+            header: 'Order',
+            cell: (row) => (
+              <label className="flex cursor-pointer items-center gap-2 font-extrabold">
+                <input type="checkbox" checked={ticked.has(row.id)} onChange={() => toggle(row.id)} aria-label={`Select ${row.order_reference}`} />
+                {row.order_reference}
+              </label>
+            ),
+          },
+          { header: 'Customer', cell: (row) => row.customer.name },
+          { header: 'Amount due', cell: (row) => formatCash(row.amount_due_minor_units) },
+          { header: 'Recorded', cell: (row) => formatCash(row.amount_minor_units) },
+          {
+            header: 'Received',
+            cell: (row) => (row.remitted_at ? `${row.received_by?.name ?? 'Staff'}, ${formatDateTime(row.remitted_at)}` : 'None'),
+          },
+          { header: 'Payment', cell: (row) => paymentAtReceipt(row) },
+          {
+            header: 'Action',
+            cell: (row) => (
+              <MiniButton disabled={reconcile.isPending} onClick={() => setPending([row.id])}>
+                Reconcile
+              </MiniButton>
+            ),
+          },
+        ]}
+      />
       <ConfirmDialog
         open={pending !== null}
         tone="primary"

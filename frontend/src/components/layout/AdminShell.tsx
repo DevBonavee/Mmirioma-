@@ -32,10 +32,12 @@ interface AdminShellProps {
  * Admin page frame: header (logo, search, notifications, profile), 248 px
  * left sidebar with every admin section, and the page content.
  *
- * From 1024 px the sidebar sits on the left as in the design. Below that a
- * menu button in the header opens the same sidebar as a drawer, so phones and
- * tablets keep the content on screen instead of a 13-row list above it. The
- * drawer closes on navigation and on Escape.
+ * From 1280 px (Tailwind `xl`, the "desktop" of docs/design/responsive.md) the
+ * sidebar sits on the left as in the design. Below that a menu button in the
+ * header opens the same sidebar as a drawer, so phones and tablets keep the
+ * content on screen instead of a 13-row list above it. The drawer closes on
+ * navigation and on Escape. The page content is capped at 1440 px and centred
+ * in the space beside the sidebar.
  */
 export function AdminShell({ searchPlaceholder, onSearch, user, counts = {}, unread = 0, children }: AdminShellProps) {
   const { pathname } = useLocation()
@@ -91,10 +93,10 @@ export function AdminShell({ searchPlaceholder, onSearch, user, counts = {}, unr
   return (
     <div className="min-h-dvh bg-canvas text-body text-ink">
       <header className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-line bg-white px-4 py-3 md:gap-4 md:px-6">
-        <IconButton label="Open menu" className="lg:hidden" onClick={() => setOpen(true)} aria-expanded={open}>
+        <IconButton label="Open menu" className="xl:hidden" onClick={() => setOpen(true)} aria-expanded={open}>
           <MenuIcon size={24} roundJoin={false} />
         </IconButton>
-        <HomeLogo className="lg:mr-[52px]">
+        <HomeLogo className="xl:mr-[52px]">
           <Logo height={34} alt="" />
         </HomeLogo>
         <form
@@ -137,9 +139,9 @@ export function AdminShell({ searchPlaceholder, onSearch, user, counts = {}, unr
       </header>
 
       <div className="flex items-stretch">
-        <div className="hidden lg:flex">{sidebar}</div>
+        <div className="hidden xl:flex">{sidebar}</div>
         {open && (
-          <div className="fixed inset-0 z-20 flex lg:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">
+          <div className="fixed inset-0 z-20 flex xl:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">
             <button
               type="button"
               aria-label="Close menu"
@@ -160,7 +162,9 @@ export function AdminShell({ searchPlaceholder, onSearch, user, counts = {}, unr
             </div>
           </div>
         )}
-        <main className="box-border flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-6">{children}</main>
+        <div className="min-w-0 flex-1">
+          <main className="mx-auto box-border flex w-full max-w-admin-content flex-col gap-4 p-4 md:p-6">{children}</main>
+        </div>
       </div>
     </div>
   )

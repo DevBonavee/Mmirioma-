@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { LoadingBlock } from '../../../components/layout/StateScreens'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
+import { DataTable } from '../../../components/ui/Admin'
 import { Chip, SampleTag } from '../../../components/ui/Chip'
 import { TextField } from '../../../components/ui/Field'
 import { Notice } from '../../../components/ui/Notice'
@@ -166,56 +167,57 @@ function PriceEditor({
               </Notice>
             )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-[14px]">
-                <thead>
-                  <tr className="text-left text-chip text-mute">
-                    <th scope="col" className="border-0 border-b border-solid border-line px-2.5 py-2">#</th>
-                    <th scope="col" className="border-0 border-b border-solid border-line px-2.5 py-2">Applies to</th>
-                    <th scope="col" className="border-0 border-b border-solid border-line px-2.5 py-2">Quantity</th>
-                    <th scope="col" className="border-0 border-b border-solid border-line px-2.5 py-2">Handling</th>
-                    <th scope="col" className="border-0 border-b border-solid border-line px-2.5 py-2">Margin</th>
-                    <th scope="col" className="border-0 border-b border-solid border-line px-2.5 py-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rules.map((r, i) => {
+            <DataTable<PriceRule>
+              caption="Price rules"
+              rows={rules}
+              rowKey={(r) => String(rules.indexOf(r))}
+              rowClassName={(r) => {
+                const i = rules.indexOf(r)
+                return marked.has(i + 1) ? 'bg-red-bg' : JSON.stringify(r) !== JSON.stringify(opened[i]) && 'bg-gold-tint'
+              }}
+              columns={[
+                { header: '#', cell: (r) => <b>{rules.indexOf(r) + 1}</b> },
+                {
+                  header: 'Applies to',
+                  cell: (r) => (
+                    <>
+                      <span className="block font-bold">{areaLabel(r.zone_id, names)}</span>
+                      <span className="block text-caption text-mute">{waterLabel(r.water_category_id, names)}</span>
+                    </>
+                  ),
+                },
+                { header: 'Quantity', cell: (r) => bandLabel(r) },
+                { header: 'Handling', cell: (r) => <b>{formatNaira(r.handling_minor_units)}</b> },
+                { header: 'Margin', cell: (r) => <b>{marginLabel(r.margin)}</b> },
+                {
+                  header: 'Actions',
+                  cell: (r) => {
+                    const i = rules.indexOf(r)
                     const n = i + 1
-                    const changed = JSON.stringify(r) !== JSON.stringify(opened[i])
                     return (
-                      <tr key={i} className={cx(marked.has(n) ? 'bg-red-bg' : changed && 'bg-gold-tint')}>
-                        <td className="border-0 border-b border-solid border-row-line px-2.5 py-3 font-bold">{n}</td>
-                        <td className="border-0 border-b border-solid border-row-line px-2.5 py-3">
-                          <span className="block font-bold">{areaLabel(r.zone_id, names)}</span>
-                          <span className="block text-caption text-mute">{waterLabel(r.water_category_id, names)}</span>
-                        </td>
-                        <td className="border-0 border-b border-solid border-row-line px-2.5 py-3">{bandLabel(r)}</td>
-                        <td className="border-0 border-b border-solid border-row-line px-2.5 py-3 font-bold">{formatNaira(r.handling_minor_units)}</td>
-                        <td className="border-0 border-b border-solid border-row-line px-2.5 py-3 font-bold">{marginLabel(r.margin)}</td>
-                        <td className="border-0 border-b border-solid border-row-line px-1.5 py-1.5 whitespace-nowrap">
-                          <button
-                            type="button"
-                            aria-label={`Edit rule ${n}`}
-                            className="hit-44 cursor-pointer border-0 bg-transparent px-2 font-bold text-primary"
-                            onClick={() => setEditing(i)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={`Remove rule ${n}`}
-                            className="hit-44 cursor-pointer border-0 bg-transparent px-2 font-bold text-red"
-                            onClick={() => change(rules.filter((_, j) => j !== i))}
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
+                      <>
+                        <button
+                          type="button"
+                          aria-label={`Edit rule ${n}`}
+                          className="hit-44 cursor-pointer border-0 bg-transparent px-2 font-bold text-primary"
+                          onClick={() => setEditing(i)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Remove rule ${n}`}
+                          className="hit-44 cursor-pointer border-0 bg-transparent px-2 font-bold text-red"
+                          onClick={() => change(rules.filter((_, j) => j !== i))}
+                        >
+                          Remove
+                        </button>
+                      </>
                     )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  },
+                },
+              ]}
+            />
 
             <details className="rounded-option bg-[#F5F8FC] px-3.5 py-3">
               <summary className="min-h-6 cursor-pointer font-bold">Delivery rates for road distance: saved, not used yet</summary>
