@@ -1,10 +1,9 @@
 # Visitor analytics (proposal)
 
-**Status: proposed.** Nothing here is approved yet. Issue
+**Status: approved on 3 November 2026 by @Cloudcrackamara (not the author):
+no visitor analytics for the pilot** (section 8). Issue
 [#347](https://github.com/mmiri-oma/mmirioma/issues/347) asks whether to
-measure website visits at all; no analytics tool is added by this issue. It
-becomes approved when a reviewer who is not the author fills in the approval
-block in section 8.
+measure website visits at all; no analytics tool is added by this issue.
 
 **Author:** @nnamdi-security + agent · **Written:** 3 November 2026 · **Prices
 and terms checked:** 3 November 2026 (section 9 lists each source).
@@ -119,13 +118,15 @@ sentence in section 13 stays true.
 
 ## 8. Approval
 
-Both blocks are empty on purpose. A reviewer who is not the author fills them in.
-
 ```text
-Reviewer (not the author):   <GitHub username>
-Date:                        <date>
-Decision:                    <none for the pilot | change: ...>
-Conditions or changes:       <text>
+Reviewer (not the author):   Cloudcrackamara
+Date:                        2026-11-03
+Decision:                    none for the pilot
+Conditions or changes:       Revisit only if a marketing question arises that asking
+                             customers cannot answer (open question 1). The Article
+                             19(8) question (open question 2) stays open for the
+                             legal adviser who reviews the notice; it matters only if
+                             analytics is chosen later (section 5).
 ```
 
 ## 9. Sources
