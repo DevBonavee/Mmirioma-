@@ -281,6 +281,18 @@ in the database does not affect them.
   field in the server's words. Confirming without the code, withdrawing and
   cancelling are done from the order's page and the hold review. A driver in
   the contacts reads "Driver" (the contacts carry no delivery type).
+- **Website messages on the Support page (#365,
+  [design](../design/admin-support-website-messages.md)).** A request with
+  `source` `website` (the public contact form, [public-contact-form.md](public-contact-form.md))
+  is titled "Website message" with a blue "Website" tag; its list line reads
+  `Website · <name> · <time>`. The detail has no order timeline: it shows the
+  message, "Topic: <as the visitor chose it>" (`other` when none) and a
+  "Sender" block with the name, "Website visitor · Not linked to an account"
+  (the server never looks up whether the phone is a customer's), the phone as
+  text and a Call button. No customer link, order, points or email. Resolving
+  is the same note form. The adapter sets `source` and `topic` on the admin
+  issue only for a website message, so an app request is exactly as before;
+  the mock has one labelled sample website message.
 - **The audit log shows plain words for the codes the backend writes** and
   any other code as it is. Codes built from a status
   (`deletion_request_<status>`, `water_source_<status>`) show as the code until

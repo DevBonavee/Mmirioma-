@@ -37,6 +37,23 @@ function clientByPath(routes: Record<string, { body: unknown; status?: number }>
 const OPEN = requestsPageSample.items[0] as AdminSupportRequest
 const RESOLVED = requestSample as AdminSupportRequest
 
+describe('getIssuePeople (#365)', () => {
+  const VISITOR = { name: 'Sample Visitor', role: 'customer', phone: '+2348000000001' }
+
+  it('calls the one contact of a website message a "Website visitor", never a "Customer"', async () => {
+    const { client } = clientByPath({ 'GET /admin/support-requests/SR-6H2P8W3D': { body: { ...websiteSample, contacts: [VISITOR] } } })
+    await expect(getIssuePeople('SR-6H2P8W3D', client)).resolves.toEqual([{ name: 'Sample Visitor', role: 'Website visitor', phone: '+2348000000001' }])
+  })
+
+  it('still calls the contact of an app request a "Customer"', async () => {
+    const { client } = clientByPath({ 'GET /admin/support-requests/SR-4K7M2Q9X': { body: { ...requestSample, contacts: [VISITOR, { name: 'Sample Driver One', role: 'driver', phone: '+2348000000011' }] } } })
+    await expect(getIssuePeople('SR-4K7M2Q9X', client)).resolves.toEqual([
+      { name: 'Sample Visitor', role: 'Customer', phone: '+2348000000001' },
+      { name: 'Sample Driver One', role: 'Driver', phone: '+2348000000011' },
+    ])
+  })
+})
+
 describe('issueFromRead', () => {
   it('uses the reference as id and number, the customer as the reporter, and never invents an urgent flag', () => {
     expect(issueFromRead(OPEN)).toEqual({
@@ -53,6 +70,19 @@ describe('issueFromRead', () => {
       status: 'open',
       resolution: null,
     })
+  })
+
+  it('reads an app request exactly as before: no source and no topic (#365)', () => {
+    const issue = issueFromRead(OPEN)
+    expect('source' in issue).toBe(false)
+    expect('topic' in issue).toBe(false)
+  })
+
+  it('titles a website message "Website message", whatever its topic, and keeps the topic apart (#365)', () => {
+    for (const topic of ['late', 'wrong_quantity', 'payment', 'rider', 'other']) {
+      const issue = issueFromRead({ ...(websiteSample as AdminSupportRequest), type: topic })
+      expect(issue).toMatchObject({ title: 'Website message', type: 'other', source: 'website', topic })
+    }
   })
 
   it('shows a website visitor as the reporter, with the visitor name (#339)', () => {
