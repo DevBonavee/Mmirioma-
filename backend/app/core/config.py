@@ -72,6 +72,18 @@ class Settings(BaseSettings):
             OTPs and must be activated on the account; ``generic`` does not
             reach numbers on the Do-Not-Disturb list.
         sms_timeout_seconds: Timeout for one SMS provider request.
+        osrm_base_url: Address of the OSRM routing server for road-distance
+            pricing (FR-022, #385), for example ``http://osrm:5000``. Empty (the
+            default) means off: every quote uses the zone fee. Stays empty in
+            production until the deployment is measured (#384).
+        osrm_timeout_seconds: How long to wait for OSRM before the quote falls
+            back to the zone fee; a slow server counts as down.
+        delivery_location_bounds: ``south,west,north,east`` degrees. A delivery
+            point outside this box is refused (docs/api/delivery-location.md). The
+            default is the box around Enugu State from its OpenStreetMap boundary
+            (5.92 to 6.93 N, 7.10 to 7.90 E), rounded outwards to 0.1 degree. A
+            sanity check, not the service area: the zone the customer picks decides
+            that.
         frontend_dist_dir: Folder of the built frontend (``npm run build``)
             that the API serves at ``/`` so the app and ``/api`` share one
             origin (docs/deployment/hostinger.md). Unset in
@@ -108,6 +120,9 @@ class Settings(BaseSettings):
     termii_sender_id: str | None = Field(default=None, min_length=3, max_length=11)
     termii_channel: Literal["dnd", "generic"] = "dnd"
     sms_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    osrm_base_url: str = ""
+    osrm_timeout_seconds: float = Field(default=2.0, gt=0, le=10)
+    delivery_location_bounds: str = "5.9,7.1,7.0,8.0"
     frontend_dist_dir: Path | None = None
 
     @field_validator("database_url")
@@ -145,6 +160,28 @@ class Settings(BaseSettings):
         if parts.scheme != "https" or not parts.netloc:
             raise ValueError("TERMII_BASE_URL must be an https URL")
         return value.strip().rstrip("/")
+
+    @field_validator("osrm_base_url")
+    @classmethod
+    def _validate_osrm_base_url(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            return ""
+        parts = urlsplit(value)
+        if parts.scheme not in {"http", "https"} or not parts.netloc:
+            raise ValueError("OSRM_BASE_URL must be empty or an absolute http(s) URL")
+        return value.rstrip("/")
+
+    @field_validator("delivery_location_bounds")
+    @classmethod
+    def _validate_delivery_location_bounds(cls, value: str) -> str:
+        try:
+            south, west, north, east = (float(part) for part in value.split(","))
+        except ValueError:
+            raise ValueError("DELIVERY_LOCATION_BOUNDS must be south,west,north,east") from None
+        if not (-90 <= south < north <= 90 and -180 <= west < east <= 180):
+            raise ValueError("DELIVERY_LOCATION_BOUNDS must be a box: south < north, west < east")
+        return value
 
     @field_validator("frontend_dist_dir")
     @classmethod
@@ -202,6 +239,14 @@ class Settings(BaseSettings):
         if self.session_cookie_secure is None:
             return self.is_production
         return self.session_cookie_secure
+
+    @property
+    def delivery_bounds(self) -> tuple[float, float, float, float]:
+        """``(south, west, north, east)`` of ``DELIVERY_LOCATION_BOUNDS``."""
+        south, west, north, east = (
+            float(part) for part in self.delivery_location_bounds.split(",")
+        )
+        return south, west, north, east
 
     @property
     def async_database_url(self) -> URL:

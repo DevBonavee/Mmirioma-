@@ -9,9 +9,15 @@ docs/features/pricing.md.
 - **Water:** the highest cost per litre among the sources eligible today for
   the pilot category and of the preferred kind (decision 3; Keke: any kind),
   times the litres. The cost per litre is never sent to a customer (FR-011).
-- **Delivery:** the picked zone's fee for the category, once per order. There
-  is no road distance yet (OSRM, SRS §12.1), so the zone fee replaces the
-  whole FR-022 delivery cost: base fee, distance and extra trips (decision B).
+- **Delivery** (FR-022, docs/api/order-details-and-price.md, "Amendment
+  #385"): with a delivery location, an active zone, OSRM answering in time,
+  **every** eligible source having a pickup point and a matching price rule, the
+  base fee + the distance charge (the price rule's rate per km times the
+  **longest** road distance to an eligible source) + (trips - 1) times the
+  additional-trip charge. Otherwise the picked zone's fee for the category,
+  once per order, which replaces the whole FR-022 delivery cost (decision B).
+  Straight-line distance is never used: the only distance comes from
+  :mod:`app.modules.pricing.osrm`.
 - **Handling and margin:** from the price rule that matches the zone,
   category and litres (#37). A percentage margin applies to water +
   delivery + handling.
@@ -35,17 +41,27 @@ from decimal import ROUND_HALF_UP, Decimal
 from enum import StrEnum
 from http import HTTPStatus
 
+import httpx2
+from geoalchemy2 import WKTElement
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.errors import APIError
 from app.modules.dispatch import vehicles
-from app.modules.pricing import price_lists
+from app.modules.pricing import osrm, price_lists
 from app.modules.pricing import service as zones
-from app.modules.pricing.models import KOBO_PER_NAIRA, MarginType, Quote, ServiceZone
+from app.modules.pricing.models import (
+    KOBO_PER_NAIRA,
+    DeliveryBasis,
+    MarginType,
+    PriceRule,
+    Quote,
+    ServiceZone,
+)
 from app.modules.sources import service as sources
 from app.modules.sources.models import WaterCategory, WaterSourceKind
+from app.shared.delivery_location import DeliveryLocation
 from app.shared.lagos_time import LAGOS_TZ
 
 BASIS_POINTS_PER_WHOLE = 10_000
@@ -176,6 +192,96 @@ def compute_price(
     return Breakdown(water, delivery, handling, margin, total - subtotal, total)
 
 
+def road_delivery_cost(
+    *,
+    base_fee: int,
+    rate_per_km: int,
+    additional_trip: int,
+    trips: int,
+    road_metres: int,
+) -> int:
+    """The delivery cost from a road distance, in kobo (FR-022, #385).
+
+    ``base fee + distance charge + (trips - 1) x additional-trip charge``. The
+    distance is one way (source to delivery location) and charged once; extra
+    trips are charged by ``additional_trip``, not by repeating the distance.
+    The distance charge is the rate per km times the kilometres, computed with
+    ``Decimal`` from the metres and rounded half-up to whole kobo; nothing else
+    is rounded here (the total is rounded up to whole naira later, decision C).
+
+    Args:
+        base_fee: Per order, kobo.
+        rate_per_km: Kobo per km of road distance.
+        additional_trip: Kobo for each trip beyond the first (FR-013).
+        trips: 1 or 2.
+        road_metres: The road distance in whole metres.
+
+    Returns:
+        The delivery cost in kobo.
+
+    Examples:
+        Base 200,000 + 1,234 m at 15,000 per km (18,510) + one extra trip at
+        50,000 = 268,510 kobo.
+    """
+    charge = Decimal(road_metres) * Decimal(rate_per_km) / Decimal(1000)
+    distance_charge = int(charge.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+    return base_fee + distance_charge + (trips - 1) * additional_trip
+
+
+@dataclass(frozen=True)
+class RoadDelivery:
+    """A delivery cost found from road distance (what the quote then records)."""
+
+    cost_minor_units: int
+    road_distance_metres: int
+    distance_source_id: uuid.UUID
+    rule: PriceRule
+
+
+async def _road_delivery(
+    eligible: list[sources.EligibleSource],
+    location: DeliveryLocation,
+    rule: PriceRule,
+    trips: int,
+    transport: httpx2.AsyncBaseTransport | None,
+) -> tuple[RoadDelivery | None, osrm.FallbackReason | None]:
+    """Try to price the delivery from OSRM's road distance; otherwise say why not.
+
+    Returns:
+        ``(delivery, None)`` when road distance priced it. ``(None, reason)``
+        when a location was sent but the zone's fee is used instead.
+        ``(None, None)`` when OSRM is off: nothing was tried, so there is
+        nothing to record.
+    """
+    if not get_settings().osrm_base_url:
+        return None, None
+    # Staff pick the source later: a source with no point could be the one used,
+    # so the price cannot be made sure of from the others alone.
+    if any(source.location is None for source in eligible):
+        return None, osrm.FallbackReason.NO_SOURCE_LOCATION
+    points = [
+        osrm.Point(source.location.latitude, source.location.longitude)
+        for source in eligible
+        if source.location is not None
+    ]
+    try:
+        longest = await osrm.longest_road_distance(
+            points,
+            osrm.Point(location.latitude, location.longitude),
+            transport=transport,
+        )
+    except osrm.RoadDistanceUnavailable as unavailable:
+        return None, unavailable.reason
+    cost = road_delivery_cost(
+        base_fee=rule.base_delivery_fee_minor_units,
+        rate_per_km=rule.distance_rate_minor_units_per_km,
+        additional_trip=rule.additional_trip_minor_units,
+        trips=trips,
+        road_metres=longest.metres,
+    )
+    return RoadDelivery(cost, longest.metres, eligible[longest.source_index].source_id, rule), None
+
+
 async def pilot_category(session: AsyncSession) -> WaterCategory | None:
     """Return the category every pilot quote prices, if it exists.
 
@@ -200,7 +306,9 @@ async def create_quote(
     *,
     customer_id: uuid.UUID,
     choice: Choice,
+    delivery_location: DeliveryLocation | None = None,
     now: datetime | None = None,
+    osrm_transport: httpx2.AsyncBaseTransport | None = None,
 ) -> QuoteAnswer:
     """Price a choice on the server and store the quote, or say why not (FR-022).
 
@@ -211,7 +319,12 @@ async def create_quote(
         session: Database session; committed here when a quote is stored.
         customer_id: The signed-in customer (only they can order the quote).
         choice: The validated choice; ``delivery_address`` is required.
+        delivery_location: The customer's pin (#385), or None. With it, and
+            when OSRM and every eligible source's pickup point allow, the
+            delivery cost comes from the road distance; otherwise from the
+            zone's fee. Stored on the quote (personal data).
         now: Current time, for tests.
+        osrm_transport: Optional httpx2 transport for the OSRM call, for tests.
 
     Returns:
         The stored quote with its category, or the manual-quote reason.
@@ -241,37 +354,45 @@ async def create_quote(
     ):
         return manual(ManualReason.CATEGORY_UNAVAILABLE)
 
-    costs = await sources.eligible_costs_per_litre(
+    eligible = await sources.eligible_sources(
         session,
         water_category_id=category.id,
         kind=_kind(choice),
         today=now.astimezone(LAGOS_TZ).date(),
     )
-    if not costs:
+    if not eligible:
         return manual(ManualReason.NO_ELIGIBLE_SOURCE, category)
 
     plan = await vehicles.plan_for(session, litres=litres)
     if plan is None:
         return manual(ManualReason.NO_VEHICLE_PLAN, category)
 
-    delivery = await zones.delivery_cost_from_zone(
+    fallback = await zones.delivery_cost_from_zone(
         session, zone_id=zone.id, water_category_id=category.id
     )
-    if delivery.fee_minor_units is None:
-        return manual(ManualReason.DELIVERY_COST_UNAVAILABLE, category)
-
     match = await price_lists.match_price_rule(
         session, zone_id=zone.id, water_category_id=category.id, litres=litres
     )
+    road: RoadDelivery | None = None
+    fallback_reason: osrm.FallbackReason | None = None
+    if delivery_location is not None and match is not None:
+        road, fallback_reason = await _road_delivery(
+            eligible, delivery_location, match.rule, plan.trips, osrm_transport
+        )
+    # The zone's fee is the fallback (T-18): without it and without a road
+    # distance there is no reliable delivery cost.
+    delivery_cost = road.cost_minor_units if road is not None else fallback.fee_minor_units
+    if delivery_cost is None:
+        return manual(ManualReason.DELIVERY_COST_UNAVAILABLE, category)
     if match is None:
         return manual(ManualReason.NO_PRICE_RULE, category)
 
     rule = match.rule
-    cost_per_litre = max(costs)
+    cost_per_litre = max(source.cost_per_litre_minor_units for source in eligible)
     price = compute_price(
         cost_per_litre=cost_per_litre,
         litres=litres,
-        delivery=delivery.fee_minor_units,
+        delivery=delivery_cost,
         handling=rule.handling_minor_units,
         margin_type=rule.margin_type,
         margin_amount=rule.margin_amount_minor_units,
@@ -307,6 +428,24 @@ async def create_quote(
         safe_payload_litres=plan.safe_payload_litres,
         trips=plan.trips,
         price_valid_until=now + timedelta(minutes=get_settings().quote_validity_minutes),
+        delivery_basis=DeliveryBasis.ROAD_DISTANCE if road else DeliveryBasis.ZONE_FEE,
+        road_distance_metres=road.road_distance_metres if road else None,
+        distance_source_id=road.distance_source_id if road else None,
+        distance_fallback_reason=fallback_reason,
+        base_delivery_fee_minor_units=rule.base_delivery_fee_minor_units if road else None,
+        distance_rate_minor_units_per_km=rule.distance_rate_minor_units_per_km if road else None,
+        additional_trip_minor_units=rule.additional_trip_minor_units if road else None,
+        delivery_location=(
+            WKTElement(
+                f"POINT({delivery_location.longitude!r} {delivery_location.latitude!r})",
+                srid=4326,
+            )
+            if delivery_location is not None
+            else None
+        ),
+        delivery_location_source=(
+            delivery_location.source.value if delivery_location is not None else None
+        ),
     )
     session.add(quote)
     await session.commit()

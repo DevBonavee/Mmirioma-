@@ -57,6 +57,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.modules.pricing.osrm import FallbackReason
 from app.modules.sources.models import CATEGORY_LABEL_MAX_LENGTH
 
 #: A manual quote is whole naira (FR-022 rounds the payable amount to whole
@@ -64,6 +65,26 @@ from app.modules.sources.models import CATEGORY_LABEL_MAX_LENGTH
 #: confirmation decision 7).
 KOBO_PER_NAIRA = 100
 MIN_MANUAL_QUOTE_MINOR_UNITS = 100
+
+
+class DeliveryBasis(StrEnum):
+    """How a quote's delivery cost was found (FR-024, docs/api/order-details-and-price.md, #385)."""
+
+    #: The zone's fee for the category (the FR-022 fallback).
+    ZONE_FEE = "zone_fee"
+    #: Base fee + distance charge + additional-trip charges, from OSRM's road distance.
+    ROAD_DISTANCE = "road_distance"
+
+
+def _quote_enum(enum_class: type[StrEnum], name: str, length: int) -> Enum:
+    return Enum(
+        enum_class,
+        name=name,
+        native_enum=False,
+        create_constraint=True,
+        length=length,
+        values_callable=lambda members: [member.value for member in members],
+    )
 
 
 class AgreementMethod(StrEnum):
@@ -374,6 +395,21 @@ class Quote(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         vehicle_profile_id, safe_payload_litres, trips: The vehicle plan
             (FR-013); trips do not change the pilot price (decision B).
         price_valid_until: After it the quote cannot be ordered (SRS §8).
+        delivery_basis: :class:`DeliveryBasis`: ``road_distance`` when OSRM's
+            distance priced the delivery, else ``zone_fee`` (#385).
+        road_distance_metres, distance_source_id: With ``road_distance``, the
+            longest distance among the eligible sources and the source it
+            belongs to. The longest, because staff pick the source later and the
+            price must cover whichever it is.
+        distance_fallback_reason: A :class:`FallbackReason`, set when a delivery
+            location was sent but road distance was not used. Null when none was
+            sent or OSRM is off.
+        base_delivery_fee_minor_units, distance_rate_minor_units_per_km,
+            additional_trip_minor_units: The price rule's rates as applied,
+            with ``road_distance`` (FR-024: "the rates applied").
+        delivery_location, delivery_location_source: The customer's pin the
+            quote was priced for, or null. **Personal data** (NFR-003): cleared
+            when the customer is anonymized and by the retention review.
     """
 
     __tablename__ = "quotes"
@@ -391,6 +427,25 @@ class Quote(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ),
         CheckConstraint(f"total_minor_units % {KOBO_PER_NAIRA} = 0", name="total_whole_naira"),
         CheckConstraint("trips BETWEEN 1 AND 2", name="trips_range"),
+        # A quote's delivery cost is found one of two ways, and each way keeps
+        # what it used (FR-024); the database keeps the two shapes apart. The pin is
+        # not part of the shape: it is personal data cleared later (privacy rules),
+        # while the price, the distance and the rates stay.
+        CheckConstraint(
+            "(delivery_basis = 'road_distance' AND road_distance_metres >= 0"
+            " AND distance_source_id IS NOT NULL AND base_delivery_fee_minor_units >= 0"
+            " AND distance_rate_minor_units_per_km >= 0 AND additional_trip_minor_units >= 0"
+            " AND distance_fallback_reason IS NULL)"
+            " OR (delivery_basis = 'zone_fee' AND road_distance_metres IS NULL"
+            " AND distance_source_id IS NULL AND base_delivery_fee_minor_units IS NULL"
+            " AND distance_rate_minor_units_per_km IS NULL"
+            " AND additional_trip_minor_units IS NULL)",
+            name="delivery_basis_shape",
+        ),
+        CheckConstraint(
+            "(delivery_location IS NULL) = (delivery_location_source IS NULL)",
+            name="delivery_location_complete",
+        ),
     )
 
     customer_id: Mapped[uuid.UUID] = mapped_column(
@@ -442,3 +497,22 @@ class Quote(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     safe_payload_litres: Mapped[int]
     trips: Mapped[int]
     price_valid_until: Mapped[datetime]
+    delivery_basis: Mapped[DeliveryBasis] = mapped_column(
+        _quote_enum(DeliveryBasis, "quote_delivery_basis", 13),
+        default=DeliveryBasis.ZONE_FEE,
+        server_default=DeliveryBasis.ZONE_FEE.value,
+    )
+    road_distance_metres: Mapped[int | None] = mapped_column(BigInteger)
+    distance_source_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("water_sources.id", ondelete="RESTRICT"), index=True
+    )
+    distance_fallback_reason: Mapped[FallbackReason | None] = mapped_column(
+        _quote_enum(FallbackReason, "quote_distance_fallback_reason", 20)
+    )
+    base_delivery_fee_minor_units: Mapped[int | None] = mapped_column(BigInteger)
+    distance_rate_minor_units_per_km: Mapped[int | None] = mapped_column(BigInteger)
+    additional_trip_minor_units: Mapped[int | None] = mapped_column(BigInteger)
+    delivery_location: Mapped[WKBElement | None] = mapped_column(
+        Geography(geometry_type="POINT", srid=4326, spatial_index=False)
+    )
+    delivery_location_source: Mapped[str | None] = mapped_column(String(16))

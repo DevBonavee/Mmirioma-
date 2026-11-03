@@ -500,8 +500,10 @@ For #9 (adapters) and `docs/architecture/api-mapping.md`:
 
 **Status: agreed** (G3) on 2026-11-03 by @nnamdi-security (technical lead and
 privacy contact), who is not the author, with the decisions and the privacy
-condition under "Reviewer's decisions" at the end of this amendment. Nothing is
-built yet. Requirements: FR-020, FR-022, FR-024,
+condition under "Reviewer's decisions" at the end of this amendment. **Built in
+#385** ([pricing.md](../features/pricing.md)) except the order-side half of the
+quote match rule, which waits for #340 (orders carry no location until then; see
+[Built in #385](#built-in-385)). Requirements: FR-020, FR-022, FR-024,
 T-18, SRS §8 "Road distance unavailable". Builds on
 [delivery-location.md](delivery-location.md) (agreed, #340) and the OSRM
 decision ([maps.md](../architecture/maps.md), option R1, #334). OSRM is not
@@ -700,6 +702,24 @@ order; and that no name, phone or address reaches OSRM.
 4. The Water sources screen needs latitude and longitude fields. Follow-up
    issue with its own design.
 
+### Built in #385
+
+- **Built:** `delivery_location` on `POST /quotes` (the #340 object, with the
+  bounds in `DELIVERY_LOCATION_BOUNDS`, default the box around Enugu State
+  `5.9,7.1,7.0,8.0`); the OSRM adapter (`OSRM_BASE_URL`, empty means off;
+  `OSRM_TIMEOUT_SECONDS`, default 2); the road-distance delivery cost and every
+  fallback; a water source's optional `location` (admin API and `add-source`
+  command); the quote's snapshot columns; the privacy rules below.
+- **Not built yet, waits for #340:** the comparison of the quote's
+  `delivery_location` with the order's. Orders have no `delivery_location` until
+  #340 builds it, so there is nothing to compare. Until then a road-distance quote
+  is matched to an order by the address and zone only, as every quote is today, and
+  `OSRM_BASE_URL` stays empty in production, so no quote is priced by road yet. The
+  rule must land before road-distance pricing is switched on.
+- **A pin cleared by the privacy rules** does not make the quote invalid: the
+  shape check covers the price, the distance and the rates, not the pin
+  (migration `0026`).
+
 ### Reviewer's decisions
 
 By @nnamdi-security, 2026-11-03 (recommendations, approved with the amendment):
@@ -836,6 +856,7 @@ questions are settled; the contract is agreed.
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-03 | Built (#385), except the order-side location match, which waits for #340 ([Built in #385](#built-in-385)) | @nnamdi-security (technical lead) |
 | 2026-11-03 | Proposed (#385): `delivery_location` on `POST /quotes` and in the quote match, road-distance delivery cost from OSRM with the zone fee as fallback, the longest eligible-source distance, an optional source `location`, and what the quote records ([amendment](#amendment-385-road-distance-pricing)) | @nnamdi-security (technical lead and privacy contact, G3, 2026-11-03), with the decisions and the privacy condition in the amendment |
 | 2026-10-26 | Built in #21: reason `no_price_rule` added (additive); the reason order; the zone fee replaces the whole delivery cost; the rounding rule ([How the total is computed](#how-the-total-is-computed)); quote rate limits 30 per customer per 10 minutes and 120 per IP per hour; question 14's confirm change written into [deliveries.md](deliveries.md#confirmation-rules) | @nnamdi-security (technical lead, decisions A-F on #21) |
 | 2026-10-26 | Agreed (G3): questions 12 and 13 confirmed (pilot fallbacks F3 and F5); question 14 decided (#21 extends the confirm endpoint to accept `awaiting_confirmation`, additive) | @nnamdi-security (technical lead, #36), with @chidimmamogbo's decisions on #42 |

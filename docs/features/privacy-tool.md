@@ -73,6 +73,7 @@ python -m app.modules.privacy.cli set-deletion-status --by <admin phone> --reque
 | `backend/app/modules/auth/retention.py` | Account anonymization and phone marker, name correction, phone codes, sessions, never-verified accounts |
 | `backend/app/modules/orders/retention.py` | Finished/unfinished orders, order anonymization, orders due after 3 years, disputed orders, note count |
 | `backend/app/modules/deliveries/retention.py` | Open holds and reviews, GPS clearing, delivery codes, note count |
+| `backend/app/modules/pricing/retention.py` | Clears the map pin kept on a quote (#385) |
 | `backend/app/modules/payments/retention.py` | Unsettled cash (refusals), part payments and overpayments (warnings), cash note count |
 | `backend/app/modules/customers/retention.py` | Saved addresses deleted with the account (#82); finding and deleting website contact messages by phone (#364) |
 | `backend/app/modules/dispatch/retention.py` | A partner's jobs, live jobs (refusals), profile and zones, decline notes (#119) |
@@ -96,6 +97,7 @@ No tables of its own. The tool changes rows of other modules:
 | `orders` | Contact name and phone, address replaced; landmark and instructions cleared | Same, for orders finished over 3 years ago |
 | `feedback` | Message blanked; ratings kept (#82) | Same, for those orders |
 | `delivery_attempts`, `delivery_proofs` | GPS point and accuracy cleared | GPS over 90 days old cleared, except disputed orders and open holds or reviews |
+| `quotes` | `delivery_location` and its source cleared on the customer's quotes (#385); price, distance and rates stay | Cleared when the order is anonymized, and on a quote that never became an order 90 days after its price expired |
 | `delivery_codes` | Kept | `code_hash` blanked on expired codes; rows kept (proofs point at them) |
 | `audit_logs` | `customer_anonymized` (counts, including `addresses_removed`, `support_messages_removed`, `resolution_notes_removed`, `notifications_deleted`) | `retention_review_applied` (counts, including `unverified_accounts_anonymized`, `support_requests_deleted`) |
 

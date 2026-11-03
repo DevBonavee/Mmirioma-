@@ -75,6 +75,10 @@ None. The text ships with the frontend.
   requests, order feedback and deletion requests. It is 2.0, not 1.2,
   because what is collected changed (the procedure's version rule;
   privacy contact, 2026-10-27, #104).
+- Version 6.0 (3 November 2026, #385) adds the price we calculate and the map
+  location kept with it (section 2) and how long the location is kept
+  (section 8: until the order is anonymized, 90 days after an unused price
+  expired, or the account is closed).
 - Version 5.0 (3 November 2026, #346) names OpenFreeMap (Hyperknot Software
   Kft., Hungary) in section 7 as the provider of the landing page's service-area
   map: it receives the visitor's IP address and the map tiles they view, not any

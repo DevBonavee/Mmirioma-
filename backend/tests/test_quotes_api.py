@@ -211,6 +211,55 @@ def test_never_sends_the_breakdown(api: TestClient, answers: list[dict[str, Any]
     }
 
 
+PIN = {"latitude": 6.452713, "longitude": 7.510348, "source": "map_pin"}
+
+
+def test_a_delivery_location_reaches_the_service_and_the_answer_is_unchanged(
+    api: TestClient, answers: list[dict[str, Any]]
+) -> None:
+    """#385: the pin prices the delivery, and the customer still sees only the total."""
+    plain = post(api, REQUEST).json()
+    response = post(api, {**REQUEST, "delivery_location": PIN})
+    assert response.status_code == 200
+    assert response.json() == plain  # no distance, rate or basis in the answer
+    location = answers[-1]["delivery_location"]
+    assert (location.latitude, location.longitude, location.source.value) == (
+        6.452713,
+        7.510348,
+        "map_pin",
+    )
+
+
+def test_without_a_delivery_location_the_service_gets_none(
+    api: TestClient, answers: list[dict[str, Any]]
+) -> None:
+    post(api, REQUEST)
+    post(api, {**REQUEST, "delivery_location": None})
+    assert [call["delivery_location"] for call in answers] == [None, None]
+
+
+@pytest.mark.parametrize(
+    ("location", "loc"),
+    [
+        ({"latitude": 51.5, "longitude": -0.1, "source": "map_pin"}, ["body", "delivery_location"]),
+        ({"latitude": 6.45, "longitude": 7.51}, ["body", "delivery_location", "source"]),
+        ({**PIN, "source": "typed"}, ["body", "delivery_location", "source"]),
+        ({**PIN, "latitude": 95}, ["body", "delivery_location", "latitude"]),
+    ],
+)
+def test_a_bad_delivery_location_is_422_and_prices_nothing(
+    api: TestClient, answers: list[dict[str, Any]], location: dict[str, Any], loc: list[str]
+) -> None:
+    response = post(api, {**REQUEST, "delivery_location": location})
+    assert error(response) == (422, "validation_error")
+    assert response.json()["error"]["details"][0]["loc"] == loc
+    assert answers == []
+    if loc == ["body", "delivery_location"]:
+        assert response.json()["error"]["details"][0]["msg"].endswith(
+            "outside the area we deliver in."
+        )
+
+
 def test_manual_answer_matches_the_contract_example(
     api: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
