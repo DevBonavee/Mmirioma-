@@ -28,6 +28,7 @@ NOT_BACKEND_SETTINGS = {
     "POSTGRES_PASSWORD",
     "VITE_SUPPORT_PHONE",
     "VITE_SUPPORT_WHATSAPP",
+    "VITE_CONTACT_FORM_ENABLED",
     "BACKUP_DIR",
     "BACKUP_KEEP_DAYS",
     "BACKUP_RCLONE_REMOTE",
@@ -155,6 +156,16 @@ class TestImage:
     def test_build_pins_mocks_off(self) -> None:
         dockerfile = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
         assert "ENV VITE_USE_MOCKS=false" in dockerfile
+
+    def test_contact_form_is_off_unless_the_env_file_turns_it_on(self) -> None:
+        # The form waits for four conditions (docs/design/contact.md, #344), so
+        # both the image and compose default it off, and the template leaves it
+        # commented out.
+        dockerfile = (ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
+        assert "ARG VITE_CONTACT_FORM_ENABLED=false" in dockerfile
+        api = COMPOSE.split("\n  api:")[1].split("\n  migrate:")[0]
+        assert "VITE_CONTACT_FORM_ENABLED: ${VITE_CONTACT_FORM_ENABLED:-false}" in api
+        assert "VITE_CONTACT_FORM_ENABLED" not in _template_names(active_only=True)
 
     def test_env_file_and_backups_are_not_tracked(self) -> None:
         def ignored(name: str) -> bool:

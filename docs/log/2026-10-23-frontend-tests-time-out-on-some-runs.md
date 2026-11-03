@@ -17,5 +17,12 @@
   light (one change event instead of `user.type`, see LOG.md 2026-10-23).
   A lasting fix (a longer `testTimeout` for jsdom files, or fewer workers)
   is a test configuration change for the team to agree.
+- **Seen again (Daveoski + agent, #344, 2026-11-03):** `npm test` had 6 failed
+  and 1488 passed (117 files) on a run made while two Vite dev servers and a
+  headless Chrome were also running; the one shown in full was
+  `Delivered.test.tsx` timing out on `findByText('Thank you. Your feedback is
+  saved.')`, a file #344 does not touch. The next run passed all 1494. The new
+  Contact page form tests first used `user.type` (1.2 to 5.7 s each); they now
+  paste each value, and all but one take under a second.
 - **Status:** open
-- **Refs:** #125, `frontend/vite.config.ts`
+- **Refs:** #125, #344, `frontend/vite.config.ts`

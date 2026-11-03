@@ -2,8 +2,9 @@
 
 Requirements: FR-055, NFR-002, NFR-003, NFR-005 · Contract:
 [public-site.md](../api/public-site.md#post-publiccontact), `POST /public/contact`
-(agreed 2026-11-02) · Issue: #339 · The form's screen is a separate issue
-(#344); this document covers the backend only.
+(agreed 2026-11-02) · Issue: #339 · The form's screen is built in #344 and
+documented in [public-pages.md](public-pages.md#contact-form); this document
+covers the backend.
 
 ## 1. Overview and purpose
 
@@ -138,11 +139,14 @@ cd ../frontend && npx vitest run src/lib/api/adminSupport.test.ts \
 
 - **Limits reset on restart** and are per worker (accepted for the pilot's
   single worker, as for the auth limits).
-- **The form's screen is not built here** (#344). Its hidden honeypot field
-  must set `autocomplete="off"`, `tabindex="-1"` and `aria-hidden`, and its
-  test must show the field is empty on a normal submit: browser autofill of a
-  field named `website` would give a real visitor a made-up confirmation and
-  lose the message (technical lead's condition on the contract).
+- **The form's screen** is `/contact` (#344), switched off until the four
+  conditions in [contact.md](../design/contact.md#switching-the-form-on) are
+  met (`VITE_CONTACT_FORM_ENABLED`). Its honeypot sets `autocomplete="off"`,
+  `tabindex="-1"` and `aria-hidden`, and `ContactPage.test.tsx` shows it is
+  empty on a normal submit (technical lead's condition on the contract). Browser
+  autofill with saved data is still to be checked by hand: autofill of a field
+  named `website` would give a real visitor a made-up confirmation and lose the
+  message, and the fix would be a rename in a contract change.
 - **The admin Support screen shows a website request like any other.** The
   "Website" tag and a layout without a customer record are a follow-up with a
   design amendment (G2).

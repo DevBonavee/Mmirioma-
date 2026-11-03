@@ -39,10 +39,36 @@ export const HOW_STEPS: { title: string; text: string }[] = [
 export const ABOUT_TITLE = 'About MmiriOma | Water delivery in Enugu'
 export const ABOUT_DESCRIPTION = 'MmiriOma brings water to homes, offices and businesses in Enugu by keke or tanker. See how delivery works and who to contact.'
 
+/** The Contact page's title (`/contact`, docs/design/contact.md "Search tags"). */
+export const CONTACT_TITLE = 'Contact MmiriOma | Water delivery in Enugu'
+/**
+ * The Contact page's description: the design's while the message form is on,
+ * and without "send a message" while it is switched off, so the tag never
+ * offers what the page does not have.
+ */
+export const CONTACT_DESCRIPTION = {
+  withForm: 'Call, WhatsApp or send a message to the MmiriOma team in Enugu.',
+  withoutForm: 'Call or WhatsApp the MmiriOma team in Enugu.',
+} as const
+
+/**
+ * The Contact page's lead line (docs/design/contact.md, "Page"): it offers only
+ * what the page has, so "or WhatsApp" goes while WhatsApp support is off and
+ * the message half goes while the form is switched off. It promises no reply
+ * time.
+ *
+ * @param form - Whether the message form is switched on (`CONTACT_FORM_ENABLED`).
+ * @param whatsapp - Whether WhatsApp support is on (`GET /public/contact`).
+ */
+export function contactLead(form: boolean, whatsapp: boolean): string {
+  const reach = whatsapp ? 'Call or WhatsApp us' : 'Call us'
+  return form ? `${reach}, or send a message and our team will answer by phone.` : `${reach}.`
+}
+
 /** Label of every "order" button on the public pages (owner's choice, 2026-10-21). */
 export const ORDER_CTA = 'Order Water'
 
-/** Header and footer "Quick Links": sections of the landing page, plus the FAQ page. */
+/** Header and footer "Quick Links": sections of the landing page, plus the About, FAQ and Contact pages. */
 export const NAV_LINKS: { label: string; to: string }[] = [
   { label: 'Home', to: '/' },
   { label: 'How It Works', to: '/#how' },
@@ -50,6 +76,7 @@ export const NAV_LINKS: { label: string; to: string }[] = [
   { label: 'For Drivers', to: '/#drivers' },
   { label: 'About', to: '/about' },
   { label: 'FAQs', to: '/faq' },
+  { label: 'Contact', to: '/contact' },
   { label: 'Service Areas', to: '/#areas' },
 ]
 

@@ -68,6 +68,8 @@ services:
         VITE_API_BASE_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN in .env.production}
         VITE_SUPPORT_PHONE: ${VITE_SUPPORT_PHONE:-}
         VITE_SUPPORT_WHATSAPP: ${VITE_SUPPORT_WHATSAPP:-}
+        # Off until the four conditions in docs/design/contact.md are met (#344).
+        VITE_CONTACT_FORM_ENABLED: ${VITE_CONTACT_FORM_ENABLED:-false}
     restart: unless-stopped
     # Settings (database, SMS, support) come from the file; the lines below win
     # over it so production cannot be started in a development mode by mistake.

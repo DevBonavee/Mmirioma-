@@ -1,8 +1,8 @@
-/** Query hooks for the public website: the support contact. */
-import { useQuery } from '@tanstack/react-query'
+/** Query hooks for the public website: the support contact, the service areas and the contact form. */
+import { useMutation, useQuery } from '@tanstack/react-query'
 import type { PublicContact } from '../../domain/publicSite'
 import { DEFAULT_SUPPORT_PHONE, DEFAULT_WHATSAPP } from '../../lib/whatsapp'
-import { getPublicContact, getServiceAreas } from './publicApi'
+import { getPublicContact, getServiceAreas, sendContactMessage } from './publicApi'
 
 export const publicKeys = { contact: ['public', 'contact'] as const, serviceAreas: ['public', 'service-areas'] as const }
 
@@ -32,4 +32,15 @@ export function useWhatsappNumber(): string | null {
  */
 export function useServiceAreas() {
   return useQuery({ queryKey: publicKeys.serviceAreas, queryFn: getServiceAreas, staleTime: 60_000, retry: false })
+}
+
+/**
+ * Send a message from the Contact page (`POST /public/contact`, #344). Never
+ * retried (the contract has no idempotency key, so a retry could store it
+ * twice). `gcTime: 0` drops the finished mutation, whose `variables` hold the
+ * visitor's name, phone and message, from the cache as soon as the form lets
+ * go of it (NFR-003).
+ */
+export function useSendContactMessage() {
+  return useMutation({ mutationFn: sendContactMessage, retry: false, gcTime: 0 })
 }

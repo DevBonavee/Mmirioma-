@@ -73,6 +73,12 @@ export function newReference(): string {
   return 'MO-' + Array.from(bytes, (b) => CROCKFORD[b % 32]).join('')
 }
 
+/** Public-safe support request reference: `SR-` + 8 random Crockford base32 characters (public-site.md). */
+export function newSupportReference(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(8))
+  return 'SR-' + Array.from(bytes, (b) => CROCKFORD[b % 32]).join('')
+}
+
 /** Random six-digit delivery code. */
 export function newDeliveryCode(): string {
   const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000

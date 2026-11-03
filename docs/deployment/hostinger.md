@@ -169,6 +169,16 @@ settings. Support number and WhatsApp are optional. `VITE_*` values are public
 and baked into the bundle at build time, so changing them needs
 `deploy/prod.sh build api`. Changing `SESSION_SECRET` signs everyone out.
 
+**The contact form** on `/contact` (#344) is off unless `.env.production` sets
+`VITE_CONTACT_FORM_ENABLED=true`; without it the page shows the call, WhatsApp
+and email card only. Leave it off until the four conditions in
+[contact.md](../design/contact.md#switching-the-form-on) are met (the last
+open one is the legal review of the privacy notice, #392, with the notice's
+date set to the day the form goes live). Then set it and rebuild:
+`deploy/prod.sh build api`, then `deploy/prod.sh up -d` (as in section 7).
+Setting it without a rebuild changes nothing. To switch it off again, remove
+the line and rebuild the same way.
+
 ## 6. Commands
 
 All commands run on the VPS from the repository folder.
@@ -582,7 +592,7 @@ read the screen.
    canonical `https://mmiriomadelivery.com/`. Indexing takes days, not minutes, so
    do not expect results the same day.
 
-Then keep this up to date: when `/contact` exists, add it to
+Then keep this up to date: when a new public page exists, add it to
 `frontend/public/sitemap.xml` and redeploy, and Search Console reads the new
 file on its own schedule. If the domain ever changes, change the four places
 listed in [seo.md](../features/seo.md) (section 6) first.
