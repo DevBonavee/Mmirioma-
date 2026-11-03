@@ -336,6 +336,7 @@ def test_anonymize_dry_run_saves_nothing_and_apply_removes_the_details(created: 
                     "support_messages_removed": 0,
                     "resolution_notes_removed": 0,
                     "notifications_deleted": 0,
+                    "quote_locations_cleared": 0,
                 },
             )
         ]

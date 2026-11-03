@@ -43,10 +43,14 @@ from app.modules.dispatch import retention as jobs
 from app.modules.notifications import service as notifications
 from app.modules.orders import retention as orders
 from app.modules.payments import retention as payments
+from app.modules.pricing import retention as quotes
 
 # Retention periods from PRIVACY_NOTICE.md section 8.
 UNVERIFIED_ACCOUNT_PERIOD = timedelta(days=30)
 GPS_PERIOD = timedelta(days=90)
+#: A quote that never became an order keeps the customer's map pin this long after its
+#: price expired (technical lead, 2026-11-03, #385).
+QUOTE_LOCATION_PERIOD = timedelta(days=90)
 ORDER_PERIOD_YEARS = 3
 COMPLAINT_PERIOD_YEARS = 3
 #: Deletion requests, after they are completed or refused (#118).
@@ -87,6 +91,7 @@ class AnonymizeResult:
             app (F9, F7), one line per order, for the privacy contact to
             check before applying.
         applied: False for a dry run (nothing was saved).
+        quote_locations_cleared: Quotes whose map pin was removed (#385).
     """
 
     customer_id: uuid.UUID
@@ -100,6 +105,7 @@ class AnonymizeResult:
     notes_to_review: int
     cash_warnings: list[str]
     applied: bool
+    quote_locations_cleared: int = 0
 
 
 class PartnerNotReady(Exception):
@@ -176,6 +182,9 @@ class ReviewResult:
         deletion_requests_deleted: Deletion requests completed or refused
             over 3 years ago deleted (notice §8; #118).
         applied: False for a dry run (nothing was saved).
+        quote_locations_cleared: Quotes whose map pin was removed: those of
+            anonymized orders and accounts, and unplaced quotes whose price
+            expired over 90 days ago (#385).
     """
 
     phone_codes_cleared: int
@@ -189,6 +198,7 @@ class ReviewResult:
     support_requests_deleted: int
     deletion_requests_deleted: int
     applied: bool
+    quote_locations_cleared: int = 0
 
 
 async def get_acting_admin(session: AsyncSession, *, phone: str) -> User:
@@ -292,6 +302,7 @@ async def anonymize_customer(
     anonymized = await orders.anonymize_orders(session, order_ids=order_ids, now=now)
     gps = await deliveries.clear_order_gps(session, order_ids=order_ids, now=now)
     removed = await addresses.delete_addresses(session, customer_ids=[customer_id])
+    quote_pins = await quotes.clear_customer_quote_locations(session, customer_ids=[customer_id])
     cleared = await addresses.clear_requests(session, customer_ids=[customer_id])
     deleted_notes = await notifications.delete_for_users(session, user_ids=[customer_id])
     audit.record(
@@ -308,6 +319,7 @@ async def anonymize_customer(
             "support_messages_removed": cleared.messages,
             "resolution_notes_removed": cleared.resolution_notes,
             "notifications_deleted": deleted_notes,
+            "quote_locations_cleared": quote_pins,
         },
     )
     await _finish(session, apply)
@@ -323,6 +335,7 @@ async def anonymize_customer(
         notes_to_review=notes,
         cash_warnings=warnings,
         applied=apply,
+        quote_locations_cleared=quote_pins,
     )
 
 
@@ -575,12 +588,14 @@ async def retention_review(
     await addresses.delete_requests(session, customer_ids=to_delete)
     accounts_deleted = await accounts.delete_accounts(session, user_ids=to_delete)
     accounts_anonymized = 0
+    quote_pins = 0
     for user in await accounts.get_users(session, user_ids=actors):
         if accounts.is_anonymized_phone(user.phone):
             continue
         marker = await accounts.new_phone_marker(session)
         await accounts.anonymize_account(session, user, phone_marker=marker)
         await addresses.clear_requests(session, customer_ids=[user.id])
+        quote_pins += await quotes.clear_customer_quote_locations(session, customer_ids=[user.id])
         await notifications.delete_for_users(session, user_ids=[user.id])
         accounts_anonymized += 1
     support_deleted = await addresses.delete_resolved_support_requests(
@@ -602,6 +617,12 @@ async def retention_review(
     locations = await orders.count_order_locations(session, order_ids=old_orders)
     anonymized = await orders.anonymize_orders(session, order_ids=old_orders, now=now)
     gps += await deliveries.clear_order_gps(session, order_ids=old_orders, now=now)
+    # A quote keeps its pin while its order keeps the location (#385); an unplaced
+    # quote keeps it 90 days after its price expired.
+    quote_pins += await quotes.clear_order_quote_locations(session, order_ids=old_orders)
+    quote_pins += await quotes.clear_expired_unplaced_quote_locations(
+        session, expired_before=now - QUOTE_LOCATION_PERIOD
+    )
 
     result = ReviewResult(
         phone_codes_cleared=phone_codes,
@@ -615,6 +636,7 @@ async def retention_review(
         support_requests_deleted=support_deleted,
         deletion_requests_deleted=deletion_deleted,
         applied=apply,
+        quote_locations_cleared=quote_pins,
     )
     audit.record(
         session,

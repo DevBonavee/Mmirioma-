@@ -151,6 +151,7 @@ def _choice(request: NewOrder) -> quotes.Choice:
         quantity_litres=request.quantity_litres,
         delivery_address=request.delivery_address,
         service_zone_id=request.service_zone_id,
+        delivery_location=request.delivery_location,
     )
 
 

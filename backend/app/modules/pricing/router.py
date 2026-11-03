@@ -226,5 +226,10 @@ async def create_quote(
     # The direct peer; see auth/rate_limit.py for running behind a reverse proxy.
     ip = request.client.host if request.client else "unknown"
     limits.check_and_record(str(customer.id), ip)
-    answer = await quotes.create_quote(db, customer_id=customer.id, choice=body.to_choice())
+    answer = await quotes.create_quote(
+        db,
+        customer_id=customer.id,
+        choice=body.to_choice(),
+        delivery_location=body.delivery_location,
+    )
     return quote_read(answer)

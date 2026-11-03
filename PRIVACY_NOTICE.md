@@ -3,7 +3,7 @@
 <!-- The website's Privacy page (/privacy, frontend/src/features/marketing/LegalPages.tsx)
 mirrors this notice section by section. Change both together. -->
 
-**Version:** 7.0  
+**Version:** 8.0  
 **Last updated:** 3 November 2026  
 **Service area:** Enugu State, Nigeria
 
@@ -30,6 +30,7 @@ MmiriOma is a water ordering and delivery service for households and businesses,
 | Saved addresses: a name you give each one (for example "Home"), the address, landmark and the delivery area you choose | Let you reuse an address when you order; the area tells us whether we can deliver there |
 | A map location (latitude and longitude) of your delivery address, only if you choose to share your phone's location or place a pin on the map. It is saved with the address or order you add it to | Help the rider find your gate. When we price deliveries by road distance, it will also be used to work out the distance |
 | If you deliver for us as a rider or driver: your name, mobile number, password, vehicle type (keke or tanker), plate number, the tank capacity you declare, the area you serve, your approval status and whether you are available for work | Check your vehicle and approve you before you take jobs, offer you only jobs your vehicle can carry, and contact you about deliveries |
+| The price we calculate when you ask for one, and, if you shared a map location, that location | Show you a price you can order at, check that your order matches it, and work out the delivery cost from the road distance. The price is kept with your order; the map location is kept only as long as section 8 says |
 | Order records: water category, the water source used, the agreed price and how you agreed it, the confirmed delivery window, and each change of order status | Process and support your order, and keep a history of what happened |
 | Delivery records: arrival time, attempts to contact you, quantity delivered, how the delivery was confirmed, and any incident the driver or our staff record | Confirm delivery and resolve problems or disputes |
 | Optional GPS location of the driver's phone at arrival and at delivery | Support delivery verification. Recorded only when the driver has given consent and their phone allows it; never used to track you |
@@ -100,6 +101,7 @@ We keep information only as long as set out below. Our staff review stored data 
 | Calls and messages on our support line | 12 months after the matter is resolved | Deleted, unless linked to an unresolved matter |
 | Problems you report in the app | 3 years after our staff resolve it | Deleted. If your account is closed sooner, your message and our staff's note about it are removed then, and the rest of the record is kept until the 3 years end |
 | Messages you send through the website contact form | 3 years after our staff resolve them | Deleted. We keep no account for you, so to have a message deleted sooner, call or email us (section 9) |
+| The map location kept with a price we calculated for you | Removed when the order made with that price is anonymized, or 90 days after an unused price stopped being valid, or when your account is closed | The location is removed; the price, the distance and the rates stay, because they identify no one without it |
 | Account deletion requests | 3 years after we complete or refuse your request | Deleted. Until then, the reference, dates and outcome are kept as a record that the request was handled; the reason you gave is removed earlier, when your account is closed |
 | Sign-in sessions | A session lasts up to 7 days | Ended sessions are deleted at the next monthly review |
 | Server logs | 90 days | Deleted, unless needed to investigate a security incident |

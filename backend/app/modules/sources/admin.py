@@ -77,6 +77,7 @@ async def create(
     approximate_location: str,
     kind: WaterSourceKind | None,
     is_simulated: bool,
+    location: service.SourceLocation | None = None,
 ) -> SourceWithActivations:
     """Add a source (audit ``water_source_added``). It serves no category yet."""
     source = await service.add_source(
@@ -86,6 +87,7 @@ async def create(
         approximate_location=approximate_location,
         is_simulated=is_simulated,
         kind=kind,
+        location=location,
     )
     return await _view(session, source.id)
 
@@ -98,6 +100,7 @@ async def update(
     name: str | None,
     approximate_location: str | None,
     kind: WaterSourceKind | None,
+    location: service.SourceLocation | None | service._Unset = service.UNSET,
 ) -> SourceWithActivations:
     """Edit a source's name, location and kind.
 
@@ -112,6 +115,7 @@ async def update(
             name=name,
             approximate_location=approximate_location,
             kind=kind,
+            location=location,
         )
     except LookupError:
         raise _source_not_found() from None
