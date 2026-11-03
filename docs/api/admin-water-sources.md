@@ -212,6 +212,20 @@ confirmed with it keep it ([deliveries.md](deliveries.md), decision 10).
 Audit: `water_source_suspended` or `water_source_revoked`, `details`
 `{ "water_category_id", "status" }`.
 
+## Proposed amendment #385: a source `location`
+
+**Status: proposed**, with the road-distance amendment in
+[order-details-and-price.md](order-details-and-price.md#source-location).
+`WaterSourceRead` gains `location`: `{ "latitude", "longitude" }` (WGS 84,
+inside the [delivery bounds](delivery-location.md#delivery-bounds)) or `null`
+(the default). `POST` and `PATCH /admin/water-sources` accept the same optional
+field; the `add-source` command gains `--latitude` and `--longitude`, both or
+neither. It is never sent to a customer or a driver. It changes no existing
+field, and a source without one keeps working: any quote that could use it uses
+the zone fee. A PATCH that sets or clears it is audited as
+`water_source_updated` with `details.fields` naming `location`, never the
+coordinates. The Water sources screen gets no new field in #385.
+
 ## Error codes added
 
 | Status | Code | When |
