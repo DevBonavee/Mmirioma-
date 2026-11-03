@@ -214,7 +214,8 @@ Audit: `water_source_suspended` or `water_source_revoked`, `details`
 
 ## Proposed amendment #385: a source `location`
 
-**Status: proposed**, with the road-distance amendment in
+**Status: agreed** (G3) on 2026-11-03 by @nnamdi-security, who is not the author,
+with the road-distance amendment in
 [order-details-and-price.md](order-details-and-price.md#source-location).
 `WaterSourceRead` gains `location`: `{ "latitude", "longitude" }` (WGS 84,
 inside the [delivery bounds](delivery-location.md#delivery-bounds)) or `null`
@@ -263,3 +264,4 @@ All three were decided by the technical lead on 2026-11-01 (G3).
 | --- | --- | --- |
 | 2026-11-01 | Proposed (#309), from the technical lead's decisions on the issue | not yet agreed |
 | 2026-11-01 | Agreed, with the three open questions decided; the 401 code is `not_authenticated`, as in the README | @nnamdi-security |
+| 2026-11-03 | Additive (#385): an optional `location` on a water source, set by an administrator and never sent to a customer or a driver ([amendment](#proposed-amendment-385-a-source-location), with the road-distance rules in order-details-and-price.md) | @nnamdi-security (G3, 2026-11-03) |
