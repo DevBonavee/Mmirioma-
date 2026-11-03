@@ -1,8 +1,9 @@
 # Delivery location contract
 
-**Status: proposed** for #340 by @Daveoski (+ Claude Code) on 2026-11-03, for
-agreement (G3) by one reviewer who is not the author. Nothing is built to it
-yet. It follows the maps decision (#334,
+**Status: agreed** (G3) on 2026-11-03 by @nnamdi-security (technical lead), who
+is not the author, with the decisions under "Reviewer's decisions" at the end.
+Proposed for #340 by @Daveoski (+ Claude Code) on 2026-11-03. Nothing is built
+to it yet. It follows the maps decision (#334,
 [maps.md](../architecture/maps.md)) and the technical lead's decisions on the
 issue ([decisions](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment-6589913114)
 and the [handover](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment-6590449932)
@@ -31,7 +32,7 @@ today's clients keep working unchanged.
 | Field | Rule |
 | --- | --- |
 | `latitude`, `longitude` | WGS 84 decimal degrees (SRID 4326), as the zone `centre` and the delivery proof `location`. Latitude −90 to 90, longitude −180 to 180, then inside the delivery bounds (below). Stored to 6 decimal places (about 0.1 m); more are rounded |
-| `source` | How the point was set: `device_location` (the phone's position, not moved) or `map_pin` (placed or moved by hand). Any other value is 422 `validation_error` |
+| `source` | **Required whenever a location is sent.** How the point was set: `device_location` (the phone's position, not moved) or `map_pin` (placed or moved by hand). A missing or any other value is 422 `validation_error` |
 
 An address with no point has `location: null`. That is the "typed" case in
 #340's scope: it needs no third value ([question 1](#open-questions)).
@@ -45,8 +46,9 @@ The server refuses a point outside the area MmiriOma delivers in (#340: "inside
 Nigeria and within a sensible Enugu bound"). One server setting,
 `DELIVERY_LOCATION_BOUNDS`, a box of south, west, north and east degrees; the
 box sits inside Nigeria, so one check covers both. A point outside it is
-422 `validation_error` with `loc` ending in `latitude` (or the location field)
-and the message "This location is outside the area we deliver in." The value is
+422 `validation_error` with `loc` `["body", "location"]` on addresses and
+`["body", "delivery_location"]` on orders (never the inner field, so a screen
+has one place to show it), and the message "This location is outside the area we deliver in." The value is
 [question 2](#open-questions).
 
 The bounds are a sanity check, not the service area: whether MmiriOma
@@ -181,8 +183,35 @@ Each has a recommendation; the reviewer decides.
    Recommendation: start the map at the centre of the zone the customer
    picked, which needs no new field or setting.
 
+## Reviewer's decisions
+
+By @nnamdi-security, 2026-11-03 (recommendations, approved with the contract):
+
+1. **Two source values only** (`device_location`, `map_pin`): agreed. `null`
+   already means no pin.
+2. **Bounds:** agreed: a box around Enugu State from its OpenStreetMap
+   boundary, rounded outwards to 0.1 degree, set when the backend is built and
+   recorded in the PR. A sanity check only; the zone the customer picks still
+   decides whether MmiriOma delivers.
+3. **Staff do not see the location in the pilot:** agreed. The driver sees it
+   only on the assigned, accepted job, as decided on #340.
+4. **No location on quotes yet:** agreed. OSRM is gated by the memory
+   measurement, so every quote uses zone rates; the road-distance issue adds
+   it with its match rule.
+5. **Where the map starts:** agreed: the centre of the zone the customer
+   picked, from `GET /service-zones` (#346). This replaces the earlier idea of a
+   separate configuration value.
+6. **Clarifications made in the agreement:** the validation `loc` is the
+   location field (above), and `source` is required with a location.
+7. **The build PR** adds a one-line pointer to this file in
+   [customer-account.md](customer-account.md#saved-addresses),
+   [order-details-and-price.md](order-details-and-price.md#post-orders-changes) and
+   [deliveries.md](deliveries.md#driver-job-object), so a reader of those
+   contracts finds the new fields, and tests that an inactive or foreign
+   address never exposes another customer's location.
+
 ## Changes
 
 | Date | Change | Agreed |
 | --- | --- | --- |
-| 2026-11-03 | Proposed for #340 | Not yet |
+| 2026-11-03 | Proposed for #340 | @nnamdi-security (technical lead, G3, 2026-11-03), with the clarifications in "Reviewer's decisions" |
