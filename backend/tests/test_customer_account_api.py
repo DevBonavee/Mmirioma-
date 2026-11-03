@@ -16,6 +16,7 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.orm.attributes import set_committed_value
 
 from app.core.config import get_settings
 from app.core.errors import APIError
@@ -68,18 +69,27 @@ UNSAFE = [endpoint for endpoint in ENDPOINTS if endpoint[0] != "GET"]
 def view_from(body: dict[str, Any]) -> service.AddressView:
     """The service view that should produce ``body`` (a contract example)."""
     zone = body["zone"]
+    location = body["location"]
+    address = CustomerAddress(
+        id=uuid.UUID(body["id"]),
+        customer_id=CUSTOMER.id,
+        zone_id=uuid.UUID(zone["id"]),
+        label=body["label"],
+        address=body["address"],
+        landmark=body["landmark"],
+        is_default=body["is_default"],
+        created_at=datetime.fromisoformat(body["created_at"]),
+        updated_at=datetime.fromisoformat(body["updated_at"]),
+    )
+    # The point is read back through the row's computed latitude and longitude.
+    for name, value in (
+        ("location_latitude", location and location["latitude"]),
+        ("location_longitude", location and location["longitude"]),
+        ("location_source", location and location["source"]),
+    ):
+        set_committed_value(address, name, value)
     return service.AddressView(
-        address=CustomerAddress(
-            id=uuid.UUID(body["id"]),
-            customer_id=CUSTOMER.id,
-            zone_id=uuid.UUID(zone["id"]),
-            label=body["label"],
-            address=body["address"],
-            landmark=body["landmark"],
-            is_default=body["is_default"],
-            created_at=datetime.fromisoformat(body["created_at"]),
-            updated_at=datetime.fromisoformat(body["updated_at"]),
-        ),
+        address=address,
         zone=ServiceZone(id=uuid.UUID(zone["id"]), name=zone["name"], is_active=zone["is_active"]),
     )
 
@@ -384,3 +394,98 @@ def test_default_address_error_matches_the_contract_example(
         f"/api/v1/me/addresses/{ADDRESS_ID}", headers=sign_in(api, UserRole.CUSTOMER)
     )
     assert response.json() == DEFAULT_ERROR_EXAMPLE
+
+
+# --- Delivery location (#340, docs/api/delivery-location.md) -------------------
+
+PIN = {"latitude": 6.452713, "longitude": 7.510348, "source": "map_pin"}
+
+
+def sent_data(fake: FakeCustomers) -> service.AddressData:
+    return fake.calls[-1][1]["data"]
+
+
+def test_a_saved_address_response_carries_its_location_or_null(
+    api: TestClient, fake: FakeCustomers
+) -> None:
+    items = api.get("/api/v1/me/addresses", headers=sign_in(api, UserRole.CUSTOMER)).json()["items"]
+    assert items[0]["location"] == PIN
+    assert items[1]["location"] is None
+
+
+def test_post_passes_the_location_to_the_service(api: TestClient, fake: FakeCustomers) -> None:
+    body = {**CREATE_EXAMPLE, "location": PIN}
+    response = api.post("/api/v1/me/addresses", json=body, headers=sign_in(api, UserRole.CUSTOMER))
+    assert response.status_code == HTTPStatus.CREATED
+    data = sent_data(fake)
+    assert data.location is not None and data.location.model_dump(mode="json") == PIN
+    assert data.change_location
+
+
+def test_post_without_a_location_saves_none(api: TestClient, fake: FakeCustomers) -> None:
+    api.post("/api/v1/me/addresses", json=CREATE_EXAMPLE, headers=sign_in(api, UserRole.CUSTOMER))
+    data = sent_data(fake)
+    assert data.location is None and data.change_location
+
+
+def test_patch_without_a_location_leaves_a_saved_pin_alone(
+    api: TestClient, fake: FakeCustomers
+) -> None:
+    body = {key: value for key, value in CREATE_EXAMPLE.items() if key != "location"}
+    api.patch(
+        f"/api/v1/me/addresses/{ADDRESS_ID}", json=body, headers=sign_in(api, UserRole.CUSTOMER)
+    )
+    assert not sent_data(fake).change_location
+
+
+def test_patch_with_null_removes_the_pin_and_with_a_value_replaces_it(
+    api: TestClient, fake: FakeCustomers
+) -> None:
+    headers = sign_in(api, UserRole.CUSTOMER)
+    path = f"/api/v1/me/addresses/{ADDRESS_ID}"
+    api.patch(path, json={**CREATE_EXAMPLE, "location": None}, headers=headers)
+    removed = sent_data(fake)
+    assert removed.change_location and removed.location is None
+
+    api.patch(path, json={**CREATE_EXAMPLE, "location": PIN}, headers=headers)
+    replaced = sent_data(fake)
+    assert replaced.change_location and replaced.location is not None
+
+
+@pytest.mark.parametrize(
+    "location",
+    [
+        {**PIN, "latitude": 6.4584, "longitude": 3.3792},  # Lagos: outside the box
+        {**PIN, "latitude": 95},
+        {**PIN, "source": "typed"},
+        {"latitude": 6.45, "longitude": 7.51},  # no source
+        {**PIN, "accuracy": 5},
+        "6.45,7.51",
+    ],
+)
+@pytest.mark.parametrize("method", ["post", "patch"])
+def test_a_bad_location_is_a_validation_error_and_reaches_nothing(
+    api: TestClient, fake: FakeCustomers, method: str, location: Any
+) -> None:
+    path = "/api/v1/me/addresses" + ("" if method == "post" else f"/{ADDRESS_ID}")
+    response = getattr(api, method)(
+        path,
+        json={**CREATE_EXAMPLE, "location": location},
+        headers=sign_in(api, UserRole.CUSTOMER),
+    )
+    assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert error_code(response) == "validation_error"
+    assert fake.calls == []
+
+
+def test_a_point_outside_the_box_is_reported_on_the_location_with_the_agreed_message(
+    api: TestClient, fake: FakeCustomers
+) -> None:
+    response = api.post(
+        "/api/v1/me/addresses",
+        json={**CREATE_EXAMPLE, "location": {**PIN, "latitude": 6.4584, "longitude": 3.3792}},
+        headers=sign_in(api, UserRole.CUSTOMER),
+    )
+    (detail,) = response.json()["error"]["details"]
+    assert detail["loc"] == ["body", "location"]
+    assert detail["msg"].endswith("This location is outside the area we deliver in.")

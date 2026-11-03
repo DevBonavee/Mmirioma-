@@ -72,10 +72,35 @@ async def customer_order_ids(session: AsyncSession, *, customer_id: uuid.UUID) -
     return list(await session.scalars(select(Order.id).where(Order.customer_id == customer_id)))
 
 
+async def count_order_locations(session: AsyncSession, *, order_ids: Collection[uuid.UUID]) -> int:
+    """Count the orders among these that still hold a map point (#340).
+
+    Called before :func:`anonymize_orders`, which clears them, so the audit
+    row can say how many points were cleared. Counts only.
+
+    Args:
+        session: Database session.
+        order_ids: The orders.
+
+    Returns:
+        How many of them have a ``delivery_location``.
+    """
+    if not order_ids:
+        return 0
+    return (
+        await session.scalar(
+            select(func.count())
+            .select_from(Order)
+            .where(Order.id.in_(order_ids), Order.delivery_location.is_not(None))
+        )
+        or 0
+    )
+
+
 async def anonymize_orders(
     session: AsyncSession, *, order_ids: Collection[uuid.UUID], now: datetime
 ) -> int:
-    """Remove the contact and address details from orders. Does not commit.
+    """Remove the contact and address details, and the map point, from orders. Does not commit.
 
     Orders already anonymized are skipped, so running it twice changes
     nothing. The customer's feedback message on these orders is blanked too
@@ -100,6 +125,9 @@ async def anonymize_orders(
             contact_phone=ANONYMIZED_CONTACT_PHONE,
             delivery_address=ANONYMIZED_ADDRESS,
             landmark=None,
+            # The map point is the address, more precisely (#340, maps.md section 8).
+            delivery_location=None,
+            delivery_location_source=None,
             delivery_instructions=None,
             updated_at=now,
         )

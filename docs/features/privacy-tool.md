@@ -87,17 +87,17 @@ No tables of its own. The tool changes rows of other modules:
 | Table | Anonymize customer | Retention review |
 | --- | --- | --- |
 | `users` | Name "Deleted customer", phone marker, unknown password, inactive, not verified; row kept | Never-verified customers created over 30 days ago and without orders are deleted; those that audit rows name as the actor are anonymized as in the first column instead (#82) |
-| `customer_addresses` | Deleted | Deleted for every never-verified account the review deletes or anonymizes |
+| `customer_addresses` | Deleted, with any map location (`location`, `location_source`) | Deleted for every never-verified account the review deletes or anonymizes |
 | `support_requests` | Message and the staff's resolution note replaced by "Removed at the customer's request." (#117); row kept | Deleted with a never-verified account the review deletes (message replaced when it anonymizes one); requests resolved over 3 years ago deleted (#82) |
 | `deletion_requests` | Reason blanked; status set separately with `set-deletion-status` | Deleted with a never-verified account the review deletes; requests completed or refused over 3 years ago deleted, open ones never (#118) |
 | `notifications` | Deleted (contract decision 8) | Deleted when the review anonymizes an account; they go with a deleted one (cascade) |
 | `user_sessions` | Deleted | Ended (expired or revoked) sessions deleted |
 | `phone_verifications` | Deleted | `code_hash` blanked on expired codes; rows kept |
-| `orders` | Contact name and phone, address replaced; landmark and instructions cleared | Same, for orders finished over 3 years ago |
+| `orders` | Contact name and phone, address replaced; landmark, instructions and map location (`delivery_location`, with its source) cleared | Same, for orders finished over 3 years ago |
 | `feedback` | Message blanked; ratings kept (#82) | Same, for those orders |
 | `delivery_attempts`, `delivery_proofs` | GPS point and accuracy cleared | GPS over 90 days old cleared, except disputed orders and open holds or reviews |
 | `delivery_codes` | Kept | `code_hash` blanked on expired codes; rows kept (proofs point at them) |
-| `audit_logs` | `customer_anonymized` (counts, including `addresses_removed`, `support_messages_removed`, `resolution_notes_removed`, `notifications_deleted`) | `retention_review_applied` (counts, including `unverified_accounts_anonymized`, `support_requests_deleted`) |
+| `audit_logs` | `customer_anonymized` (counts, including `orders_anonymized`, `order_locations_cleared`, `addresses_removed`, `support_messages_removed`, `resolution_notes_removed`, `notifications_deleted`) | `retention_review_applied` (counts, including `unverified_accounts_anonymized`, `order_locations_cleared`, `support_requests_deleted`) |
 
 `anonymize-partner` (#119) changes these rows of a rider or driver:
 

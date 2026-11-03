@@ -50,6 +50,7 @@ from app.modules.orders.quantities import (
 )
 from app.modules.orders.service import NewOrder, ReadLookups
 from app.shared import lagos_time
+from app.shared.location import Location, LocationRead, read_location
 from app.shared.phone import normalize_nigerian_phone
 
 DELIVERY_ADDRESS_MIN_LENGTH = 5
@@ -200,6 +201,9 @@ class OrderCreate(BaseModel):
     contact_phone: ContactPhone
     delivery_address: DeliveryAddress
     landmark: Landmark | None = None
+    #: Optional map point of the address (docs/api/delivery-location.md). Not
+    #: compared with the quote; part of the idempotency comparison.
+    delivery_location: Location | None = None
     delivery_instructions: DeliveryInstructions | None = None
     preferred_delivery_date: date | None = None
 
@@ -247,9 +251,16 @@ class OrderCreate(BaseModel):
         """
         return NewOrder(
             **self.model_dump(
-                exclude={"quantity_litres", "quantity_local_gallons", "keke", "tanker"}
+                exclude={
+                    "quantity_litres",
+                    "quantity_local_gallons",
+                    "keke",
+                    "tanker",
+                    "delivery_location",
+                }
             ),
             quantity_litres=self.litres,
+            delivery_location=self.delivery_location,
             keke_can_size_litres=self.keke.can_size_litres if self.keke else None,
             keke_can_count=self.keke.can_count if self.keke else None,
             tanker_tank_type=self.tanker.tank_type if self.tanker else None,
@@ -514,6 +525,8 @@ class OrderRead(OrderBaseRead):
     Attributes:
         feedback: The customer's feedback on the order (FR-051), or null.
             Customers only: not on the staff views (customer-account.md).
+        delivery_location: The map point stored with the order, or null (every
+            order before #340). Customers only (delivery-location.md).
         delivery_window: The confirmed window, or null until a dispatcher
             confirms the order (#99). Never the preferred date.
         price: The confirmed price, or null until confirmed (#99). Separate
@@ -526,6 +539,7 @@ class OrderRead(OrderBaseRead):
     delivery_window: DeliveryWindowRead | None = None
     price: OrderPriceRead | None = None
     water_category: QuoteCategoryRead | None = None
+    delivery_location: LocationRead | None = None
 
     @classmethod
     def from_order(cls, order: Order, lookups: ReadLookups) -> Self:
@@ -545,6 +559,12 @@ class OrderRead(OrderBaseRead):
         end_at = order.delivery_window_end_at
         return cls(
             **OrderBaseRead.from_order(order, lookups).model_dump(),
+            # The customer's own copy, never on the staff views (contract, "Orders").
+            delivery_location=read_location(
+                order.delivery_location_latitude,
+                order.delivery_location_longitude,
+                order.delivery_location_source,
+            ),
             feedback=FeedbackRead.from_feedback(feedback) if feedback is not None else None,
             # Both window columns are set together (``delivery_window_valid``).
             delivery_window=(

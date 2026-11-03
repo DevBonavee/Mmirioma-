@@ -326,6 +326,10 @@ FR-038) before confirming." How each item is covered:
 
 ## `POST /orders` changes
 
+> **Amended by [delivery-location.md](delivery-location.md) (#340):** `OrderCreate` gains an
+> optional `delivery_location`, stored as the order's own copy and compared on an
+> idempotent retry. It is not compared with the quote.
+
 `OrderCreate` gains the [delivery details](#delivery-details) and an optional
 `quote_id`. Like `POST /quotes`, it has no category field
 ([order-create-with-quote-request.json](examples/order-create-with-quote-request.json)):
@@ -428,6 +432,9 @@ The mock's 409 `no_station_open` is replaced by `no_eligible_source` (the
 FR-012 gate is per source and category, not per station).
 
 ## `OrderRead` changes
+
+> **Amended by [delivery-location.md](delivery-location.md) (#340):** the customer's `OrderRead`
+> gains `delivery_location` (the stored copy, or `null`). Staff views do not return it.
 
 Every endpoint that returns `OrderRead` gains
 ([order-with-details.json](examples/order-with-details.json)):

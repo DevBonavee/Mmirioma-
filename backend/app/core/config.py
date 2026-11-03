@@ -10,7 +10,7 @@ import re
 import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, NamedTuple
 from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -25,6 +25,25 @@ SYNC_DRIVER = "postgresql+psycopg"
 MIN_SECRET_LENGTH = 32
 # Official MmiriOma customer support number (SRS v0.2 FR-055).
 OFFICIAL_SUPPORT_PHONE = "+2348133774902"
+#: south, west, north, east in degrees: a box around Enugu State, wider than the
+#: city on purpose (docs/api/delivery-location.md, "Delivery bounds").
+DEFAULT_DELIVERY_LOCATION_BOUNDS = "5.9,6.9,7.2,8.0"
+#: Nigeria's own extent, a sanity limit on the setting so a typo cannot widen
+#: the box to the world.
+NIGERIA_SOUTH, NIGERIA_WEST, NIGERIA_NORTH, NIGERIA_EAST = 4.0, 2.6, 14.0, 14.8
+
+
+class DeliveryBounds(NamedTuple):
+    """A box of WGS 84 degrees that a delivery location must fall inside."""
+
+    south: float
+    west: float
+    north: float
+    east: float
+
+    def contains(self, latitude: float, longitude: float) -> bool:
+        """Whether a point is inside the box, edges included."""
+        return self.south <= latitude <= self.north and self.west <= longitude <= self.east
 
 
 class Settings(BaseSettings):
@@ -99,6 +118,7 @@ class Settings(BaseSettings):
     session_cookie_secure: bool | None = None
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     support_phone: str = OFFICIAL_SUPPORT_PHONE
+    delivery_location_bounds: str = DEFAULT_DELIVERY_LOCATION_BOUNDS
     support_whatsapp_enabled: bool = False
     pilot_water_category: Literal["potable", "utility"] = "utility"
     quote_validity_minutes: int = Field(default=60, ge=1, le=24 * 60)
@@ -137,6 +157,24 @@ class Settings(BaseSettings):
         if not re.fullmatch(r"\+\d{8,15}", value):
             raise ValueError("SUPPORT_PHONE must be in E.164 form, for example +2348133774902")
         return value
+
+    @field_validator("delivery_location_bounds")
+    @classmethod
+    def _validate_delivery_location_bounds(cls, value: str) -> str:
+        message = (
+            "DELIVERY_LOCATION_BOUNDS must be four numbers, south,west,north,east, "
+            "inside Nigeria with south below north and west below east"
+        )
+        try:
+            south, west, north, east = (float(part) for part in value.split(","))
+        except ValueError:
+            raise ValueError(message) from None
+        if not (
+            NIGERIA_SOUTH <= south < north <= NIGERIA_NORTH
+            and NIGERIA_WEST <= west < east <= NIGERIA_EAST
+        ):
+            raise ValueError(message)
+        return value.strip()
 
     @field_validator("termii_base_url")
     @classmethod
@@ -190,6 +228,14 @@ class Settings(BaseSettings):
         if self.sms_provider == "mock":
             raise ValueError("SMS_PROVIDER must be termii in production")
         return self
+
+    @property
+    def delivery_bounds(self) -> DeliveryBounds:
+        """The validated ``DELIVERY_LOCATION_BOUNDS`` box."""
+        south, west, north, east = (
+            float(part) for part in self.delivery_location_bounds.split(",")
+        )
+        return DeliveryBounds(south, west, north, east)
 
     @property
     def is_production(self) -> bool:

@@ -271,6 +271,9 @@ Conventions (base path `/api/v1`, formats, error envelope, CSRF) are in the
 
 ### Driver job object
 
+> **Amended by [delivery-location.md](delivery-location.md) (#340):** `DriverJobDetail` gains
+> `delivery_location` (`latitude` and `longitude` only), shown only while the job is `accepted`.
+
 `DriverJobSummary` (list items):
 
 ```json
