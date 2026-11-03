@@ -35,9 +35,10 @@ and terms checked:** 3 November 2026 (section 9 lists each source).
 | How many people open the landing page, and from which link? | Nothing | Yes |
 | Do visitors reach the order page and leave? | Nothing (orders placed are counted, not abandoned visits) | Yes |
 
-The two unanswered questions are marketing questions. The pilot is a supervised,
-small launch (PRD §3.3, §5), so the team can ask each customer how they heard of
-MmiriOma. Revisit when a real question exists that the orders cannot answer.
+The two unanswered questions are marketing questions. The pilot is a small
+launch: the PRD asks for at least one real delivery (§1, §3.3) in a pilot
+neighbourhood that is still an open decision (§13). With so few customers, the
+team can simply ask each one how they heard of MmiriOma. Revisit when a real question exists that the orders cannot answer.
 
 ## 3. Options
 
