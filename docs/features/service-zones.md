@@ -75,7 +75,7 @@ driver zones and orders (`service_zone_id`, #21) will.
 | GET | `/api/v1/admin/service-zones` | admin | 200 `{items: [ServiceZone], pilot_water_category}`, every zone by name, plus the pilot category (`{id, label}` or `null`, the one quotes price; #109) | shared 401/403 |
 | POST | `/api/v1/admin/service-zones` | admin + CSRF | 201 `ServiceZone` | 404 `water_category_not_found`, 409 `service_zone_name_taken`, 422 `validation_error` |
 | PATCH | `/api/v1/admin/service-zones/{id}` | admin + CSRF | 200 `ServiceZone` | 404 `service_zone_not_found`, 404 `water_category_not_found`, 409 `service_zone_name_taken`, 422 `validation_error` |
-| GET | `/api/v1/service-zones` | anyone, no session | 200 `{items: [{id, name}]}`, active zones by name | 503 only |
+| GET | `/api/v1/service-zones` | anyone, no session | 200 `{items: [{id, name, centre, boundary}]}`, active zones by name; `centre` always set, `boundary` a GeoJSON Polygon or `null`; no fees; `Cache-Control: public, max-age=60` (#346) | 503 only |
 
 `ServiceZone` has `id`, `name`, `is_active`, `centre {latitude, longitude}`,
 `boundary` (GeoJSON `Polygon` or `null`), `fallback_delivery_fees`

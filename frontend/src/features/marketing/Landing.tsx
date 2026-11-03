@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { whatsappLink } from '../../lib/whatsapp'
 import { OUTLINE_BUTTON, PRIMARY_BUTTON } from './buttonStyles'
-import { HOW_STEPS, LANDING_FAQS, OBJECTIONS, ORDER_CTA, SERVICE_AREAS, tileFill } from './content'
+import { HOW_STEPS, LANDING_FAQS, OBJECTIONS, ORDER_CTA, tileFill } from './content'
 import {
   ArrowRightIcon,
   BigPinIcon,
@@ -12,7 +12,6 @@ import {
   DottedArrowIcon,
   DropCheckIcon,
   DropFilledIcon,
-  PinIcon,
   ShieldCheckIcon,
   TruckIcon,
   WhatsAppIcon,
@@ -20,6 +19,7 @@ import {
 import { InstallAppButton, Kicker, MarketingFooter, MarketingHeader, Oma, Pic, SectionHead } from './MarketingParts'
 import { formatPhone } from '../../lib/format/phone'
 import { useSupportContact } from './queries'
+import { CheckAreaLink, ServiceAreas } from './ServiceAreas'
 import { FloatingActions } from './SiteExtras'
 import { useMarketingPage } from './useMarketingPage'
 
@@ -491,7 +491,6 @@ const TEXT_LINK = 'inline-flex min-h-11 items-center gap-1.5 text-[15px] font-bo
 
 /** Service areas and FAQs. The "Our Partners" strip is left out until real partners are agreed (decision Q4). */
 function AreasAndFaqs() {
-  const { phone, whatsapp } = useSupportContact()
   return (
     <section className="bg-white">
       <div className="mk-wrap py-20">
@@ -499,38 +498,15 @@ function AreasAndFaqs() {
           <div id="areas" className="flex flex-col gap-[18px]">
             <Kicker>Where we deliver</Kicker>
             <h2 className="m-0 font-display text-[clamp(30px,3.4vw,40px)] font-extrabold tracking-[-1px] text-ink">Our service areas</h2>
-            <p className="m-0 max-w-[460px] text-[16px] leading-[1.6] text-slate">
-              The areas we plan to serve in Enugu. <b className="text-ink">Sample list:</b> our first zone is still being confirmed.
-            </p>
-            <ul aria-label="Service areas (sample)" className="m-0 flex list-none flex-wrap gap-2.5 p-0 pt-1">
-              {SERVICE_AREAS.map((a) => (
-                <li key={a} className="inline-flex min-h-[46px] items-center gap-2 rounded-xl bg-mk-chip px-4 text-[15px] font-semibold text-ink">
-                  <PinIcon className="text-ink" />
-                  {a}
-                </li>
-              ))}
-            </ul>
+            <p className="m-0 max-w-[460px] text-[16px] leading-[1.6] text-slate">The areas we deliver to during the pilot.</p>
+            <ServiceAreas />
             <div className="mt-2.5 flex flex-wrap items-center gap-4 rounded-[18px] bg-mk-chip px-6 py-[22px]">
               <BigPinIcon className="shrink-0" />
               <div className="min-w-0 flex-[1_1_200px]">
                 <p className="m-0 text-[16px] font-bold text-ink">Not on the list?</p>
                 <p className="mt-0.5 mb-0 text-[14px] text-slate">Ask us. We are adding new areas.</p>
               </div>
-              {whatsapp ? (
-                <a
-                  href={whatsappLink(whatsapp, 'Hello MmiriOma, do you deliver to my area?')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={TEXT_LINK}
-                >
-                  Check your area on WhatsApp
-                  <ArrowRightIcon size={15} />
-                </a>
-              ) : (
-                <a href={`tel:${phone}`} className={TEXT_LINK}>
-                  Call {formatPhone(phone)} to check your area
-                </a>
-              )}
+              <CheckAreaLink />
             </div>
           </div>
           <div id="faq" className="mk-split-divider flex flex-col gap-[18px]">

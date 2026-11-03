@@ -70,7 +70,8 @@ describe('partner account calls', () => {
 
   it('lists the service zones without a session', async () => {
     const { fetchMock, client } = setup(serviceZones)
-    await expect(listServiceZoneOptions(undefined, client)).resolves.toEqual(serviceZones.items)
+    // The list now also carries each zone's centre and boundary (#346); the sign-up picker reads only id and name.
+    await expect(listServiceZoneOptions(undefined, client)).resolves.toEqual(serviceZones.items.map(({ id, name }) => ({ id, name })))
     expect(sent(fetchMock)).toMatchObject({ url: `${BASE_URL}/api/v1/service-zones`, method: 'GET' })
   })
 

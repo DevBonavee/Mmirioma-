@@ -7,18 +7,25 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { createQueryClient } from '../../app/queryClient'
 import { routes } from '../../app/router'
 import { resetMockDb } from '../../mocks/db'
-import { ABOUT_DESCRIPTION, ABOUT_TITLE, BRAND_LINE, CONTACT, HOW_STEPS, NAV_LINKS, SERVICE_AREAS } from './content'
+import { ABOUT_DESCRIPTION, ABOUT_TITLE, BRAND_LINE, CONTACT, HOW_STEPS, NAV_LINKS } from './content'
 import { getPublicContact } from './publicApi'
 import { forgetOriginalTags } from './seoTags'
 
 // The About Us page (#338, docs/design/about.md). The support contact is faked, as in supportContact.test.tsx,
 // so each test says whether WhatsApp support is on.
-vi.mock('./publicApi', () => ({ getPublicContact: vi.fn() }))
+// Only the support contact is faked; the rest of the module (the landing page's service areas) stays real.
+vi.mock('./publicApi', async (importOriginal) => ({ ...(await importOriginal<typeof import('./publicApi')>()), getPublicContact: vi.fn() }))
 const contact = vi.mocked(getPublicContact)
 
 const ON = { phone: '+2348133774902', whatsapp: '+2348133774902' }
 const OFF = { phone: '+2348133774902', whatsapp: null }
 const WAIT = 10_000
+/**
+ * The areas the landing page's old sample list named. The list has since become the real zones from the server
+ * (#346), so it is no longer in `content.ts`; the About page must still name no area itself, and these are the
+ * names it would be most tempting to copy.
+ */
+const AREA_NAMES = ['GRA', 'Ogui', 'Independence Layout', 'Trans-Ekulu', 'Abakpa', 'New Haven', 'Thinkers Corner', 'Anyika', 'Emene', 'Uwani']
 const SLOW = 20_000
 
 beforeAll(() => {
@@ -84,7 +91,7 @@ describe('the About page', () => {
     renderAt('/about')
     await aboutPage()
     expect(screen.getByRole('link', { name: 'See the areas we serve' })).toHaveAttribute('href', '/#areas')
-    for (const area of SERVICE_AREAS) expect(document.body.textContent).not.toContain(area)
+    for (const area of AREA_NAMES) expect(screen.getByRole('main').textContent).not.toContain(area)
   }, SLOW)
 
   it('shows the place, the email, the phone from the server and WhatsApp when it is on', async () => {

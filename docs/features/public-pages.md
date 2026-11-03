@@ -97,7 +97,13 @@ on (`lib/whatsapp.ts`), so help is always reachable.
 - No water-quality claims, no invented numbers, no promises the app does not
   keep (live tracking, choosing a delivery time). Changed lines are listed in
   landing-v1.md.
-- Service areas are a sample list until the pilot zone is confirmed.
+- Service areas are the real active zones (#346): a map and a list of names from
+  `GET /service-zones`. The map (MapLibre GL JS, OpenFreeMap tiles; decided in
+  #334) is a separate chunk loaded only when the section is near the viewport,
+  and the list never depends on it. With no active zone the section says so and
+  offers the call or WhatsApp link. `VITE_MAP_STYLE_URL` can point to another
+  tile provider without a code change. See
+  [landing-service-areas.md](../design/landing-service-areas.md).
 - The Terms and the FAQ describe the pilot as it works (#107): cash on
   delivery after unloading (F4), the window agreed on the confirmation call
   (F3), no cancellation or redelivery charge (F5), refunds reviewed and paid
