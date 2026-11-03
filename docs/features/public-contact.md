@@ -74,7 +74,7 @@ None: no session cookie or CSRF token. A cookie that is sent is ignored.
 | --- | --- |
 | Over 120 requests from one IP in 10 minutes | 429 `too_many_attempts`, `Retry-After` |
 | `SUPPORT_PHONE` not in E.164 form | The app refuses to start (settings validation) |
-| `POST` or another method | 405 |
+| `PUT`, `DELETE` or another method | 405 (`POST` is the contact form: [public-contact-form.md](public-contact-form.md)) |
 
 ## 9. Testing instructions
 
@@ -86,7 +86,7 @@ curl -i http://localhost:8000/api/v1/public/contact
 
 `test_public_contact_api.py` (no database): the example with WhatsApp on,
 `null` by default, both numbers from `SUPPORT_PHONE`, no session needed, the
-cache header, the 121st request is 429, `POST` is 405.
+cache header, the 121st request is 429, `PUT` and `DELETE` are 405.
 
 ## 10. Known limitations
 

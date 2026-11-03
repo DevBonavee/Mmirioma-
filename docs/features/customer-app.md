@@ -57,7 +57,7 @@ hidden for the pilot (see section 6).
 | `frontend/src/features/customer/orderHelpers.ts` | Display helpers for fields the backend may not send (quantity, price, place, picture) |
 | `frontend/src/features/customer/real/notifications.ts` | Notification adapters (#88 part 2) through `lib/api/customerNotifications.ts` |
 | `frontend/src/features/customer/queries.ts` | TanStack Query hooks and cache refresh after changes |
-| `frontend/src/features/customer/order/` | Order draft (sessionStorage), reorder and flow helpers |
+| `frontend/src/features/customer/order/` | Order draft (sessionStorage), reorder and flow helpers, and `LeaveOrderGuard` with its rule in `leaveOrder.ts` (#337) |
 | `frontend/src/features/customer/pages/` | One component per screen |
 | `frontend/src/features/customer/routes.tsx` | Customer routes, with the handoff screen id per route |
 | `frontend/src/features/auth/` | Session hooks, `RequireRole`, sign-in redirects, auth API switch |
@@ -183,6 +183,15 @@ another customer's order returns the same 404 as a missing one.
   wait; the phone number is kept (NFR-012).
 - A lost connection keeps the order draft (sessionStorage); retrying "Place
   order" reuses the same idempotency key.
+- Leaving an unfinished order (#337): on the order steps (`/order`,
+  `/order/keke`, `/order/tanker`, `/order/details`, `/order/address`,
+  `/order/save-address`, `/order/review`), a move to a page outside the order, by
+  the logo or any link, asks "Leave this order?" when the draft has anything in
+  it. Stay is the default. The draft is kept either way, since it lives in
+  sessionStorage. The check reads the stored draft, not React state, so placing
+  an order (which clears the draft and then navigates in the same tick) is not
+  mistaken for leaving; moves between order steps, and an untouched draft, never
+  ask. A forced move such as a session expiry also asks while a draft exists.
 - The order draft belongs to no account, so it is cleared on sign-out and on
   every successful sign-in or registration (#272). On the delivery details
   step, a draft `address_id` that is not one of the account's saved addresses
@@ -213,6 +222,8 @@ npm test
   feedback, address defaults.
 - `src/features/customer/order/order.test.ts`: draft persistence, Keke has no
   source, flow, reorder.
+- `src/features/customer/order/leaveOrder.test.tsx`: the "Leave this order?"
+  prompt (#337).
 - `src/features/customer/pages/SignIn.test.tsx`: sign-in screen behaviour.
 - `src/features/customer/pages/Support.test.tsx`: neither support page shows a
   bracketed placeholder (#270).

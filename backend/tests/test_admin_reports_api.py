@@ -255,16 +255,91 @@ def test_report_matches_the_example(api: TestClient, reports_fake: FakeReporting
     )
     assert response.status_code == 200
     assert response.json() == REPORT
-    assert reports_fake.calls == [("report", {"range_name": "7d", "simulated": True})]
+    assert reports_fake.calls == [
+        (
+            "report",
+            {
+                "range_name": "7d",
+                "simulated": True,
+                "include_cancelled": False,
+                "from_day": None,
+                "to_day": None,
+            },
+        )
+    ]
 
 
-@pytest.mark.parametrize("query", ["", "range=90d", "range=7d&simulated=include"])
+def test_report_accepts_chosen_dates_and_include_cancelled(
+    api: TestClient, reports_fake: FakeReporting
+) -> None:
+    first, last = lagos_today() - timedelta(days=10), lagos_today() - timedelta(days=3)
+    response = api.get(
+        f"/api/v1/admin/reports?from={first}&to={last}&include_cancelled=true",
+        headers=sign_in(api, UserRole.ADMIN),
+    )
+    assert response.status_code == 200
+    assert response.json()["range"] == "custom"
+    assert reports_fake.calls == [
+        (
+            "report",
+            {
+                "range_name": "custom",
+                "simulated": False,
+                "include_cancelled": True,
+                "from_day": first,
+                "to_day": last,
+            },
+        )
+    ]
+
+
+def test_report_accepts_exactly_90_days_ending_today(
+    api: TestClient, reports_fake: FakeReporting
+) -> None:
+    today = lagos_today()
+    response = api.get(
+        f"/api/v1/admin/reports?from={today - timedelta(days=89)}&to={today}",
+        headers=sign_in(api, UserRole.ADMIN),
+    )
+    assert response.status_code == 200
+
+
+def _bad_report_queries() -> list[str]:
+    today = lagos_today()
+    return [
+        "",
+        "range=90d",
+        "range=7d&simulated=include",
+        f"range=7d&from={today}&to={today}",
+        f"range=7d&from={today}",
+        f"from={today}",
+        f"to={today}",
+        f"from={today}&to={today - timedelta(days=1)}",
+        f"from={today}&to={today + timedelta(days=1)}",
+        f"from={today - timedelta(days=90)}&to={today}",
+        "from=2026-13-01&to=2026-13-02",
+        "range=7d&include_cancelled=maybe",
+    ]
+
+
+@pytest.mark.parametrize("query", _bad_report_queries())
 def test_bad_report_queries_are_validation_errors(
     api: TestClient, reports_fake: FakeReporting, query: str
 ) -> None:
     response = api.get(f"/api/v1/admin/reports?{query}", headers=sign_in(api, UserRole.ADMIN))
     assert (response.status_code, error_code(response)) == (422, "validation_error")
     assert reports_fake.calls == []
+
+
+def test_bad_end_date_error_names_the_to_field(
+    api: TestClient, reports_fake: FakeReporting
+) -> None:
+    today = lagos_today()
+    response = api.get(
+        f"/api/v1/admin/reports?from={today}&to={today - timedelta(days=1)}",
+        headers=sign_in(api, UserRole.ADMIN),
+    )
+    assert [d["loc"][-1] for d in response.json()["error"]["details"]] == ["to"]
 
 
 def test_report_has_no_customer_data(api: TestClient, reports_fake: FakeReporting) -> None:

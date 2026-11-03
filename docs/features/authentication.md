@@ -110,7 +110,7 @@ Migration `0002` (revises `0001`).
 | `password_hash` | varchar(255) | `scrypt$<log2N>$<r>$<p>$<salt>$<hash>` |
 | `role` | varchar(20), CHECK `ck_users_user_role` | `customer`, `admin`, `driver` |
 | `is_active` | boolean, default true | false blocks login and all sessions |
-| `terms_accepted_at`, `terms_version` | timestamptz and varchar(10), nullable, set together (`ck_users_terms_acceptance_complete`) | When and which Terms and Privacy Policy the person accepted at sign-up (#332, migration `0024`). Null means no acceptance was recorded |
+| `terms_accepted_at`, `terms_version` | timestamptz and varchar(10), nullable, set together (`ck_users_terms_acceptance_complete`) | When and which Terms and Privacy Policy the person accepted at sign-up (#332, migration `0025`). Null means no acceptance was recorded |
 | `phone_verified_at` | timestamptz, nullable | Set when the customer verifies the phone by SMS code (FR-003, [phone-verification.md](phone-verification.md)); required before ordering |
 | `created_at`, `updated_at` | timestamptz | |
 

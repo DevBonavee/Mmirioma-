@@ -121,6 +121,24 @@ async def partner_pending(session: AsyncSession) -> None:
     )
 
 
+async def website_message(session: AsyncSession) -> None:
+    """Tell every admin that a visitor sent a message through the website. Does not commit.
+
+    No name, phone or message in the text: the support queue shows them to
+    staff (docs/api/public-site.md, "POST /public/contact").
+
+    Args:
+        session: The session the message is written in.
+    """
+    await _notify_admins(
+        session,
+        kind=SUPPORT_REQUEST,
+        title="New support request",
+        body="Someone sent a message through the website.",
+        order_id=None,
+    )
+
+
 async def support_request(
     session: AsyncSession, *, order_id: uuid.UUID | None, reference: str | None
 ) -> None:

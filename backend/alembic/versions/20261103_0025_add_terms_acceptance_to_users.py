@@ -1,7 +1,7 @@
-"""Record when and which Terms and Privacy Policy a person accepted at sign-up.
+"""Record when and which Terms and Privacy Notice a person accepted at sign-up.
 
 Sign-up now requires the person to confirm they are 18 or older and accept the
-Terms of Use and Privacy Policy (docs/api/auth.md, #332). ``users`` keeps the time
+Terms of Service and Privacy Notice (docs/api/auth.md, #332). ``users`` keeps the time
 and the version accepted.
 
 There is no backfill: existing accounts stay null, which means no acceptance was
@@ -9,9 +9,9 @@ recorded and is never read as acceptance. A check constraint keeps the two colum
 set or cleared together. Columns only; no data is rewritten and the downgrade drops
 them.
 
-Revision ID: 0024
-Revises: 0023
-Create Date: 2026-11-02 12:00:00+00:00
+Revision ID: 0025
+Revises: 0024
+Create Date: 2026-11-03 12:00:00+00:00
 """
 
 from collections.abc import Sequence
@@ -19,8 +19,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0024"
-down_revision: str | Sequence[str] | None = "0023"
+revision: str = "0025"
+down_revision: str | Sequence[str] | None = "0024"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

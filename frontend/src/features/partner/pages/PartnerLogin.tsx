@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Wave } from '../../../components/art/Art'
 import { Illustration } from '../../../components/brand/Illustration'
+import { HomeLogo } from '../../../components/brand/HomeLogo'
 import { Logo } from '../../../components/brand/Logo'
 import { AlertCircleIcon } from '../../../components/icons/icons'
 import { MobileShell, ScrollArea } from '../../../components/layout/MobileShell'
@@ -55,7 +56,9 @@ export function PartnerLogin() {
       <div className="relative h-[300px] shrink-0 overflow-hidden bg-[linear-gradient(160deg,#0B4FA8_0%,#1570D8_55%,#16A0B8_100%)]">
         <Illustration name="drop-hero" className="absolute top-5 right-[-60px] h-[250px] w-auto max-w-none opacity-35 mix-blend-screen" />
         <div className="rise-1 absolute top-7 left-6 rounded-icon bg-white px-3 py-2">
-          <Logo height={30} />
+          <HomeLogo>
+            <Logo height={30} alt="" />
+          </HomeLogo>
         </div>
         <div className="rise-2 absolute top-[104px] left-6 text-white">
           <div className="text-[13px] font-bold tracking-[0.6px] text-[#CFE3FB] uppercase">Rider and driver app</div>

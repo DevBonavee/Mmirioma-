@@ -66,6 +66,7 @@ def admin_support_read(view: requests.AdminSupportView) -> AdminSupportRequestRe
         )
     return AdminSupportRequestRead(
         reference=request.reference,
+        source=request.source,
         type=request.type,
         message=request.message,
         order_reference=view.order_reference,

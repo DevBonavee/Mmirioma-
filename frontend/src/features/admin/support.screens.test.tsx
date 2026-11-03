@@ -8,6 +8,7 @@ import notificationsSample from '../../../../docs/api/examples/admin-notificatio
 import settingsSample from '../../../../docs/api/examples/admin-settings.json'
 import shellSample from '../../../../docs/api/examples/admin-shell.json'
 import requestsPageSample from '../../../../docs/api/examples/admin-support-requests-page.json'
+import websiteSample from '../../../../docs/api/examples/admin-support-request-website.json'
 
 // The real-API branches of the Support, Settings (audit log) and notification screens (#219): the adapters and the
 // shared client run for real, and only `fetch` is replaced. See operations.screens.test.tsx for why the app is
@@ -148,6 +149,19 @@ describe('the Support screen against the real API (#219, G2 approved by the tech
     renderAt('/admin/support')
     expect(await screen.findByText(/Resolved by Sample Admin, .*Note: Called the customer and checked the tank\./, {}, { timeout: WAIT })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Apply and resolve' })).toBeNull()
+  }, SLOW)
+
+  it('lists a website visitor message without failing, though the visitor has no account (#339)', async () => {
+    serve({
+      'GET /admin/support-requests': { body: { ...requestsPageSample, items: [websiteSample, ...requestsPageSample.items] } },
+      'GET /admin/support-requests/SR-6H2P8W3D': { body: { ...websiteSample, contacts: [{ name: 'Sample Visitor', role: 'customer', phone: '+2348000000001' }] } },
+    })
+    renderAt('/admin/support')
+    expect(await screen.findByText(/Do you deliver to Independence Layout/, {}, { timeout: WAIT })).toBeInTheDocument()
+    expect(screen.queryByText(/unexpected response|not connected/i)).toBeNull()
+    // The other requests still show, and the visitor can be called.
+    expect(screen.getAllByText('Delivery was late').length).toBeGreaterThan(0)
+    expect((await screen.findAllByRole('link', { name: 'Call' }, { timeout: WAIT })).length).toBeGreaterThan(0)
   }, SLOW)
 
   it('shows an empty state when there are no requests', async () => {

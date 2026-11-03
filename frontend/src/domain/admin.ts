@@ -529,13 +529,27 @@ export interface AdminDashboard {
 
 export type ReportRange = 'today' | '7d' | '30d'
 
+/**
+ * What the Reports page asks for (#333): a preset pill, or chosen Lagos dates
+ * (`YYYY-MM-DD`, both inclusive). Cancelled orders are left out of the area
+ * and vehicle tables unless `includeCancelled`.
+ */
+export type ReportQuery =
+  | { range: ReportRange; includeCancelled: boolean }
+  | { range: 'custom'; from: string; to: string; includeCancelled: boolean }
+
 export interface AdminReport {
-  range: ReportRange
+  range: ReportRange | 'custom'
+  /** First and last Lagos date of the report, `YYYY-MM-DD`. */
+  from: string
+  to: string
+  /** True when `by_type` and `by_area` count cancelled orders too. */
+  includes_cancelled: boolean
   orders: number
   delivered: number
   cancelled: number
   revenue_minor_units: number
-  by_type: { keke: number; tanker: number }
+  by_type: { keke: number; tanker: number; not_recorded: number }
   by_area: { area: string; orders: number; delivered: number }[]
   /**
    * `code` is the plate, `null` when the driver has none. `earned_minor_units` is not sent by the backend (partner pay is out of the MVP):

@@ -538,8 +538,9 @@ adapter is `features/admin/real/reports.ts`.
 
 | Backend | Design type | Rule |
 | --- | --- | --- |
-| `range` (query) | `ReportRange` | Always sent (`today`, `7d` or `30d`). A missing `range` is 422 `validation_error`, not a default (decision 7) |
-| `AdminReportRead` | `AdminReport` | `range` as it is; `orders` = `orders.total`; `delivered` = `deliveries.delivered` (counted by the `delivered` event); `cancelled` = `orders.by_status.cancelled`, 0 when absent; `by_type` = `by_delivery_type` without `not_recorded`; `is_sample` = `is_simulated` |
+| `range`, `from`, `to` (query) | `ReportQuery` | Always sent: a preset `range` (`today`, `7d` or `30d`), or `from` and `to` (Lagos dates, at most 90 days, `to` not in the future) with `range` `custom`. Neither, or both, is 422 `validation_error`, not a default (decision 7, #333) |
+| `include_cancelled` (query) | `ReportQuery.includeCancelled` | Sent only when `true`; the server default is `false` (#333) |
+| `AdminReportRead` | `AdminReport` | `range` as it is (`custom` for chosen dates), with `from` and `to` as `YYYY-MM-DD`; `includes_cancelled` = the query's `include_cancelled` (the response does not echo it); `orders` = `orders.total`; `delivered` = `deliveries.delivered` (counted by the `delivered` event); `cancelled` = `orders.by_status.cancelled`, 0 when absent; `by_type` = `by_delivery_type`, with `not_recorded` kept (the "Orders by vehicle" table shows it only above 0); `by_type` and `by_area` leave out cancelled orders unless `include_cancelled` (#333), while `orders` and `cancelled` always count them; `is_sample` = `is_simulated` |
 | `cash.collected_minor_units` | `revenue_minor_units` | Integer kobo, shown in naira only for display. The screen's note reads "Cash collected" for real numbers |
 | `by_zone[]` | `by_area[]` | `area` = `name`; the row with `name` `null` (orders with no zone) reads "Area not listed" |
 | `by_driver[]` | `by_rider[]` | `name`; `code` = `plate` (`null` shows the name alone); `trips` = `delivered` |

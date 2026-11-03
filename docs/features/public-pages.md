@@ -21,6 +21,14 @@ the legal pages. Anyone can open them, signed in or not.
   quantity claim or a recommendation. See "Size tiles" below.
 - "Order Water" → `/order` (sign-in first when signed out).
 - "Become a Rider or Driver" → `/partner/signup`.
+- The hero has exactly two buttons, "Order water" (→ `/order`) and "Become a
+  partner" (→ `/partner/signup`), as #337 asked. The header and the closing
+  section keep "Order Water" and "Become a Rider or Driver". "Install the app"
+  is only in the "Put MmiriOma on your phone" section; the header has no
+  install link.
+- Every screen logo is a link home named "MmiriOma, home", drawn by one
+  component, `HomeLogo` (#337): to `/`, or to `/partner/` inside the partner app
+  so the installed app keeps its scope. See "Logo links" below.
 - Every public page has a floating "Chat on WhatsApp" button (bottom right;
   icon only below 640 px; hidden while WhatsApp support is off) and, after 600 px of scrolling, "Back to top" above
   it. Back to top scrolls up (instantly under reduced motion) and moves focus
@@ -43,6 +51,8 @@ the legal pages. Anyone can open them, signed in or not.
 | `frontend/src/features/marketing/routes.tsx` | The four public routes |
 | `Landing.tsx`, `FaqPage.tsx`, `LegalPages.tsx` | The pages |
 | `MarketingParts.tsx` | Header with mobile menu, footer, install button, picture and heading helpers |
+| `frontend/src/components/brand/HomeLogo.tsx`, `logoTarget.ts` | The logo link every screen uses, and the rule for where it goes |
+| `seoTags.ts` | The search and sharing tags a page sets and restores: canonical, description, Open Graph, Twitter ([seo.md](seo.md), #331) |
 | `content.ts` | Copy shared by pages and tests: nav, areas, FAQs, worries (`OBJECTIONS`), `ORDER_CTA`, `filterFaqs`, `tileFill` (how high a size tile's water rises) |
 | `SiteExtras.tsx` | Floating WhatsApp and Back to top buttons |
 | `queries.ts`, `publicApi.ts` | The support contact: `useSupportContact`, `useWhatsappNumber` (mock or `GET /public/contact`) |
@@ -88,6 +98,25 @@ on (`lib/whatsapp.ts`), so help is always reachable.
   `SUPPORT_WHATSAPP_ENABLED`, never an admin screen. With `whatsapp: null`,
   every WhatsApp button is hidden and the 404 page, FAQ, landing page and
   Contact us offer the phone instead.
+
+### Logo links
+
+Every logo that identifies a screen is wrapped in `HomeLogo` (#337,
+`docs/design/landing-v1.md` "Logo links"). The link is named "MmiriOma, home" and
+is at least 44 px tall. Where it goes:
+
+| Where | Goes to |
+| --- | --- |
+| Public pages (header, footer), 404, customer app, sign-in pages | `/` |
+| Admin header, menu drawer and staff sign-in | `/` (it used to open `/admin`; the dashboard is in the sidebar) |
+| Partner app (any path under `/partner`) | `/partner/`, so the installed app stays inside its scope `/partner/` |
+
+Not links: the logo marks beside the "Create your account" heading and in the
+"Delivered" circle. They are illustrations with no name.
+
+A test in `src/app/logoLinks.test.tsx` renders each shell, and scans the source
+for a `<Logo>` or `<BrandLogo>` outside `<HomeLogo>`, so a new screen that
+forgets the link fails the tests.
 
 ### Size tiles
 
@@ -140,6 +169,13 @@ checks (FAQs and worries, including no Paystack, points or payouts), FAQ empty s
 with its order and apply links, section order (benefits before how it
 works; worries last, no newsletter), the WhatsApp button link, the 404 page
 and its driver-app variant, `/app` still redirecting.
+`src/app/logoLinks.test.tsx`: the logo link on each shell (public pages,
+Terms, FAQ, 404, three sign-in pages, customer top bar, receipt, admin header,
+partner top bar), the hero's two buttons, install in its own section, and the
+scan for a logo outside `HomeLogo`. `src/components/brand/HomeLogo.test.tsx`: where a logo goes
+and its name. `src/features/customer/order/leaveOrder.test.tsx`: the draft check,
+which moves ask "Leave this order?", Stay and Leave, and no prompt for an
+untouched draft, a move between steps, or a placed order.
 `src/features/marketing/sizeTiles.test.tsx`: `tileFill` for each group, each
 tile's accessible name and fill, the tap toggling the fill with no timers left
 running, and the stylesheet rules (transform only, hover only where a device has
@@ -155,10 +191,9 @@ and the mock contact. Manual: compare with
 
 ## 10. Known limitations
 
-- At 360 px the tiles are 41 px wide, narrower than the "1,000" and "Custom"
-  labels, which spill past the tile edge. This was already so before the water
-  was added; the tile is no longer clipped, so nothing is cut off, but the
-  spill can overlap a neighbouring tile's water when both are filled.
+- At 360 px the tiles are 41 px wide, so the tanker "1,000" and "Custom" labels
+  use a smaller size below 420 px to fit (#337). Between 420 and 960 px they fit
+  at full size.
 - Each tile is a keyboard stop, so the section adds eight tab stops.
 
 - The Terms are reviewed by the legal operator (@nnamdi-security) on #107's

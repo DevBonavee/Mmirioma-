@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import reportSample from '../../../../../docs/api/examples/admin-report.json'
-import type { ReportRange } from '../../../domain/admin'
+import type { ReportQuery, ReportRange } from '../../../domain/admin'
 import type { AdminReportRead } from '../../../lib/api/adminReports'
 import { createApiClient } from '../../../lib/api/client'
 import { NO_ZONE_LABEL, getReport, reportFromRead } from './reports'
 
 const READ = reportSample as unknown as AdminReportRead
+const WEEK: ReportQuery = { range: '7d', includeCancelled: false }
 const envelope = (code: string, details: unknown = null) => ({ error: { code, message: 'No', details } })
 
 function clientAnswering(body: unknown, status = 200) {
@@ -20,7 +21,10 @@ describe('reportFromRead', () => {
     expect(report.orders).toBe(61)
     expect(report.delivered).toBe(48)
     expect(report.cancelled).toBe(4)
-    expect(report.by_type).toEqual({ keke: 40, tanker: 19 })
+    expect(report.by_type).toEqual({ keke: 40, tanker: 19, not_recorded: 2 })
+    expect(report.from).toBe('2026-10-21')
+    expect(report.to).toBe('2026-10-27')
+    expect(report.includes_cancelled).toBe(false)
     expect(report.is_sample).toBe(true)
     // by_source -> by_station, loads from pickups.
     expect(report.by_station).toEqual([
@@ -59,7 +63,7 @@ describe('reportFromRead', () => {
 describe('getReport', () => {
   it.each<ReportRange>(['today', '7d', '30d'])('sends range=%s and converts the answer', async (range) => {
     const { fetchMock, client } = clientAnswering({ ...reportSample, range })
-    const report = await getReport(range, client)
+    const report = await getReport({ range, includeCancelled: false }, client)
     expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get('range')).toBe(range)
     expect(new URL(String(fetchMock.mock.calls[0][0])).pathname).toBe('/api/v1/admin/reports')
     expect(report.range).toBe(range)
@@ -67,22 +71,49 @@ describe('getReport', () => {
 
   it('sends no simulated parameter: real orders only (BR-09)', async () => {
     const { fetchMock, client } = clientAnswering(reportSample)
-    await getReport('7d', client)
+    await getReport({ range: '7d', includeCancelled: false }, client)
     expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.has('simulated')).toBe(false)
+  })
+
+  it('sends no include_cancelled by default, and include_cancelled=true when asked', async () => {
+    const off = clientAnswering(reportSample)
+    await getReport({ range: '7d', includeCancelled: false }, off.client)
+    expect(new URL(String(off.fetchMock.mock.calls[0][0])).searchParams.has('include_cancelled')).toBe(false)
+
+    const on = clientAnswering(reportSample)
+    const report = await getReport({ range: '7d', includeCancelled: true }, on.client)
+    expect(new URL(String(on.fetchMock.mock.calls[0][0])).searchParams.get('include_cancelled')).toBe('true')
+    expect(report.includes_cancelled).toBe(true)
+  })
+
+  it('sends from and to, and no range, for chosen dates', async () => {
+    const { fetchMock, client } = clientAnswering({ ...reportSample, range: 'custom', from: '2026-10-01', to: '2026-10-15' })
+    const report = await getReport({ range: 'custom', from: '2026-10-01', to: '2026-10-15', includeCancelled: false }, client)
+    const params = new URL(String(fetchMock.mock.calls[0][0])).searchParams
+    expect(params.get('from')).toBe('2026-10-01')
+    expect(params.get('to')).toBe('2026-10-15')
+    expect(params.has('range')).toBe(false)
+    expect(report.range).toBe('custom')
+    expect(report.from).toBe('2026-10-01')
+  })
+
+  it('passes a 422 validation_error for a bad custom range through', async () => {
+    const { client } = clientAnswering(envelope('validation_error', [{ loc: ['query', 'to'], msg: 'Value error, Choose 90 days or fewer', type: 'value_error' }]), 422)
+    await expect(getReport({ range: 'custom', from: '2026-01-01', to: '2026-11-01', includeCancelled: false }, client)).rejects.toMatchObject({ status: 422, code: 'validation_error' })
   })
 
   it('passes a 422 validation_error for a missing range through', async () => {
     const { client } = clientAnswering(envelope('validation_error', [{ loc: ['query', 'range'], msg: 'Field required', type: 'missing' }]), 422)
-    await expect(getReport(undefined as unknown as ReportRange, client)).rejects.toMatchObject({ status: 422, code: 'validation_error' })
+    await expect(getReport({ range: undefined as unknown as ReportRange, includeCancelled: false }, client)).rejects.toMatchObject({ status: 422, code: 'validation_error' })
   })
 
   it('passes 403 forbidden through', async () => {
     const { client } = clientAnswering(envelope('forbidden'), 403)
-    await expect(getReport('7d', client)).rejects.toMatchObject({ status: 403, code: 'forbidden' })
+    await expect(getReport(WEEK, client)).rejects.toMatchObject({ status: 403, code: 'forbidden' })
   })
 
   it('reports a response the contract does not allow as invalid_response', async () => {
     const { client } = clientAnswering({ ...reportSample, cash: { collected_minor_units: 1.5, reconciled_minor_units: 0 } })
-    await expect(getReport('7d', client)).rejects.toMatchObject({ code: 'invalid_response' })
+    await expect(getReport(WEEK, client)).rejects.toMatchObject({ code: 'invalid_response' })
   })
 })

@@ -17,18 +17,20 @@ import { apiClient, ApiError, type ApiClient } from './client'
 
 const personSchema = z.object({ id: z.string(), name: z.string() })
 
-/** `AdminSupportRequest`: a customer's "Report a problem", as staff see it. */
+/** `AdminSupportRequest`: a customer's "Report a problem" or a website visitor's message, as staff see it. */
 export const supportRequestSchema = z.object({
   /** `SR-` and 8 characters; also the id in the paths below. */
   reference: z.string(),
+  /** `app`: a signed-in customer. `website`: a visitor who used the public contact form (#339). */
+  source: z.enum(['app', 'website']),
   /** `late`, `wrong_quantity`, `payment`, `rider` or `other`. */
   type: z.string(),
   message: z.string(),
   order_reference: z.string().nullable(),
   status: z.enum(['open', 'resolved']),
   created_at: z.string(),
-  /** The customer who wrote it (staff only, NFR-003). */
-  customer: z.object({ id: z.string(), name: z.string(), phone: z.string() }),
+  /** Who wrote it (staff only, NFR-003). `id` is `null` for a website visitor, who has no account (#339). */
+  customer: z.object({ id: z.string().nullable(), name: z.string(), phone: z.string() }),
   /** `null` while open. */
   resolution: z.object({ note: z.string(), resolved_by: personSchema, resolved_at: z.string() }).nullable(),
   is_simulated: z.boolean(),

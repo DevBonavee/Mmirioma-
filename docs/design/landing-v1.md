@@ -162,8 +162,102 @@ water appears at once, without animation. The size stays in ink and the unit
 text turns ink over the water, for contrast. The fill is a picture of the size,
 not a quantity claim or a recommendation.
 
-Not yet approved by a reviewer: this note records what was built; a reviewer who
-is not the author checks it against the owner's request.
+Approved on 2026-11-02 by @nnamdi-security, who is not the author: the note
+records what was built and matches the owner's request in #330.
+
+## Hero buttons and logo links (2026-11-02, #337)
+
+Requested by the owner in #337, after the design was approved; recorded here
+because it changes the hero of an approved screen. Status: **approved** (G2) on
+2026-11-02 by @nnamdi-security, who is not the author, with the decisions below.
+The code for it is a separate pull request.
+
+**Review decisions (recommendation and approval, 2026-11-02):**
+
+1. **Hero labels stay "Order water" and "Become a partner".** The owner chose
+   these in #337, after the 2026-10-21 labels, so the later request wins for
+   the hero. The header and closing section keep their labels for now; the owner
+   can align them in a later change.
+2. **The partner app's logo goes to `/partner/`, not `/`.** The installed
+   partner app has the scope `/partner/` (`partner.webmanifest`), so `/` would
+   leave it. This is a deliberate exception to #337's "every logo links to `/`";
+   read that Done-when item as "every logo links to its app's home".
+3. **No install link is added to the header.** It has none today (`NAV_LINKS`),
+   and #337's wording "and the header" does not match the code. Install stays in
+   "Put MmiriOma on your phone".
+
+### Hero
+
+The hero shows exactly two buttons:
+
+- **Order water**, the filled button, goes to `/order`.
+- **Become a partner**, the outlined button, goes to `/partner/signup`.
+
+"Install the app" leaves the hero. It stays in its own section, "Put MmiriOma on
+your phone" (`#download`), which has the customer and driver install buttons.
+The header has no install link today and none is added.
+
+The hero uses these two labels as written in #337. Every other order and driver
+button on the site keeps the owner's labels from 2026-10-21, "Order Water" and
+"Become a Rider or Driver", so the hero reads slightly differently from the
+header and the closing section. If the team wants them to match, change the
+hero's labels here, not the others.
+
+The badges under the buttons, the headline and the picture do not change.
+
+### Logo links
+
+Every MmiriOma logo that identifies a screen is a link to the public homepage
+`/`, with the accessible name "MmiriOma, home". One shared component draws it, so
+a new screen cannot forget it.
+
+| Where | Goes to |
+| --- | --- |
+| Public pages, header and footer | `/` |
+| Customer app: top bars, sign-in, receipt | `/` |
+| Admin: header, menu drawer, staff sign-in | `/` (the logo used to open `/admin`; the dashboard stays one click away in the sidebar) |
+| Partner app: top bars, sign-in | `/partner/` |
+| 404 page | `/` |
+
+The partner app is the exception. It installs with the scope `/partner/`, so a
+link to `/` would open outside the installed app. Its logo goes to `/partner/`,
+which is the partner's own home when signed in and the sign-in page when not.
+
+The logo marks inside the "Delivered" celebration circle and beside the "Create
+your account" heading are illustrations, not screen logos. They stay as they are,
+with no link and no name.
+
+### Leaving an unfinished order
+
+On the order steps (type, quantity, delivery details, save address, review) the
+customer may have typed things the app has not sent yet. When the logo, or any
+other link to a page outside the order, is used while the draft differs from a
+fresh one, a dialog asks first:
+
+- Title: **Leave this order?**
+- Text: "What you entered is kept on this device for now, but it is not placed."
+- Buttons: **Stay** (default focus) and **Leave**.
+
+The dialog does not show on an order that was placed, and does not show when the
+draft is still untouched. A browser refresh or closing the tab is not covered:
+the draft already survives a reload (it is kept in the browser's session storage).
+
+### Admin and the installed rider app
+
+- Admin: the logo leaves the admin area for the public site. Values typed into
+  an admin form are lost when the page changes, as they already are with any link
+  in the sidebar; no prompt is added for admin pages.
+- Rider app: handled by the `/partner/` rule above. A link that must go to the
+  public site, such as Terms or the privacy notice, is not changed here.
+
+### Phone, tablet and desktop
+
+The landing page is checked at 360, 768, 1280 and 1920 px. Any horizontal scroll
+or cramped section found is fixed in the code pull request and listed there.
+The check found no horizontal scroll at any of the four widths. At 360 px the
+tanker "1,000" and "Custom" labels were wider than their 41 px tiles, so below
+420 px they use a smaller size (14 px and 12 px). The
+service areas list keeps its "sample" wording until #346 replaces it.
 
 ## Open items
 

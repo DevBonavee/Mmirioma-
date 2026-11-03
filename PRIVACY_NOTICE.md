@@ -3,7 +3,7 @@
 <!-- The website's Privacy page (/privacy, frontend/src/features/marketing/LegalPages.tsx)
 mirrors this notice section by section. Change both together. -->
 
-**Version:** 4.0  
+**Version:** 5.0  
 **Last updated:** 3 November 2026  
 **Service area:** Enugu State, Nigeria
 
@@ -35,6 +35,7 @@ MmiriOma is a water ordering and delivery service for households and businesses,
 | Cash payment records: amount due, amount collected, who collected and received it, and when | Account for cash paid on delivery |
 | Bank account details, only if we pay you a refund by bank transfer | Make that refund |
 | What you tell us when you call or message our support line | Answer your questions and handle complaints |
+| Messages you send through the contact form on our website, whether or not you have an account: your name, your phone number, the type of question if you choose one, and your message | Answer you by phone, and handle your question or complaint. We do not link the message to an account, and we do not ask for your email address |
 | Problems and questions you send in the app ("Report a problem" and Help): the type of problem, your message, the order it is about, its status and how our staff resolved it | Investigate and resolve the problem, and handle complaints |
 | Feedback you give on a delivered order: your rating (1 to 5), whether the rider or driver unloaded the water, and, if you choose to answer, whether it was on time, whether you got the quantity you ordered, whether you would order again, and a short message | Check and improve our deliveries and our riders' and drivers' service |
 | Account deletion requests you make in the app: when you asked, the reason if you give one, and the outcome | Handle your request (section 9) and keep a record that we did |
@@ -70,7 +71,7 @@ When the driver records that unloading is complete, we send a 6-digit **delivery
 We share only what is needed to run the service:
 
 - **The driver assigned to your order** sees the contact's first name and last initial, phone number, delivery address, landmark, instructions and quantity, and only while they are assigned to the delivery.
-- **Our authorized staff** (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers.
+- **Our authorized staff** (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers. They also see the messages sent through the website contact form, to answer them.
 - **Termii**, our SMS provider, receives your phone number and the text of each message we send you.
 - **Hostinger** (HOSTINGER Global S.à r.l., Luxembourg), our hosting provider, runs the server and stores the service's data and backups in its data centre in Paris, France.
 - **Backblaze** (Backblaze, Inc., United States) stores an off-site copy of our backups in its data centre in Amsterdam, the Netherlands.
@@ -96,6 +97,7 @@ We keep information only as long as set out below. Our staff review stored data 
 | Complaints, disputes and incident records | 3 years after resolution | Deleted or anonymized, unless continued retention is justified |
 | Calls and messages on our support line | 12 months after the matter is resolved | Deleted, unless linked to an unresolved matter |
 | Problems you report in the app | 3 years after our staff resolve it | Deleted. If your account is closed sooner, your message and our staff's note about it are removed then, and the rest of the record is kept until the 3 years end |
+| Messages you send through the website contact form | 3 years after our staff resolve them | Deleted. We keep no account for you, so to have a message deleted sooner, call or email us (section 9) |
 | Account deletion requests | 3 years after we complete or refuse your request | Deleted. Until then, the reference, dates and outcome are kept as a record that the request was handled; the reason you gave is removed earlier, when your account is closed |
 | Sign-in sessions | A session lasts up to 7 days | Ended sessions are deleted at the next monthly review |
 | Server logs | 90 days | Deleted, unless needed to investigate a security incident |
@@ -103,7 +105,7 @@ We keep information only as long as set out below. Our staff review stored data 
 
 ## 9. How can you request access, correction or deletion?
 
-You can ask us to access, correct or delete your personal information by calling **+234 813 377 4902** or emailing **[olivetgrail@gmail.com](mailto:olivetgrail@gmail.com)**. Before we disclose or change anything, we confirm the request comes from you, normally by calling back the phone number on your account. For deletion, you can also use "Delete my account" in the customer app; we still call you back to confirm it is you.
+You can ask us to access, correct or delete your personal information by calling **+234 813 377 4902** or emailing **[olivetgrail@gmail.com](mailto:olivetgrail@gmail.com)**. Before we disclose or change anything, we confirm the request comes from you, normally by calling back the phone number on your account. For deletion, you can also use "Delete my account" in the customer app; we still call you back to confirm it is you. If you only sent us a message through the website contact form and have no account, tell us your name and the phone number you gave, and we find your messages by that number and call it back to confirm it is you.
 
 - We acknowledge a request within **3 working days**.
 - We aim to complete a straightforward request within **14 calendar days**, and always within any deadline the law sets.

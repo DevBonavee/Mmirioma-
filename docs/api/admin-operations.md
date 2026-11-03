@@ -406,6 +406,7 @@ endpoints and the rule that **a support request never changes the order**
 ```json
 {
   "reference": "SR-4K7M2Q9X",
+  "source": "app",
   "type": "late",
   "message": "The water has not arrived yet.",
   "order_reference": "MO-7KQ2M9XH4T",
@@ -424,7 +425,8 @@ endpoints and the rule that **a support request never changes the order**
 | Field | Rule |
 | --- | --- |
 | `reference`, `type`, `message`, `order_reference`, `status`, `created_at` | As in [customer-account.md](customer-account.md#support-request-object) |
-| `customer` | The customer who wrote it (NFR-003: staff only) |
+| `source` | `app`: a signed-in customer's report. `website`: a visitor's message from the public contact form ([public-site.md](public-site.md#post-publiccontact), #339) |
+| `customer` | Who wrote it (NFR-003: staff only). For a `website` request `id` is `null` (a visitor has no account), `name` and `phone` are what the visitor gave ([example](examples/admin-support-request-website.json)), `order_reference` is `null` and the detail's `contacts` has the visitor as its one entry |
 | `resolution` | `null` while open |
 | `is_simulated` | The order's flag; `false` without an order |
 
@@ -712,6 +714,7 @@ on the current backend, including the delivery type and zone breakdowns
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-02 | Added `source` (`app` or `website`) to the admin support request and made `customer.id` nullable, for the public contact form (additive; a client that assumes `customer.id` is a string must handle `null`; #339) | @nnamdi-security (technical lead, G3, 2026-11-02, with `POST /public/contact`) |
 | 2026-11-02 | Proposed (#333): `from`/`to` custom range and `include_cancelled` on `GET /admin/reports` ([amendment](#amendment-proposed-in-333-chosen-date-range-and-cancelled-orders)) | @nnamdi-security (technical lead, G3, 2026-11-02) |
 | 2026-11-01 | Added `AuditLogRead.target_label` (additive, resolved when read, #296) | @nnamdi-security (technical lead, G3) |
 | 2026-10-27 | "Data needed": the note is removed by replacing it with the message's text, so the response keeps its shape (#117) | @nnamdi-security (privacy contact) |

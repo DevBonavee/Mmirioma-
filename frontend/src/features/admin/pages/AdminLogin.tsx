@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Illustration } from '../../../components/brand/Illustration'
+import { HomeLogo } from '../../../components/brand/HomeLogo'
 import { Logo } from '../../../components/brand/Logo'
 import { AlertCircleIcon } from '../../../components/icons/icons'
 import { Button } from '../../../components/ui/Button'
@@ -66,7 +67,9 @@ export function AdminLogin() {
       <section className="relative flex shrink-0 flex-col justify-between gap-6 overflow-hidden bg-[linear-gradient(160deg,#0A2540_0%,#0B4FA8_55%,#1570D8_100%)] px-6 pt-6 pb-8 text-white sm:px-10 lg:w-[46%] lg:max-w-[640px] lg:px-14 lg:py-12">
         <Illustration name="drop-hero" className="pointer-events-none absolute top-0 right-[-80px] h-full w-auto max-w-none opacity-25 mix-blend-screen" />
         <div className="rise-1 relative self-start rounded-icon bg-white px-3 py-2">
-          <Logo height={32} />
+          <HomeLogo>
+            <Logo height={32} alt="" />
+          </HomeLogo>
         </div>
         <div className="rise-2 relative">
           <div className="text-[13px] font-bold tracking-[0.6px] text-[#CFE3FB] uppercase">Staff dashboard</div>

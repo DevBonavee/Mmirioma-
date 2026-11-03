@@ -261,8 +261,16 @@ async def dashboard(
     )
 
 
-async def report(session: AsyncSession, *, range_name: str, simulated: bool) -> Report:
-    """Return the report for ``today``, the last 7 or the last 30 Lagos days.
+async def report(
+    session: AsyncSession,
+    *,
+    range_name: str,
+    simulated: bool,
+    include_cancelled: bool = False,
+    from_day: date | None = None,
+    to_day: date | None = None,
+) -> Report:
+    """Return the report for a preset range or for chosen Lagos dates.
 
     Rows hold aggregates, driver names and source names only, no customer
     data (FR-053), so the screen can build its CSV from them. Refunds, costs
@@ -271,19 +279,36 @@ async def report(session: AsyncSession, *, range_name: str, simulated: bool) -> 
     ``by_zone[].delivered`` counts the zone's deliveries in the range (by
     delivery time, as ``deliveries.delivered``), so the rows add up to it.
 
+    Cancelled orders are left out of ``by_zone`` and ``by_delivery_type``
+    unless ``include_cancelled`` (#333); ``orders.total`` and
+    ``orders.by_status`` always count them. A cancelled order is never
+    delivered, so ``by_zone[].delivered`` is the same either way.
+
     Args:
         session: Database session.
-        range_name: ``today``, ``7d`` or ``30d`` (checked by the schema).
+        range_name: ``today``, ``7d``, ``30d`` or ``custom`` (checked by the
+            schema).
         simulated: Simulated records only (True) or real ones only (False).
+        include_cancelled: Count cancelled orders in the two breakdowns.
+        from_day: First Lagos date, for ``custom`` only.
+        to_day: Last Lagos date, for ``custom`` only.
 
     Returns:
         The report.
     """
-    last = lagos_today()
-    first = last - timedelta(days=REPORT_RANGE_DAYS[range_name] - 1)
+    if from_day is not None and to_day is not None:
+        first, last = from_day, to_day
+    else:
+        last = lagos_today()
+        first = last - timedelta(days=REPORT_RANGE_DAYS[range_name] - 1)
     start, end = _day_bounds(first, last)
     orders = await orders_reporting.count_orders(
-        session, created_from=start, created_to=end, simulated=simulated, include_open=False
+        session,
+        created_from=start,
+        created_to=end,
+        simulated=simulated,
+        include_open=False,
+        exclude_cancelled_from_breakdowns=not include_cancelled,
     )
     deliveries = await orders_reporting.count_deliveries(
         session, delivered_from=start, delivered_to=end, simulated=simulated

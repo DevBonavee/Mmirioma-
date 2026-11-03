@@ -10,7 +10,12 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
-from app.modules.customers.models import NOTE_MAX_LENGTH, SupportRequestStatus, SupportRequestType
+from app.modules.customers.models import (
+    NOTE_MAX_LENGTH,
+    SupportRequestSource,
+    SupportRequestStatus,
+    SupportRequestType,
+)
 from app.modules.orders.schemas import PageParams
 
 #: The contract's minimum for a resolution note (the mock asks for 5).
@@ -43,9 +48,12 @@ class AdminSupportListParams(PageParams):
 
 
 class SupportCustomerRead(BaseModel):
-    """The customer who wrote the request (NFR-003: staff only)."""
+    """Who wrote the request (NFR-003: staff only).
 
-    id: uuid.UUID
+    ``id`` is null for a website visitor, who has no account (#339).
+    """
+
+    id: uuid.UUID | None
     name: str
     phone: str
 
@@ -69,6 +77,7 @@ class AdminSupportRequestRead(BaseModel):
     """The admin support request object (contract example ``admin-support-request.json``)."""
 
     reference: str
+    source: SupportRequestSource
     type: SupportRequestType
     message: str
     order_reference: str | None

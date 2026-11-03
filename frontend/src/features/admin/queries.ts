@@ -5,7 +5,7 @@
  * `admin` key, plus the partner and customer caches in this tab.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { AdminOrderFilter, ReportRange } from '../../domain/admin'
+import type { AdminOrderFilter, ReportQuery } from '../../domain/admin'
 import type { WaterChoice } from '../../domain/orders'
 import * as api from './adminApi'
 
@@ -34,7 +34,7 @@ export const adminKeys = {
   payouts: ['admin', 'payouts'] as const,
   cashDay: (date: string) => ['admin', 'cash', 'day', date] as const,
   driverCash: (driverId: string) => ['admin', 'cash', 'driver', driverId] as const,
-  report: (range: ReportRange) => ['admin', 'report', range] as const,
+  report: (query: ReportQuery) => ['admin', 'report', query] as const,
   issues: (query: string) => ['admin', 'issues', query] as const,
   issuePeople: (id: string) => ['admin', 'issue-people', id] as const,
   audit: ['admin', 'audit'] as const,
@@ -82,7 +82,7 @@ export const usePayouts = () => useQuery({ queryKey: adminKeys.payouts, queryFn:
 export const useCashDay = (date: string) => useQuery({ queryKey: adminKeys.cashDay(date), queryFn: () => api.getCashDay(date), placeholderData: keepPreviousData, refetchInterval: LIVE })
 /** K4: a driver's cash on hand to receive. */
 export const useDriverCash = (driverId: string) => useQuery({ queryKey: adminKeys.driverCash(driverId), queryFn: () => api.getDriverCash(driverId) })
-export const useReport = (range: ReportRange) => useQuery({ queryKey: adminKeys.report(range), queryFn: () => api.getReport(range), placeholderData: keepPreviousData })
+export const useReport = (query: ReportQuery) => useQuery({ queryKey: adminKeys.report(query), queryFn: () => api.getReport(query), placeholderData: keepPreviousData })
 export const useIssues = (query: string) => useQuery({ queryKey: adminKeys.issues(query), queryFn: () => api.listIssues(query), placeholderData: keepPreviousData, refetchInterval: LIVE })
 export const useIssuePeople = (id: string | null) => useQuery({ queryKey: adminKeys.issuePeople(id ?? ''), queryFn: () => api.getIssuePeople(id!), enabled: Boolean(id) })
 export const useAudit = () => useQuery({ queryKey: adminKeys.audit, queryFn: () => api.listAudit() })

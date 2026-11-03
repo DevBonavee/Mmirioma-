@@ -1,10 +1,10 @@
 # Maps, address search and road distance (proposal)
 
 **Status: approved by the design reviewer on 2 November 2026, with
-conditions** (section 10). Issue
-[#334](https://github.com/mmiri-oma/mmirioma/issues/334) stays open until the
-budget holder's comment is linked in section 10. Map work (#340, #345, #346)
-follows the approved options and the conditions.
+conditions** (section 10), and the budget holder agreed the $0 ceiling on
+2 November 2026. Map work (#340, #345, #346) follows the approved options and
+the conditions. Issue [#334](https://github.com/mmiri-oma/mmirioma/issues/334)
+is complete once this change merges.
 
 **Author:** @nnamdi-security + agent · **Written:** 2 November 2026 · **Prices
 and terms checked:** 2 November 2026 (section 11 lists each source).
@@ -33,8 +33,8 @@ until a budget exists. If a recommendation fails its test, the zero-cost
 fallback is to run without it (section 6), not to buy a replacement; the paid
 replacements are listed in section 7 only so the team can see their price.
 
-The budget holder should confirm the $0 ceiling in a comment on #334. That
-comment is still missing (section 10).
+The budget holder confirmed the $0 ceiling in a comment on #334 (linked in
+section 10).
 
 ## 2. What the SRS already fixes
 
@@ -329,11 +329,11 @@ Conditions or changes:              1. OSRM (R1) is deployed only if, measured o
                                        needs a new budget decision.
 
 Budget holder:                      nnamdi-security
-Monthly ceiling agreed:             $0  (comment on #334: pending, not yet posted)
+Monthly ceiling agreed:             $0  (https://github.com/mmiri-oma/mmirioma/issues/334#issuecomment-6589912380)
 ```
 
-The reviewer block is filled in. The budget holder's comment on #334 is still
-to be posted and linked above; until then #334 is not complete.
+Both blocks are filled in. The conditions above still apply when the map work
+is built and deployed.
 
 ## 11. Sources and open questions
 

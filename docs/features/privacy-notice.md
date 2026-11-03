@@ -75,6 +75,13 @@ None. The text ships with the frontend.
   requests, order feedback and deletion requests. It is 2.0, not 1.2,
   because what is collected changed (the procedure's version rule;
   privacy contact, 2026-10-27, #104).
+- Version 5.0 (3 November 2026, #332) adds the record of the acceptance at sign-up:
+  the time, and which version of the Terms and the notice was accepted.
+- Version 4.0 (2 November 2026, #339) adds the website contact form: the
+  name, phone number and message of a visitor (section 2), staff seeing them
+  (section 7), 3 years after resolution (section 8) and deletion by phone
+  number for a visitor with no account (section 9). The pilot still collects
+  no email address.
 - Section 9 names "Delete my account" in the customer app as a way to ask
   for deletion, with the same identity check by call-back; the partner app
   has none, so riders and drivers ask by phone or email (#119).

@@ -9,7 +9,6 @@ import {
   CardIcon,
   ChevronIcon,
   DottedArrowIcon,
-  DownloadArrowIcon,
   DropCheckIcon,
   DropFilledIcon,
   PinIcon,
@@ -99,12 +98,12 @@ function Hero() {
           <div className="flex flex-wrap gap-3.5">
             <Link to="/order" className={cx(PRIMARY_BUTTON, 'min-h-[54px] px-[26px] text-[16px]')}>
               <DropFilledIcon />
-              {ORDER_CTA}
+              Order water
               <ArrowRightIcon />
             </Link>
-            <Link to="/#download" className={cx(OUTLINE_BUTTON, 'min-h-[54px] px-[26px] text-[16px]')}>
-              <DownloadArrowIcon />
-              Install the app
+            <Link to="/partner/signup" className={cx(OUTLINE_BUTTON, 'min-h-[54px] px-[26px] text-[16px]')}>
+              <TruckIcon />
+              Become a partner
             </Link>
           </div>
           <div className="grid max-w-[560px] grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-3.5 pt-3.5">
@@ -241,7 +240,7 @@ function SizeTile({ n, unit, tone, fill }: { n: string; unit: string; tone: 'kek
       <span aria-hidden="true" className="mk-tile-clip">
         <span className="mk-tile-water" />
       </span>
-      <span className={cx('font-display font-bold text-ink', n === 'Custom' ? 'text-[15px]' : tone === 'keke' ? 'text-[19px]' : 'text-[18px]')}>{n}</span>
+      <span className={cx('font-display font-bold text-ink', n === 'Custom' ? 'text-[15px] max-[420px]:text-[12px]' : tone === 'keke' ? 'text-[19px]' : 'text-[18px] max-[420px]:text-[14px]')}>{n}</span>
       <span className="mk-tile-unit text-[12px]">{unit}</span>
     </div>
   )
