@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -8,6 +8,7 @@ import notificationsSample from '../../../../docs/api/examples/admin-notificatio
 import settingsSample from '../../../../docs/api/examples/admin-settings.json'
 import shellSample from '../../../../docs/api/examples/admin-shell.json'
 import requestsPageSample from '../../../../docs/api/examples/admin-support-requests-page.json'
+import websiteSample from '../../../../docs/api/examples/admin-support-request-website.json'
 
 // The real-API branches of the Support, Settings (audit log) and notification screens (#219): the adapters and the
 // shared client run for real, and only `fetch` is replaced. See operations.screens.test.tsx for why the app is
@@ -150,10 +151,123 @@ describe('the Support screen against the real API (#219, G2 approved by the tech
     expect(screen.queryByRole('button', { name: 'Apply and resolve' })).toBeNull()
   }, SLOW)
 
+  it('lists a website visitor message without failing, though the visitor has no account (#339)', async () => {
+    serve({
+      'GET /admin/support-requests': { body: { ...requestsPageSample, items: [websiteSample, ...requestsPageSample.items] } },
+      'GET /admin/support-requests/SR-6H2P8W3D': { body: { ...websiteSample, contacts: [{ name: 'Sample Visitor', role: 'customer', phone: '+2348000000001' }] } },
+    })
+    renderAt('/admin/support')
+    expect(await screen.findByText(/Do you deliver to Independence Layout/, {}, { timeout: WAIT })).toBeInTheDocument()
+    expect(screen.queryByText(/unexpected response|not connected/i)).toBeNull()
+    // The other requests still show, and the visitor can be called.
+    expect(screen.getAllByText('Delivery was late').length).toBeGreaterThan(0)
+    expect((await screen.findAllByRole('link', { name: 'Call' }, { timeout: WAIT })).length).toBeGreaterThan(0)
+  }, SLOW)
+
   it('shows an empty state when there are no requests', async () => {
     serve({ 'GET /admin/support-requests': { body: { items: [], total: 0, limit: 100, offset: 0 } } })
     renderAt('/admin/support')
     expect(await screen.findByText('No issues.', {}, { timeout: WAIT })).toBeInTheDocument()
+  }, SLOW)
+})
+
+describe('the Support screen shows website messages (#365, G2 approved)', () => {
+  const VISITOR = { name: 'Sample Visitor', role: 'customer', phone: '+2348000000001' }
+  const RESOLUTION = { note: 'Called the visitor.', resolved_by: { id: 'a1', name: 'Sample Admin' }, resolved_at: '2026-11-02T11:00:00Z' }
+  const serveWebsite = (message: Record<string, unknown> = websiteSample, contacts: unknown = [VISITOR], extra: typeof routes = {}) =>
+    serve({
+      'GET /admin/support-requests': { body: { ...requestsPageSample, items: [message, ...requestsPageSample.items] } },
+      [`GET /admin/support-requests/${message.reference}`]: { body: { ...message, contacts } },
+      ...extra,
+    })
+
+  it('tags the list row, titles it "Website message" and names the visitor on the second line', async () => {
+    serveWebsite()
+    renderAt('/admin/support')
+    const row = (await screen.findByRole('button', { name: /Website message/ }, { timeout: WAIT })) as HTMLElement
+    expect(within(row).getAllByText('Website').length).toBeGreaterThan(0)
+    expect(row).toHaveTextContent(/Website · Sample Visitor · /)
+    expect(row).toHaveTextContent('Open')
+    // The same list still has the app requests, told apart: their second line names the order and the customer.
+    expect(screen.getByRole('button', { name: /Delivery was late/ })).toHaveTextContent(/MO-.* · Customer · /)
+  }, SLOW)
+
+  it('shows the detail without an order timeline, with the topic and the visitor as the sender', async () => {
+    serveWebsite()
+    renderAt('/admin/support')
+    expect(await screen.findByRole('heading', { name: 'Website message' }, { timeout: WAIT })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Order timeline' })).toBeNull()
+    expect(screen.queryByText('Not about an order.')).toBeNull()
+    expect(screen.getByText(/Do you deliver to Independence Layout/)).toBeInTheDocument()
+    expect(screen.getByText('Topic: Other')).toBeInTheDocument()
+    const sender = screen.getByRole('heading', { name: 'Sender' }).closest('section') as HTMLElement
+    expect(within(sender).getByText('Sample Visitor')).toBeInTheDocument()
+    expect(within(sender).getByText('Website visitor · Not linked to an account')).toBeInTheDocument()
+    // The phone shows as text once the contacts arrive, and Call dials it.
+    expect(await within(sender).findByText('0800 000 0001', {}, { timeout: WAIT })).toBeInTheDocument()
+    expect(within(sender).getByRole('link', { name: 'Call' })).toHaveAttribute('href', 'tel:+2348000000001')
+    // Nothing a website message does not have.
+    expect(screen.queryByText(/points/i)).toBeNull()
+    expect(within(sender).getAllByRole('link')).toHaveLength(1) // only Call: no customer, profile or history link
+  }, SLOW)
+
+  it.each([
+    ['late', 'Delivery was late'],
+    ['wrong_quantity', 'Wrong quantity'],
+    ['payment', 'Payment'],
+    ['rider', 'Rider'],
+    ['other', 'Other'],
+  ])('shows the topic %s as "%s", as the visitor chose it', async (type, label) => {
+    serveWebsite({ ...websiteSample, type })
+    renderAt('/admin/support')
+    expect(await screen.findByText(`Topic: ${label}`, {}, { timeout: WAIT })).toBeInTheDocument()
+    // The list title is "Website message" whatever the topic, so it never reads as a delivery report.
+    expect(screen.getByRole('button', { name: /Website message/ })).toBeInTheDocument()
+  }, SLOW)
+
+  it("keeps the visitor's name and offers a retry when the contacts cannot be loaded", async () => {
+    serveWebsite(websiteSample, [], { 'GET /admin/support-requests/SR-6H2P8W3D': { body: { error: { code: 'server_error', message: 'No', details: null } }, status: 500 } })
+    renderAt('/admin/support')
+    const sender = (await screen.findByRole('heading', { name: 'Sender' }, { timeout: WAIT })).closest('section') as HTMLElement
+    expect(within(sender).getByText('Sample Visitor')).toBeInTheDocument()
+    expect(await within(sender).findByRole('button', { name: /try again|retry/i }, { timeout: WAIT })).toBeInTheDocument()
+    expect(within(sender).queryByRole('link', { name: 'Call' })).toBeNull()
+  }, SLOW)
+
+  it('shows a resolved website message as its note, with no form', async () => {
+    serveWebsite({ ...websiteSample, status: 'resolved', resolution: RESOLUTION })
+    renderAt('/admin/support')
+    expect(await screen.findByText(/Resolved by Sample Admin, .*Note: Called the visitor\./, {}, { timeout: WAIT })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Apply and resolve' })).toBeNull()
+  }, SLOW)
+
+  it('resolves a website message with the same note form', async () => {
+    const user = userEvent.setup()
+    serveWebsite(websiteSample, [VISITOR], {
+      'POST /admin/support-requests/SR-6H2P8W3D/resolve': { body: { ...websiteSample, status: 'resolved', resolution: RESOLUTION } },
+    })
+    renderAt('/admin/support')
+    await user.type(await screen.findByLabelText('Note', {}, { timeout: WAIT }), 'Called the visitor.')
+    await user.click(screen.getByRole('button', { name: 'Apply and resolve' }))
+    await waitFor(() => expect(calls.some((c) => c.method === 'POST' && c.path === '/admin/support-requests/SR-6H2P8W3D/resolve' && JSON.stringify(c.body) === JSON.stringify({ note: 'Called the visitor.' }))).toBe(true))
+  }, SLOW)
+
+  it('leaves an app request exactly as it was: timeline, People and no Website tag', async () => {
+    const user = userEvent.setup()
+    serveWebsite()
+    renderAt('/admin/support')
+    await user.click(await screen.findByRole('button', { name: /Delivery was late/ }, { timeout: WAIT }))
+    expect(await screen.findByRole('heading', { name: 'Order timeline' }, { timeout: WAIT })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'People' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Sender' })).toBeNull()
+    expect(screen.queryByText(/Topic:/)).toBeNull()
+  }, SLOW)
+
+  it('counts a website message in "open"', async () => {
+    serveWebsite()
+    renderAt('/admin/support')
+    // The example page has one open app request; the website message makes two.
+    expect(await screen.findByText(/2 open\./, {}, { timeout: WAIT })).toBeInTheDocument()
   }, SLOW)
 })
 

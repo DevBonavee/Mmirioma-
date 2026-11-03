@@ -17,8 +17,9 @@ hidden for the pilot (see section 6).
 1. **Sign in / create account** (`/signin`, `/signup`): phone number and
    password only. New accounts go straight to home; the phone stays
    unverified until staff verify it manually (FR-003).
-2. **Home** (`/home`): delivery address, order by Keke or Tanker, quick
-   actions (Reorder, Addresses, My orders), latest order.
+2. **Home** (`/home`): delivery address ("Set your delivery address" until one
+   is saved), order by Keke or Tanker, quick actions (Reorder, Addresses, My
+   orders), latest order.
 3. **Order** (`/order` → `/order/keke` or `/order/tanker`):
    - Keke: jerrycan size (25 or 50 L) and count (12, 24, 30, 60). No water source.
    - Tanker: tank type (ground, overhead), size (500, 750, 1,000 gallons or
@@ -27,7 +28,10 @@ hidden for the pilot (see section 6).
    - No price yet: it comes on Review, after the address and area (#42).
 4. **Address**: returning customers pick a saved address (`/order/address`);
    others enter details and the area (`/order/details`), then choose how to
-   keep a new address (`/order/save-address`).
+   keep a new address (`/order/save-address`). A new address can carry a map pin
+   (#345): the customer taps "Use my location" or places it by hand, and the
+   phone's location is asked for only on that tap. Typing the address always
+   works. See [delivery-location.md](delivery-location.md).
 5. **Review** (`/order/review`): the server's total, pay on delivery, place
    the order; or "Send request" when the app has no price. In mock mode a
    request goes to support (the mock has no quote requests).
@@ -57,7 +61,7 @@ hidden for the pilot (see section 6).
 | `frontend/src/features/customer/orderHelpers.ts` | Display helpers for fields the backend may not send (quantity, price, place, picture) |
 | `frontend/src/features/customer/real/notifications.ts` | Notification adapters (#88 part 2) through `lib/api/customerNotifications.ts` |
 | `frontend/src/features/customer/queries.ts` | TanStack Query hooks and cache refresh after changes |
-| `frontend/src/features/customer/order/` | Order draft (sessionStorage), reorder and flow helpers |
+| `frontend/src/features/customer/order/` | Order draft (sessionStorage), reorder and flow helpers, and `LeaveOrderGuard` with its rule in `leaveOrder.ts` (#337) |
 | `frontend/src/features/customer/pages/` | One component per screen |
 | `frontend/src/features/customer/routes.tsx` | Customer routes, with the handoff screen id per route |
 | `frontend/src/features/auth/` | Session hooks, `RequireRole`, sign-in redirects, auth API switch |
@@ -183,6 +187,15 @@ another customer's order returns the same 404 as a missing one.
   wait; the phone number is kept (NFR-012).
 - A lost connection keeps the order draft (sessionStorage); retrying "Place
   order" reuses the same idempotency key.
+- Leaving an unfinished order (#337): on the order steps (`/order`,
+  `/order/keke`, `/order/tanker`, `/order/details`, `/order/address`,
+  `/order/save-address`, `/order/review`), a move to a page outside the order, by
+  the logo or any link, asks "Leave this order?" when the draft has anything in
+  it. Stay is the default. The draft is kept either way, since it lives in
+  sessionStorage. The check reads the stored draft, not React state, so placing
+  an order (which clears the draft and then navigates in the same tick) is not
+  mistaken for leaving; moves between order steps, and an untouched draft, never
+  ask. A forced move such as a session expiry also asks while a draft exists.
 - The order draft belongs to no account, so it is cleared on sign-out and on
   every successful sign-in or registration (#272). On the delivery details
   step, a draft `address_id` that is not one of the account's saved addresses
@@ -213,6 +226,8 @@ npm test
   feedback, address defaults.
 - `src/features/customer/order/order.test.ts`: draft persistence, Keke has no
   source, flow, reorder.
+- `src/features/customer/order/leaveOrder.test.tsx`: the "Leave this order?"
+  prompt (#337).
 - `src/features/customer/pages/SignIn.test.tsx`: sign-in screen behaviour.
 - `src/features/customer/pages/Support.test.tsx`: neither support page shows a
   bracketed placeholder (#270).

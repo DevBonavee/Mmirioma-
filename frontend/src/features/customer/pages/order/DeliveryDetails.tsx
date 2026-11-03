@@ -3,18 +3,20 @@ import { useEffect, useId, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { z } from 'zod'
-import { DetailsMapArt, MapFrame, MapPin } from '../../../../components/art/Art'
 import { ChevronDownIcon } from '../../../../components/icons/icons'
 import { BackLink, Footer, MobileShell, ScrollArea, TopBar } from '../../../../components/layout/MobileShell'
 import { ErrorBlock } from '../../../../components/layout/StateScreens'
 import { Button } from '../../../../components/ui/Button'
 import { INPUT, TextField } from '../../../../components/ui/Field'
-import { Notice } from '../../../../components/ui/Notice'
 import { cx } from '../../../../lib/cx'
 import { formatPhone } from '../../../../lib/format/phone'
 import { phoneField } from '../../../../lib/forms'
+import type { DeliveryLocation } from '../../../../domain/orders'
 import { AreaPicker } from '../../components/AreaPicker'
+import { LocationCard } from '../../components/LocationCard'
 import { OrderStepHeading } from '../../components/OrderParts'
+import { PinMap } from '../../components/PinMap'
+import { useMapStart } from '../../components/pinSupport'
 import type { AreaChoice } from '../../order/livePrice'
 import { useOrderDraft } from '../../order/orderDraftContext'
 import { useAddresses, useProfile, useServiceZones } from '../../queries'
@@ -47,7 +49,6 @@ export function DeliveryDetails() {
   const { draft, update } = useOrderDraft()
   const profile = useProfile()
   const addresses = useAddresses()
-  const [pinNote, setPinNote] = useState(false)
   const selectId = useId()
 
   const saved = addresses.data ?? []
@@ -104,8 +105,12 @@ export function DeliveryDetails() {
   // A new address needs its area for the price (FR-020); a saved one has its own.
   const [area, setArea] = useState<AreaChoice>(draft.new_address.zone)
   const [areaError, setAreaError] = useState<string | undefined>()
+  // The optional pin of a new address (#345); a saved address keeps the pin it was saved with.
+  const [location, setLocation] = useState<DeliveryLocation | null>(draft.new_address.location)
+  const mapStart = useMapStart(area)
   const zones = useServiceZones()
   const areasReady = !isNew || zones.isSuccess
+  const savedPin = isNew ? null : (saved.find((a) => a.id === addressId)?.location ?? null)
 
   const onSubmit = handleSubmit((v) => {
     if (isNew && area === null) {
@@ -117,7 +122,7 @@ export function DeliveryDetails() {
       receiver_phone: v.receiver_phone,
       instructions: v.instructions,
       address_id: isNew ? null : v.address_id,
-      new_address: isNew ? { ...d.new_address, address: v.address, landmark: v.landmark, zone: area } : d.new_address,
+      new_address: isNew ? { ...d.new_address, address: v.address, landmark: v.landmark, zone: area, location } : d.new_address,
     }))
     navigate(isNew ? '/order/save-address' : '/order/review')
   })
@@ -203,22 +208,12 @@ export function DeliveryDetails() {
               }
             />
           )}
-          <MapFrame height={132} className="rise-3">
-            <DetailsMapArt />
-            <MapPin color="#1570D8" ringColor="rgba(21,112,216,.35)" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[88%]" />
-            <button
-              type="button"
-              onClick={() => setPinNote((v) => !v)}
-              aria-expanded={pinNote}
-              className="hit-44 absolute right-2.5 bottom-2.5 cursor-pointer rounded-badge border-0 bg-white px-[11px] py-[7px] text-caption font-bold text-primary shadow-control"
-            >
-              Move pin
-            </button>
-          </MapFrame>
-          {pinNote && (
-            <Notice tone="info">
-              Map pins are not available yet. Use the landmark and instructions so the rider can find you.
-            </Notice>
+          {isNew && <LocationCard value={location} onChange={setLocation} {...mapStart} />}
+          {savedPin && (
+            <div className="rise-3 flex flex-col gap-1.5">
+              <PinMap target={savedPin} readOnly />
+              <p className="m-0 text-caption text-mute">This address has a pin. To change it, edit the address in Saved addresses.</p>
+            </div>
           )}
           <TextField className="rise-4" label="Landmark" optional {...register('landmark')} error={errors.landmark?.message} />
           <TextField

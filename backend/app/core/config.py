@@ -10,7 +10,7 @@ import re
 import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, NamedTuple
 from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -25,6 +25,25 @@ SYNC_DRIVER = "postgresql+psycopg"
 MIN_SECRET_LENGTH = 32
 # Official MmiriOma customer support number (SRS v0.2 FR-055).
 OFFICIAL_SUPPORT_PHONE = "+2348133774902"
+#: south, west, north, east in degrees: a box around Enugu State, wider than the
+#: city on purpose (docs/api/delivery-location.md, "Delivery bounds").
+DEFAULT_DELIVERY_LOCATION_BOUNDS = "5.9,6.9,7.2,8.0"
+#: Nigeria's own extent, a sanity limit on the setting so a typo cannot widen
+#: the box to the world.
+NIGERIA_SOUTH, NIGERIA_WEST, NIGERIA_NORTH, NIGERIA_EAST = 4.0, 2.6, 14.0, 14.8
+
+
+class DeliveryBounds(NamedTuple):
+    """A box of WGS 84 degrees that a delivery location must fall inside."""
+
+    south: float
+    west: float
+    north: float
+    east: float
+
+    def contains(self, latitude: float, longitude: float) -> bool:
+        """Whether a point is inside the box, edges included."""
+        return self.south <= latitude <= self.north and self.west <= longitude <= self.east
 
 
 class Settings(BaseSettings):
@@ -72,6 +91,12 @@ class Settings(BaseSettings):
             OTPs and must be activated on the account; ``generic`` does not
             reach numbers on the Do-Not-Disturb list.
         sms_timeout_seconds: Timeout for one SMS provider request.
+        osrm_base_url: Address of the OSRM routing server for road-distance
+            pricing (FR-022, #385), for example ``http://osrm:5000``. Empty (the
+            default) means off: every quote uses the zone fee. Stays empty in
+            production until the deployment is measured (#384).
+        osrm_timeout_seconds: How long to wait for OSRM before the quote falls
+            back to the zone fee; a slow server counts as down.
         frontend_dist_dir: Folder of the built frontend (``npm run build``)
             that the API serves at ``/`` so the app and ``/api`` share one
             origin (docs/deployment/hostinger.md). Unset in
@@ -99,6 +124,7 @@ class Settings(BaseSettings):
     session_cookie_secure: bool | None = None
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     support_phone: str = OFFICIAL_SUPPORT_PHONE
+    delivery_location_bounds: str = DEFAULT_DELIVERY_LOCATION_BOUNDS
     support_whatsapp_enabled: bool = False
     pilot_water_category: Literal["potable", "utility"] = "utility"
     quote_validity_minutes: int = Field(default=60, ge=1, le=24 * 60)
@@ -108,6 +134,8 @@ class Settings(BaseSettings):
     termii_sender_id: str | None = Field(default=None, min_length=3, max_length=11)
     termii_channel: Literal["dnd", "generic"] = "dnd"
     sms_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    osrm_base_url: str = ""
+    osrm_timeout_seconds: float = Field(default=2.0, gt=0, le=10)
     frontend_dist_dir: Path | None = None
 
     @field_validator("database_url")
@@ -138,6 +166,24 @@ class Settings(BaseSettings):
             raise ValueError("SUPPORT_PHONE must be in E.164 form, for example +2348133774902")
         return value
 
+    @field_validator("delivery_location_bounds")
+    @classmethod
+    def _validate_delivery_location_bounds(cls, value: str) -> str:
+        message = (
+            "DELIVERY_LOCATION_BOUNDS must be four numbers, south,west,north,east, "
+            "inside Nigeria with south below north and west below east"
+        )
+        try:
+            south, west, north, east = (float(part) for part in value.split(","))
+        except ValueError:
+            raise ValueError(message) from None
+        if not (
+            NIGERIA_SOUTH <= south < north <= NIGERIA_NORTH
+            and NIGERIA_WEST <= west < east <= NIGERIA_EAST
+        ):
+            raise ValueError(message)
+        return value.strip()
+
     @field_validator("termii_base_url")
     @classmethod
     def _validate_termii_base_url(cls, value: str) -> str:
@@ -145,6 +191,17 @@ class Settings(BaseSettings):
         if parts.scheme != "https" or not parts.netloc:
             raise ValueError("TERMII_BASE_URL must be an https URL")
         return value.strip().rstrip("/")
+
+    @field_validator("osrm_base_url")
+    @classmethod
+    def _validate_osrm_base_url(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            return ""
+        parts = urlsplit(value)
+        if parts.scheme not in {"http", "https"} or not parts.netloc:
+            raise ValueError("OSRM_BASE_URL must be empty or an absolute http(s) URL")
+        return value.rstrip("/")
 
     @field_validator("frontend_dist_dir")
     @classmethod
@@ -190,6 +247,14 @@ class Settings(BaseSettings):
         if self.sms_provider == "mock":
             raise ValueError("SMS_PROVIDER must be termii in production")
         return self
+
+    @property
+    def delivery_bounds(self) -> DeliveryBounds:
+        """The validated ``DELIVERY_LOCATION_BOUNDS`` box."""
+        south, west, north, east = (
+            float(part) for part in self.delivery_location_bounds.split(",")
+        )
+        return DeliveryBounds(south, west, north, east)
 
     @property
     def is_production(self) -> bool:

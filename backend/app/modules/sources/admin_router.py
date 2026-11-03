@@ -19,6 +19,7 @@ from app.modules.sources import admin
 from app.modules.sources.admin_schemas import (
     ActivationStatusWrite,
     ActivationWrite,
+    SourceLocationBody,
     WaterSourceCreate,
     WaterSourceListRead,
     WaterSourceRead,
@@ -27,12 +28,18 @@ from app.modules.sources.admin_schemas import (
     source_read,
 )
 from app.modules.sources.models import ActivationStatus
-from app.modules.sources.service import SourceWithActivations
+from app.modules.sources.service import UNSET, SourceLocation, SourceWithActivations
 from app.shared.lagos_time import lagos_today
 
 router = APIRouter(prefix="/admin/water-sources", tags=["admin water sources"])
 
 DbSession = Annotated[AsyncSession, Depends(get_db_session)]
+
+
+def _location(body: SourceLocationBody | None) -> SourceLocation | None:
+    """The service's pickup point for a request's ``location`` (None clears or omits it)."""
+    return SourceLocation(body.latitude, body.longitude) if body is not None else None
+
 
 _AUTH_ERRORS = {
     HTTPStatus.UNAUTHORIZED: {"model": ErrorResponse},
@@ -69,6 +76,7 @@ async def add_water_source(
             approximate_location=body.approximate_location,
             kind=body.kind,
             is_simulated=body.is_simulated,
+            location=_location(body.location),
         )
     )
 
@@ -86,6 +94,7 @@ async def edit_water_source(
             name=body.name,
             approximate_location=body.approximate_location,
             kind=body.kind,
+            location=_location(body.location) if "location" in body.model_fields_set else UNSET,
         )
     )
 

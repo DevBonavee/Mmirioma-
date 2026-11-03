@@ -252,6 +252,18 @@ export function choiceLitres(choice: WaterChoice): number | null {
   return choice.tank_size_gallons === null ? null : litresFromGallons(choice.tank_size_gallons)
 }
 
+/**
+ * The optional map pin of a delivery address (docs/api/delivery-location.md,
+ * #340): WGS 84 degrees and how the point was set. Personal data, handled like
+ * the address it belongs to.
+ */
+export interface DeliveryLocation {
+  latitude: number
+  longitude: number
+  /** `device_location`: the phone's position, not moved. `map_pin`: placed or moved by hand. */
+  source: 'device_location' | 'map_pin'
+}
+
 export interface SavedAddress {
   id: string
   /** "Home", "Office", "Mum's House"... */
@@ -259,6 +271,8 @@ export interface SavedAddress {
   address: string
   landmark: string | null
   is_default: boolean
+  /** The pin saved with the address (#345), or `null`/absent when it has none. */
+  location?: DeliveryLocation | null
   /**
    * The area (service zone) the customer picked for it (FR-020). Sent by the
    * real API; mock addresses have none. `is_active` false: no longer served,

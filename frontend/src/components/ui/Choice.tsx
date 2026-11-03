@@ -1,6 +1,7 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useId, type CSSProperties, type InputHTMLAttributes, type ReactNode, type Ref } from 'react'
 import { cx } from '../../lib/cx'
 import { CheckIcon } from '../icons/icons'
+import { FieldMessages } from './Field'
 
 interface OptionTileProps {
   /** Whether this option is chosen: `aria-pressed`, blue border, tint, shadow and (by default) a tick. */
@@ -103,5 +104,47 @@ export function RadioRow({ checked, onSelect, className, children }: RadioRowPro
       <RadioDot on={checked} />
       {children}
     </button>
+  )
+}
+
+interface CheckboxRowProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'className' | 'children'> {
+  ref?: Ref<HTMLInputElement>
+  className?: string
+  /** The label. It may hold links, which open without ticking the box. */
+  children: ReactNode
+  /** Message under the row; also gives the row the error border. */
+  error?: string
+}
+
+/**
+ * Checkbox row from the design system: a bordered row at least 48 px tall with a
+ * 24 px native control. The whole row is the tap target. Works with React Hook
+ * Form's `register()`.
+ */
+export function CheckboxRow({ ref, className, children, error, id, ...input }: CheckboxRowProps) {
+  const autoId = useId()
+  const fieldId = id ?? autoId
+  return (
+    <div className={className}>
+      <label
+        htmlFor={fieldId}
+        className={cx(
+          'flex min-h-12 cursor-pointer items-start gap-3 rounded-input border-2 border-line px-3 py-2.5 text-[14px] has-checked:border-primary has-checked:bg-sky',
+          error && 'border-[#DC2626] bg-[#FEF2F2]',
+        )}
+      >
+        <input
+          ref={ref}
+          id={fieldId}
+          type="checkbox"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${fieldId}-error` : undefined}
+          className="mt-px size-6 shrink-0 accent-primary"
+          {...input}
+        />
+        <span>{children}</span>
+      </label>
+      <FieldMessages id={fieldId} error={error} />
+    </div>
   )
 }

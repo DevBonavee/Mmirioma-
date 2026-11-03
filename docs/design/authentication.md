@@ -94,13 +94,14 @@ Client messages (from the prompt):
 | C2 success notice | "A team member will confirm your phone number before your first delivery is confirmed." |
 | X6 banner | "We'll confirm your phone number before your first delivery." |
 | Phone helper (C2) | "We'll use this to contact you about deliveries." |
-| Password helper (C2) | "At least 8 characters." |
+| Password helper (C2) | Replaced by the checklist ([sign-up-password-and-terms.md](sign-up-password-and-terms.md)) |
 | Forgot password | Customer: "Forgot your password? Contact us" (link). Staff: "Forgot your password? Ask the technical lead to reset it." (plain text). Driver: "Forgot your password? Call the dispatcher." (opens the dialler) |
 
 Copy written by the design (not in the prompt; approved with this design):
 
 - "Enter your full name." (name error on C2)
-- "Use 8 to 128 characters." (password error on C2)
+- The password error on C2 is now the server's message naming what is missing
+  (#332, [auth.md](../api/auth.md#the-password-rule)).
 - C1 sentence: "We bring water to your door in Enugu, and the driver unloads it
   for you."
 - "Got it" on the C2 success notice

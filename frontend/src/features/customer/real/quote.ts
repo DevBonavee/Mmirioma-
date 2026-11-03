@@ -51,7 +51,7 @@ export function quoteCreateFromRequest(request: PriceRequest): QuoteCreate {
 /** The areas a customer can pick, by name. */
 export async function listServiceZones(client: ApiClient = apiClient): Promise<AreaOption[]> {
   const list = await fetchServiceZones(undefined, client)
-  return list.items.map((z) => ({ id: z.id, name: z.name }))
+  return list.items.map((z) => (z.centre ? { id: z.id, name: z.name, centre: z.centre } : { id: z.id, name: z.name }))
 }
 
 /**

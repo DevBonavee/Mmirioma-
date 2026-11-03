@@ -33,7 +33,7 @@ describe('tankCapacityError', () => {
 })
 
 describe('tanker sign-up (mock)', () => {
-  const base = { name: 'Ngozi Eze', password: 'long-enough', vehicle_type: 'tanker' as const, plate: 'ENU 900 XA' }
+  const base = { name: 'Ngozi Eze', password: 'Sample-Passw0rd-1', accepted_terms: true, vehicle_type: 'tanker' as const, plate: 'ENU 900 XA' }
   const withArea = async () => ({ ...base, service_zone_id: (await listSignupAreas())[0].id })
 
   it('saves the typed capacity', async () => {

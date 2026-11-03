@@ -2,7 +2,8 @@
 // jsdom provides sessionStorage, which the mock store uses.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ApiError } from '../lib/api/client'
-import { mockGetMe, mockLogin, mockLogout, mockRegister } from './authMock'
+import type { RegisterInput } from '../lib/api/auth'
+import { mockGetMe, mockLogin, mockLogout, mockChangePassword, mockRegister } from './authMock'
 import { addAddress, createOrder, demoAdvanceOrder, getOrder, getPoints, listAddresses, removeAddress, submitFeedback } from './customerMock'
 import { resetMockDb } from './db'
 import { ANY_PLACE, deliveryFeeFor, DEFAULT_PRICE_LIST, pointsFor, quoteFor } from './pricing'
@@ -85,10 +86,46 @@ describe('mock auth', () => {
     await expect(mockLogin({ phone: '08099999999', password: 'nope-nope' })).rejects.toMatchObject({ code: 'invalid_credentials' })
   })
 
+  it.each([
+    ['Aa1!aaa', 'Your password needs at least 8 characters.'],
+    ['A1!' + 'a'.repeat(126), 'Use 128 characters or fewer.'],
+    ['password1!', 'Your password needs an uppercase letter.'],
+    ['Password!!', 'Your password needs a number.'],
+    ['Password11', 'Your password needs a symbol.'],
+  ])('refuses the weak password %s as the server does (#332)', async (password, msg) => {
+    await expect(mockRegister({ name: 'X', phone: '0809 000 0020', password, accepted_terms: true })).rejects.toMatchObject({
+      status: 422,
+      code: 'validation_error',
+      details: [{ loc: ['body', 'password'], msg, type: 'value_error' }],
+    })
+  })
+
+  it('refuses a sign-up without the acceptance as the server does (#332)', async () => {
+    const input = { name: 'X', phone: '0809 000 0021', password: 'Sample-Passw0rd' }
+    await expect(mockRegister({ ...input, accepted_terms: false })).rejects.toMatchObject({
+      status: 422,
+      code: 'validation_error',
+      details: [{ loc: ['body', 'accepted_terms'], msg: 'Confirm you are 18 or older and accept the Terms of Service and Privacy Notice.', type: 'value_error' }],
+    })
+    await expect(mockRegister(input as RegisterInput)).rejects.toMatchObject({
+      status: 422,
+      details: [{ loc: ['body', 'accepted_terms'], msg: 'Field required', type: 'missing' }],
+    })
+  })
+
+  it('refuses a weak new password on change password, and takes a weak current one (#332)', async () => {
+    await mockRegister({ name: 'X', phone: '0809 000 0022', password: 'Sample-Passw0rd', accepted_terms: true })
+    await expect(mockChangePassword('Sample-Passw0rd', 'password1!')).rejects.toMatchObject({
+      status: 422,
+      details: [{ loc: ['body', 'new_password'], msg: 'Your password needs an uppercase letter.', type: 'value_error' }],
+    })
+    await expect(mockChangePassword('Sample-Passw0rd', 'Another-Passw0rd')).resolves.toBeUndefined()
+  })
+
   it('registers new customers unverified and rejects a used phone', async () => {
-    const s = await mockRegister({ name: ' New Person ', phone: '0809 000 0002', password: 'long-enough' })
+    const s = await mockRegister({ name: ' New Person ', phone: '0809 000 0002', password: 'Sample-Passw0rd-1', accepted_terms: true })
     expect(s.user).toMatchObject({ name: 'New Person', phone: '+2348090000002', phone_verified: false, role: 'customer' })
-    await expect(mockRegister({ name: 'X', phone: '08031234567', password: 'long-enough' })).rejects.toMatchObject({
+    await expect(mockRegister({ name: 'X', phone: '08031234567', password: 'Sample-Passw0rd-1', accepted_terms: true })).rejects.toMatchObject({
       status: 409,
       code: 'phone_already_registered',
     })
@@ -127,7 +164,7 @@ describe('mock orders', () => {
   })
 
   it("hides other customers' orders behind the same 404", async () => {
-    await mockRegister({ name: 'Other', phone: '0809 000 0003', password: 'long-enough' })
+    await mockRegister({ name: 'Other', phone: '0809 000 0003', password: 'Sample-Passw0rd-1', accepted_terms: true })
     await expect(getOrder('MO-7KQ2M9XH4T')).rejects.toMatchObject({ status: 404, code: 'order_not_found' })
   })
 
@@ -149,7 +186,7 @@ describe('mock orders', () => {
 
 describe('mock addresses', () => {
   it('makes the first address the default and protects the default from removal', async () => {
-    await mockRegister({ name: 'Fresh', phone: '0809 000 0004', password: 'long-enough' })
+    await mockRegister({ name: 'Fresh', phone: '0809 000 0004', password: 'Sample-Passw0rd-1', accepted_terms: true })
     const a = await addAddress({ label: 'Home', address: '1 New Road, Enugu', landmark: null, zone_id: 'ar-gra', make_default: false })
     expect(a.is_default).toBe(true)
     await expect(removeAddress(a.id)).rejects.toMatchObject({ code: 'default_address' })

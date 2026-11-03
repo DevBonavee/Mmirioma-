@@ -3,8 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>MmiriOma</title>
-    <meta name="description" content="Order water in Enugu and have it poured into your tank." />
+    <!-- Search and sharing tags for the landing page (/). Every path is served this same file, so
+         src/features/marketing/useMarketingPage.ts swaps the title, description, canonical and share
+         tags for the page being shown. See docs/features/seo.md. -->
+    <title>MmiriOma | Water delivery in Enugu</title>
+    <meta name="description" content="Order water by keke or tanker in Enugu. We pour it into your drums or tank, and you see the price before you confirm." />
+    <link rel="canonical" href="https://mmiriomadelivery.com/" />
     <meta name="theme-color" content="#1570D8" />
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
@@ -17,10 +21,34 @@
     <!-- Link previews when the site is shared (read from this static file, not from JavaScript). -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MmiriOma" />
+    <meta property="og:locale" content="en_NG" />
+    <meta property="og:url" content="https://mmiriomadelivery.com/" />
     <meta property="og:title" content="MmiriOma | Water delivery in Enugu" />
     <meta property="og:description" content="Order water by keke or tanker in Enugu and have it poured into your drums or tank." />
-    <meta property="og:image" content="/marketing/hero-scene.jpg" />
+    <meta property="og:image" content="https://mmiriomadelivery.com/marketing/hero-scene.jpg" />
+    <meta property="og:image:width" content="2202" />
+    <meta property="og:image:height" content="969" />
+    <meta property="og:image:alt" content="A blue MmiriOma keke loaded with water cans beside a white MmiriOma water tanker in front of a modern house" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MmiriOma | Water delivery in Enugu" />
+    <meta name="twitter:description" content="Order water by keke or tanker in Enugu and have it poured into your drums or tank." />
+    <meta name="twitter:image" content="https://mmiriomadelivery.com/marketing/hero-scene.jpg" />
+
+    <!-- Only facts the team has confirmed: the name, the site and the city served. No phone: the official
+         support number comes from one central configuration value (FR-055), which a static file cannot
+         read. No hours, street address, coordinates, rating or social links until they exist. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "MmiriOma",
+        "url": "https://mmiriomadelivery.com/",
+        "description": "Water delivery by keke or tanker in Enugu.",
+        "image": "https://mmiriomadelivery.com/marketing/hero-scene.jpg",
+        "areaServed": { "@type": "City", "name": "Enugu" },
+        "address": { "@type": "PostalAddress", "addressLocality": "Enugu", "addressCountry": "NG" }
+      }
+    </script>
 
     <!-- Plus Jakarta Sans. If this fails, src/styles/fonts.css serves our own copy. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

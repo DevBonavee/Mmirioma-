@@ -31,6 +31,7 @@ from app.modules.auth.models import User, UserRole
 from app.modules.customers import requests
 from app.modules.customers.models import (
     SupportRequest,
+    SupportRequestSource,
     SupportRequestStatus,
     SupportRequestType,
 )
@@ -90,7 +91,8 @@ def support_view(body: dict[str, Any]) -> requests.AdminSupportView:
         request=SupportRequest(
             id=uuid.uuid4(),
             reference=body["reference"],
-            user_id=uuid.UUID(customer["id"]),
+            source=SupportRequestSource(body["source"]),
+            user_id=uuid.UUID(customer["id"]) if customer["id"] else None,
             type=SupportRequestType(body["type"]),
             message=body["message"],
             status=SupportRequestStatus(body["status"]),
@@ -102,7 +104,11 @@ def support_view(body: dict[str, Any]) -> requests.AdminSupportView:
         ),
         order_reference=body["order_reference"],
         is_simulated=body["is_simulated"],
-        customer=User(id=uuid.UUID(customer["id"]), name=customer["name"], phone=customer["phone"]),
+        customer=requests.SupportSender(
+            id=uuid.UUID(customer["id"]) if customer["id"] else None,
+            name=customer["name"],
+            phone=customer["phone"],
+        ),
         resolver=resolver,
     )
 

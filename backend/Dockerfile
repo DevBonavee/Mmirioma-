@@ -12,6 +12,8 @@ FROM node:24-bookworm-slim AS frontend
 ARG VITE_API_BASE_URL
 ARG VITE_SUPPORT_PHONE=
 ARG VITE_SUPPORT_WHATSAPP=
+# The Contact page's message form (#344): off unless "true" (frontend/src/lib/features.ts).
+ARG VITE_CONTACT_FORM_ENABLED=false
 RUN test -n "$VITE_API_BASE_URL" || (echo "Set the VITE_API_BASE_URL build variable" >&2 && exit 1)
 
 WORKDIR /repo/frontend

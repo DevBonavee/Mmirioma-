@@ -87,7 +87,7 @@ export function Orders() {
       }}
     >
       <SplitLayout
-        sideWidth="lg:w-[380px]"
+        sideWidth="w-[380px]"
         main={
           <>
             <PageHead
@@ -116,7 +116,7 @@ export function Orders() {
             {list.isPending && <LoadingBlock label="Loading orders" />}
             {list.isError && <ErrorBlock error={list.error} onRetry={() => list.refetch()} />}
             {list.isSuccess && (
-              <Card className="rise-3 overflow-x-auto px-1 py-1.5">
+              <Card className="rise-3 px-1 py-1.5">
                 <DataTable<AdminOrder>
                   caption="Orders"
                   rows={orders}

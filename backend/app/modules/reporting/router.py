@@ -139,10 +139,18 @@ async def get_dashboard(
 async def get_report(
     params: Annotated[ReportParams, Query()], admin: CurrentAdmin, db: DbSession
 ) -> AdminReportRead:
-    """Aggregates over today, 7 or 30 Lagos days; no customer data (FR-052, FR-053)."""
-    result = await service.report(db, range_name=params.range, simulated=params.simulated == "only")
+    """Aggregates over a preset or chosen Lagos days; no customer data (FR-052, FR-053)."""
+    range_name = params.range or "custom"
+    result = await service.report(
+        db,
+        range_name=range_name,
+        simulated=params.simulated == "only",
+        include_cancelled=params.include_cancelled,
+        from_day=params.from_,
+        to_day=params.to,
+    )
     return AdminReportRead(
-        range=params.range,
+        range=range_name,
         from_=result.from_day,
         to=result.to_day,
         is_simulated=result.is_simulated,

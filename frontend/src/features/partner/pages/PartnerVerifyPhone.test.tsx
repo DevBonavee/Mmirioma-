@@ -44,7 +44,8 @@ async function newRider() {
   await partnerSignup({
     name: 'Sample Rider',
     phone: '0800 000 0071',
-    password: 'sample-password-1',
+    password: 'Sample-Passw0rd-1',
+    accepted_terms: true,
     vehicle_type: 'keke',
     plate: 'ENU 123 AB',
     tank_gallons: null,

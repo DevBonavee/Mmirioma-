@@ -3,10 +3,11 @@
  * customers self-register, same error codes. Used only in mock mode.
  */
 import type { LoginInput, RegisterInput, Session, User } from '../lib/api/auth'
+import { passwordProblem } from '../lib/format/password'
 import { normalizeNigerianPhone } from '../lib/format/phone'
 import { mutate, read } from './db'
 import { emptyCustomerData, type MockState } from './seed'
-import { delay, mockError, newId } from './store'
+import { acceptedTermsDetail, delay, mockError, newId } from './store'
 
 /** Session lifetime: absolute, counted from sign-in, no sliding renewal (auth.md). */
 export const SESSION_DAYS = 7
@@ -62,8 +63,10 @@ export async function mockRegister(input: RegisterInput): Promise<Session> {
   const details: { loc: string[]; msg: string; type: string }[] = []
   if (!phone) details.push({ loc: ['body', 'phone'], msg: 'Enter a Nigerian mobile number', type: 'value_error' })
   if (name.length < 1 || name.length > 100) details.push({ loc: ['body', 'name'], msg: 'Enter your name', type: 'value_error' })
-  if (input.password.length < 8 || input.password.length > 128)
-    details.push({ loc: ['body', 'password'], msg: 'Use 8 to 128 characters', type: 'value_error' })
+  const passwordMessage = passwordProblem(input.password)
+  if (passwordMessage) details.push({ loc: ['body', 'password'], msg: passwordMessage, type: 'value_error' })
+  const termsDetail = acceptedTermsDetail(input.accepted_terms)
+  if (termsDetail) details.push(termsDetail)
   if (details.length) throw mockError(422, 'validation_error', 'Request validation failed', details)
   if (read().users.some((u) => u.phone === phone)) {
     throw mockError(409, 'phone_already_registered', 'This phone number already has an account')
@@ -107,8 +110,9 @@ export async function mockChangePassword(current: string, next: string): Promise
   const id = requireUserId()
   const user = read().users.find((u) => u.id === id)!
   if (user.password !== current) throw mockError(403, 'password_incorrect', 'Your password is not right')
-  if (next.length < 8 || next.length > 128) {
-    throw mockError(422, 'validation_error', 'Request validation failed', [{ loc: ['body', 'new_password'], msg: 'Use 8 to 128 characters', type: 'value_error' }])
+  const passwordMessage = passwordProblem(next)
+  if (passwordMessage) {
+    throw mockError(422, 'validation_error', 'Request validation failed', [{ loc: ['body', 'new_password'], msg: passwordMessage, type: 'value_error' }])
   }
   mutate((s) => {
     s.users.find((u) => u.id === id)!.password = next

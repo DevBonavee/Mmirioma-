@@ -9,8 +9,9 @@ default address.
 
 An order copies the address text when it is placed, so changing or removing
 a saved address never changes an order (FR-024). The SRS lists latitude and
-longitude as optional; they are left out until a screen collects them
-(admin-directory.md, "Data needed").
+longitude as optional; ``location`` and ``location_source`` hold them since
+#340 (docs/api/delivery-location.md). The admin directory does not return or
+accept them in the pilot.
 
 ``support_requests`` and ``deletion_requests``: docs/api/customer-account.md,
 "Support requests" and "Account deletion" (#82, part 4).
@@ -20,11 +21,27 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
-from sqlalchemy import Enum, ForeignKey, Index, String, UniqueConstraint, false, text
+from geoalchemy2 import WKBElement
+from sqlalchemy import (
+    CheckConstraint,
+    Enum,
+    ForeignKey,
+    Index,
+    String,
+    UniqueConstraint,
+    false,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.orders.models import DELIVERY_ADDRESS_MAX_LENGTH, LANDMARK_MAX_LENGTH
+from app.shared.location import (
+    location_constraints,
+    point_column,
+    source_column,
+    stored_properties,
+)
 
 #: Labels such as "Home" or "Mum's house": trimmed, 1-50 characters, on both
 #: the customer and the admin side (customer-account.md, decision 13).
@@ -46,6 +63,12 @@ class CustomerAddress(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         is_default: The address offered first. At most one per customer,
             enforced by the partial unique index below; the service keeps
             exactly one whenever the customer has any.
+        location: Optional map point (``geography(POINT, 4326)``), personal
+            data like the address. Null when the customer did not set one.
+        location_source: How the point was set (``device_location`` or
+            ``map_pin``); set exactly when ``location`` is.
+        location_latitude: Read-only, the point's latitude, loaded with the row.
+        location_longitude: Read-only, the point's longitude.
     """
 
     __tablename__ = "customer_addresses"
@@ -58,6 +81,7 @@ class CustomerAddress(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             unique=True,
             postgresql_where=text("is_default"),
         ),
+        *location_constraints("location", "location_source", "location"),
     )
 
     customer_id: Mapped[uuid.UUID] = mapped_column(
@@ -70,6 +94,11 @@ class CustomerAddress(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     address: Mapped[str] = mapped_column(String(DELIVERY_ADDRESS_MAX_LENGTH))
     landmark: Mapped[str | None] = mapped_column(String(LANDMARK_MAX_LENGTH))
     is_default: Mapped[bool] = mapped_column(default=False, server_default=false())
+    location: Mapped[WKBElement | None] = point_column()
+    location_source: Mapped[str | None] = source_column()
+    location_latitude: Mapped[float | None]
+    location_longitude: Mapped[float | None]
+    location_latitude, location_longitude = stored_properties(location)
 
 
 #: docs/api/customer-account.md, "Support request object".
@@ -77,6 +106,9 @@ SUPPORT_MESSAGE_MIN_LENGTH = 3
 SUPPORT_MESSAGE_MAX_LENGTH = 1000
 #: Reasons and staff notes (deletion reason, refusal reason, resolution note).
 NOTE_MAX_LENGTH = 500
+#: A website visitor's name and normalized phone (public-site.md, "Storage").
+CONTACT_NAME_MAX_LENGTH = 100
+CONTACT_PHONE_MAX_LENGTH = 16
 #: ``SR-`` or ``DR-`` and 8 Crockford base32 characters.
 REQUEST_REFERENCE_LENGTH = 11
 
@@ -89,6 +121,18 @@ class SupportRequestType(StrEnum):
     PAYMENT = "payment"
     RIDER = "rider"
     OTHER = "other"
+
+
+class SupportRequestSource(StrEnum):
+    """Where a support request came from (docs/api/public-site.md, #339).
+
+    ``app``: a signed-in customer (``user_id`` set). ``website``: a visitor
+    who filled in the public contact form (no account; ``contact_name`` and
+    ``contact_phone`` set).
+    """
+
+    APP = "app"
+    WEBSITE = "website"
 
 
 class SupportRequestStatus(StrEnum):
@@ -138,15 +182,26 @@ class SupportRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     Attributes:
         reference: ``SR-`` and 8 random characters, not sequential, so
             requests cannot be counted or probed (NFR-002).
-        user_id: The customer. RESTRICT: the privacy tool removes or blanks
-            requests before it deletes or anonymizes an account.
+        source: :class:`SupportRequestSource`. An ``app`` row has a
+            ``user_id`` and an ``idempotency_key`` and no contact fields; a
+            ``website`` row has both contact fields and neither of the other
+            two (the ``source_shape`` check).
+        user_id: The customer, or null for a ``website`` request. RESTRICT:
+            the privacy tool removes or blanks requests before it deletes or
+            anonymizes an account.
+        contact_name: A website visitor's name (1-100 characters), or null.
+        contact_phone: A website visitor's phone in E.164 form, or null.
+            Both contact fields are personal data (NFR-003) and are never
+            logged; the account-based privacy steps do not reach them, only
+            the 3-years-after-resolution deletion does.
         order_id: The customer's order it is about, or null. RESTRICT.
         type: :class:`SupportRequestType`.
         message: What the customer wrote, 3-1000 characters. Replaced by
             the privacy tool when the account is anonymized.
         status: :class:`SupportRequestStatus`.
         idempotency_key: The client's key; a retry with the same key returns
-            the same request (unique per customer).
+            the same request (unique per customer). Null for a ``website``
+            request, which has no key (public-site.md, decision 4).
         resolved_at: When staff resolved it.
         resolved_by: The admin who resolved it.
         resolution_note: The admin's note (docs/api/admin-operations.md,
@@ -154,12 +209,30 @@ class SupportRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """
 
     __tablename__ = "support_requests"
-    __table_args__ = (UniqueConstraint("user_id", "idempotency_key"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "idempotency_key"),
+        # The two shapes never mix: the database, not the code, keeps a
+        # website request without an account and an app request with one.
+        CheckConstraint(
+            "(source = 'app' AND user_id IS NOT NULL AND idempotency_key IS NOT NULL"
+            " AND contact_name IS NULL AND contact_phone IS NULL)"
+            " OR (source = 'website' AND user_id IS NULL AND idempotency_key IS NULL"
+            " AND contact_name IS NOT NULL AND contact_phone IS NOT NULL)",
+            name="source_shape",
+        ),
+    )
 
     reference: Mapped[str] = mapped_column(String(REQUEST_REFERENCE_LENGTH), unique=True)
-    user_id: Mapped[uuid.UUID] = mapped_column(
+    source: Mapped[SupportRequestSource] = mapped_column(
+        _str_enum(SupportRequestSource, "support_request_source", 10),
+        default=SupportRequestSource.APP,
+        server_default=SupportRequestSource.APP.value,
+    )
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True
     )
+    contact_name: Mapped[str | None] = mapped_column(String(CONTACT_NAME_MAX_LENGTH))
+    contact_phone: Mapped[str | None] = mapped_column(String(CONTACT_PHONE_MAX_LENGTH))
     order_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("orders.id", ondelete="RESTRICT"), index=True
     )
@@ -171,7 +244,7 @@ class SupportRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         _str_enum(SupportRequestStatus, "support_request_status", 10),
         default=SupportRequestStatus.OPEN,
     )
-    idempotency_key: Mapped[uuid.UUID]
+    idempotency_key: Mapped[uuid.UUID | None]
     resolved_at: Mapped[datetime | None] = mapped_column(default=None)
     resolved_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), default=None

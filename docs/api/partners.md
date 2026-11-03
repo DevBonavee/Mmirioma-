@@ -171,7 +171,8 @@ session.
 {
   "name": "Sample Driver",
   "phone": "08000000302",
-  "password": "sample-password",
+  "password": "Sample-Passw0rd",
+  "accepted_terms": true,
   "delivery_type": "tanker",
   "plate": "enu 456 cd",
   "declared_capacity_gallons": 4000,
@@ -182,6 +183,7 @@ session.
 | Field | Rule |
 | --- | --- |
 | `name`, `phone`, `password` | As `POST /auth/register` ([auth.md](auth.md#identifier-and-password-rules)) |
+| `accepted_terms` | Required and must be `true`, as `POST /auth/register`; the time and terms version are stored ([auth.md](auth.md#recorded-acceptance), #332) |
 | `delivery_type` | `keke` or `tanker` |
 | `plate` | Trimmed and upper-cased, then 4 to 15 characters of letters, digits, spaces and hyphens. No check of the Nigerian plate format: the admin checks the real plate at approval ([decision 3](#open-questions)) |
 | `declared_capacity_gallons` | Tanker: required, a whole number from 500 to 20,000 (`tankCapacity.ts`: 500 is the smallest tanker order; 20,000 only catches typos). Keke: must be `null` or absent |

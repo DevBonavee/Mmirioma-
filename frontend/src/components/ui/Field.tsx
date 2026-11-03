@@ -15,7 +15,7 @@ interface FieldShellProps {
   error?: string
 }
 
-function FieldMessages({ id, hint, error }: { id: string; hint?: ReactNode; error?: string }) {
+export function FieldMessages({ id, hint, error }: { id: string; hint?: ReactNode; error?: string }) {
   return (
     <>
       {hint && !error && (

@@ -91,13 +91,30 @@ export function PageTabs({
 /**
  * The design's `.pill` filter chips: white with a border, chosen pill is solid
  * ink. `wrap={false}` keeps them on one line that scrolls sideways (c-orders).
+ * `largeHit` raises the invisible hit area from 44 to 48 px (the design system's
+ * minimum, `--spacing-touch`); the chips look the same. A row that scrolls sideways
+ * (`wrap={false}`) clips whatever is outside its box, so there the box is padded 5 px
+ * above and 7 px below and pulled back by -5 px margins: the row takes the same
+ * 40 px of the layout as before and the 48 px area is not cut off.
  */
-export function Pills<T extends string>({ label, options, value, onChange, className, wrap = true }: GroupProps<T> & { wrap?: boolean }) {
+export function Pills<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  className,
+  wrap = true,
+  largeHit = false,
+}: GroupProps<T> & { wrap?: boolean; largeHit?: boolean }) {
   return (
     <div
       role="tablist"
       aria-label={label}
-      className={cx('flex gap-2', wrap ? 'flex-wrap' : 'overflow-x-auto pb-0.5 [scrollbar-width:none]', className)}
+      className={cx(
+        'flex gap-2',
+        wrap ? 'flex-wrap' : cx('overflow-x-auto [scrollbar-width:none]', largeHit ? '-mt-[5px] -mb-[5px] pt-[5px] pb-[7px]' : 'pb-0.5'),
+        className,
+      )}
     >
       {options.map((o) => {
         const on = o.value === value
@@ -109,7 +126,7 @@ export function Pills<T extends string>({ label, options, value, onChange, class
             aria-selected={on}
             onClick={() => onChange(o.value)}
             className={cx(
-              'mo-pill hit-44 shrink-0',
+              'mo-pill shrink-0', largeHit ? 'hit-48' : 'hit-44',
               on ? 'border-0 bg-ink text-white' : 'border-[1.5px] border-line bg-white text-slate hover:border-primary hover:text-ink',
             )}
           >

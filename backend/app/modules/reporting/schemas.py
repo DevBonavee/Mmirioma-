@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from app.modules.auth.models import UserRole
 from app.shared.lagos_time import lagos_today
@@ -72,11 +72,60 @@ class DashboardParams(BaseModel):
         return value
 
 
-class ReportParams(BaseModel):
-    """Query of ``GET /admin/reports``: ``range`` is required (the screen's pills)."""
+#: Longest custom report range, in Lagos days (contract amendment of #333).
+REPORT_CUSTOM_MAX_DAYS = 90
 
-    range: Literal["today", "7d", "30d"]
+
+class ReportParams(BaseModel):
+    """Query of ``GET /admin/reports``.
+
+    Send either ``range`` (the screen's pills) or both ``from`` and ``to``
+    (a custom range of Lagos dates, both inclusive); never both, never neither
+    (contract decision 7 and the #333 amendment).
+
+    Attributes:
+        range: ``today``, ``7d`` or ``30d``; absent for a custom range.
+        from_: First Lagos date of a custom range (query name ``from``).
+        to: Last Lagos date of a custom range; today or earlier, at most
+            :data:`REPORT_CUSTOM_MAX_DAYS` days after ``from``.
+        simulated: ``exclude`` (default) or ``only``.
+        include_cancelled: Count cancelled orders in ``by_zone`` and
+            ``by_delivery_type``; off by default.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    range: Literal["today", "7d", "30d"] | None = None
+    from_: dt.date | None = Field(None, alias="from")
+    to: dt.date | None = None
     simulated: SimulatedFilter = "exclude"
+    include_cancelled: bool = False
+
+    @field_validator("to")
+    @classmethod
+    def _valid_end(cls, value: dt.date | None, info: ValidationInfo) -> dt.date | None:
+        """Check ``to`` against today and ``from``, so the error names ``to``."""
+        if value is None:
+            return value
+        if value > lagos_today():
+            raise ValueError("The end date cannot be in the future")
+        start = info.data.get("from_")
+        if start is not None:
+            if start > value:
+                raise ValueError("The start date must be on or before the end date")
+            if (value - start).days + 1 > REPORT_CUSTOM_MAX_DAYS:
+                raise ValueError(f"Choose {REPORT_CUSTOM_MAX_DAYS} days or fewer")
+        return value
+
+    @model_validator(mode="after")
+    def _range_or_dates(self) -> ReportParams:
+        """Require exactly one of ``range`` or the ``from`` and ``to`` pair."""
+        has_dates = self.from_ is not None or self.to is not None
+        if self.range is not None and has_dates:
+            raise ValueError("Send either range or from and to, not both")
+        if self.range is None and (self.from_ is None or self.to is None):
+            raise ValueError("Send range, or both from and to")
+        return self
 
 
 class ActivityParams(BaseModel):
@@ -180,7 +229,7 @@ class SourceRowRead(BaseModel):
 class AdminReportRead(BaseModel):
     """``GET /admin/reports`` (``AdminReportRead``): aggregates and names only (FR-053)."""
 
-    range: Literal["today", "7d", "30d"]
+    range: Literal["today", "7d", "30d", "custom"]
     from_: dt.date = Field(serialization_alias="from")
     to: dt.date
     is_simulated: bool

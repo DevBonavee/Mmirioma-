@@ -1,10 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { HomeLogo } from '../../components/brand/HomeLogo'
 import { cx } from '../../lib/cx'
 import { InstallHowToSheet } from '../pwa/InstallParts'
 import { appFor, type AppKind } from '../pwa/manifest'
 import { useInstallAction } from '../pwa/useInstallAction'
-import { CONTACT, NAV_LINKS, ORDER_CTA } from './content'
+import { BRAND_LINE, CONTACT, NAV_LINKS, ORDER_CTA } from './content'
 import { MailIcon, MenuBarsIcon, PhoneIcon, PinIcon } from './icons'
 
 /**
@@ -88,14 +89,16 @@ export function Oma() {
 }
 
 /**
- * Site header (landing and FAQ). It stays stuck to the top while the page
+ * Site header (every public page). It stays stuck to the top while the page
  * scrolls, so the order button is always one tap away. Below 960 px the
  * links move into a menu panel under the header; below 600 px the order
- * button moves into it too. The panel closes on a link tap, on Escape and on
+ * button moves into it too. The gaps narrow below 1180 and 1100 px so the
+ * eight links and the button fit on one line from 961 px (measured;
+ * docs/features/public-pages.md, "Header with eight links"). The panel closes on a link tap, on Escape and on
  * any navigation, and the page behind it does not scroll while it is open
  * (README "Behaviour").
  */
-export function MarketingHeader({ current }: { current: 'home' | 'faq' }) {
+export function MarketingHeader({ current }: { current: 'home' | 'faq' | 'about' | 'contact' }) {
   const location = useLocation()
   // The menu belongs to the location it was opened on, so any navigation
   // (a link, Back) closes it without an effect.
@@ -114,22 +117,22 @@ export function MarketingHeader({ current }: { current: 'home' | 'faq' }) {
     }
   }, [open])
 
-  const isCurrent = (to: string) => (current === 'faq' ? to === '/faq' : to === '/')
+  const isCurrent = (to: string) => to === { home: '/', faq: '/faq', about: '/about', contact: '/contact' }[current]
 
   return (
     <header className="sticky top-0 z-30 border-0 border-b border-solid border-[#E6EEF7] bg-white/95 backdrop-blur-sm">
-      <div className="mk-wrap flex min-h-[76px] items-center justify-between gap-6">
-        <Link to="/" aria-label="MmiriOma home" className="flex shrink-0 items-center">
-          <BrandLogo className="h-11" />
-        </Link>
-        <nav aria-label="Main" className="flex items-center gap-[30px] text-[15px] font-medium max-[960.98px]:hidden">
+      <div className="mk-wrap flex min-h-[76px] items-center justify-between gap-4 min-[1100px]:gap-6">
+        <HomeLogo className="shrink-0">
+          <BrandLogo className="h-9 min-[1100px]:h-11" />
+        </HomeLogo>
+        <nav aria-label="Main" className="flex items-center gap-2 text-[14px] font-medium min-[1100px]:gap-4 min-[1100px]:text-[15px] min-[1180px]:gap-6 max-[960.98px]:hidden">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.label}
               to={l.to}
               aria-current={isCurrent(l.to) ? 'page' : undefined}
               className={cx(
-                'inline-flex min-h-11 items-center no-underline',
+                'inline-flex min-h-11 items-center whitespace-nowrap no-underline',
                 isCurrent(l.to) ? 'font-bold text-primary hover:text-primary' : 'text-slate hover:text-ink',
               )}
             >
@@ -192,6 +195,8 @@ export function MarketingHeader({ current }: { current: 'home' | 'faq' }) {
 }
 
 const FOOT_LINK = 'text-mk-foot-text no-underline hover:text-white'
+/** The pages in the short footer's Quick Links; the full footer lists every `NAV_LINKS` entry. */
+const SHORT_FOOTER_LINKS = ['/', '/about', '/faq', '/contact']
 
 function FootColumn({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -214,11 +219,13 @@ export function MarketingFooter({ variant }: { variant: 'full' | 'short' }) {
       <div className="mk-wrap flex flex-col gap-12 pt-16 pb-7">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,160px),1fr))] gap-x-8 gap-y-10">
           <div className="mk-foot-brand flex max-w-[360px] min-w-0 flex-col gap-[18px]">
-            <BrandLogo dark className="h-[46px] self-start" />
-            <p className="m-0 text-[15px] leading-[1.65]">Water delivery for homes, offices and businesses in Enugu. Poured into your drums or tank.</p>
+            <HomeLogo className="self-start">
+              <BrandLogo dark className="h-[46px]" />
+            </HomeLogo>
+            <p className="m-0 text-[15px] leading-[1.65]">{BRAND_LINE}</p>
           </div>
           <FootColumn label="Quick Links">
-            {(full ? NAV_LINKS : NAV_LINKS.filter((l) => l.to === '/' || l.to === '/faq')).map((l) => (
+            {(full ? NAV_LINKS : NAV_LINKS.filter((l) => SHORT_FOOTER_LINKS.includes(l.to))).map((l) => (
               <Link key={l.label} to={l.to} className={FOOT_LINK}>
                 {l.label}
               </Link>

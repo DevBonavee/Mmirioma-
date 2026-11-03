@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import auditSample from '../../../../../docs/api/examples/admin-audit-logs-page.json'
 import notificationsSample from '../../../../../docs/api/examples/admin-notifications-page.json'
 import alreadyResolvedSample from '../../../../../docs/api/examples/error-support-request-already-resolved.json'
+import websiteSample from '../../../../../docs/api/examples/admin-support-request-website.json'
 import requestSample from '../../../../../docs/api/examples/admin-support-request.json'
 import requestsPageSample from '../../../../../docs/api/examples/admin-support-requests-page.json'
 import { createApiClient } from '../../../lib/api/client'
@@ -36,6 +37,23 @@ function clientByPath(routes: Record<string, { body: unknown; status?: number }>
 const OPEN = requestsPageSample.items[0] as AdminSupportRequest
 const RESOLVED = requestSample as AdminSupportRequest
 
+describe('getIssuePeople (#365)', () => {
+  const VISITOR = { name: 'Sample Visitor', role: 'customer', phone: '+2348000000001' }
+
+  it('calls the one contact of a website message a "Website visitor", never a "Customer"', async () => {
+    const { client } = clientByPath({ 'GET /admin/support-requests/SR-6H2P8W3D': { body: { ...websiteSample, contacts: [VISITOR] } } })
+    await expect(getIssuePeople('SR-6H2P8W3D', client)).resolves.toEqual([{ name: 'Sample Visitor', role: 'Website visitor', phone: '+2348000000001' }])
+  })
+
+  it('still calls the contact of an app request a "Customer"', async () => {
+    const { client } = clientByPath({ 'GET /admin/support-requests/SR-4K7M2Q9X': { body: { ...requestSample, contacts: [VISITOR, { name: 'Sample Driver One', role: 'driver', phone: '+2348000000011' }] } } })
+    await expect(getIssuePeople('SR-4K7M2Q9X', client)).resolves.toEqual([
+      { name: 'Sample Visitor', role: 'Customer', phone: '+2348000000001' },
+      { name: 'Sample Driver One', role: 'Driver', phone: '+2348000000011' },
+    ])
+  })
+})
+
 describe('issueFromRead', () => {
   it('uses the reference as id and number, the customer as the reporter, and never invents an urgent flag', () => {
     expect(issueFromRead(OPEN)).toEqual({
@@ -51,6 +69,31 @@ describe('issueFromRead', () => {
       urgent: false,
       status: 'open',
       resolution: null,
+    })
+  })
+
+  it('reads an app request exactly as before: no source and no topic (#365)', () => {
+    const issue = issueFromRead(OPEN)
+    expect('source' in issue).toBe(false)
+    expect('topic' in issue).toBe(false)
+  })
+
+  it('titles a website message "Website message", whatever its topic, and keeps the topic apart (#365)', () => {
+    for (const topic of ['late', 'wrong_quantity', 'payment', 'rider', 'other']) {
+      const issue = issueFromRead({ ...(websiteSample as AdminSupportRequest), type: topic })
+      expect(issue).toMatchObject({ title: 'Website message', type: 'other', source: 'website', topic })
+    }
+  })
+
+  it('shows a website visitor as the reporter, with the visitor name (#339)', () => {
+    const issue = issueFromRead(websiteSample as AdminSupportRequest)
+    expect(issue).toMatchObject({
+      id: 'SR-6H2P8W3D',
+      reported_by: 'customer',
+      reporter_name: 'Sample Visitor',
+      reference: null,
+      status: 'open',
+      urgent: false,
     })
   })
 
@@ -164,6 +207,13 @@ describe('audit log', () => {
 
   it('shows no reason on a driver row that has none', () => {
     expect(auditEntryFromRead(row('driver_approved', { safe_payload_litres: 600 })).reason).toBeNull()
+  })
+
+  it('words the deleted website contact message and shows no reason or contact detail (#364)', () => {
+    const entry = auditEntryFromRead(row('website_message_deleted', { status: 'open' }, { target_type: 'support_request', target_id: '6a8c0e11-2222-4333-8444-555566667777' }))
+    expect(entry.action).toBe('Deleted a website contact message')
+    expect(entry.reason).toBeNull()
+    expect(entry.target).toBe('Support request · 6a8c0e')
   })
 
   it('shows no reason on any other action, even if its details hold one (#293)', () => {

@@ -44,6 +44,9 @@ ignored. Application code must read configuration only through `get_settings()`.
 | `SESSION_COOKIE_SAMESITE` | `lax`, `strict`, `none`            | `lax`                   |
 | `PILOT_WATER_CATEGORY` | `utility`, `potable` (category code)  | `utility`               |
 | `QUOTE_VALIDITY_MINUTES` | int, 1 to 1440                     | `60`                    |
+| `OSRM_BASE_URL`          | empty, or an http(s) URL           | empty (off)             |
+| `OSRM_TIMEOUT_SECONDS`   | number, over 0 up to 10            | `2`                     |
+| `DELIVERY_LOCATION_BOUNDS` | `south,west,north,east` degrees, inside Nigeria | `5.9,6.9,7.2,8.0` |
 
 Validation rules:
 

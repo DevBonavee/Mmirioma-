@@ -310,3 +310,33 @@
   .mo-chip-gray { background: var(--color-gray-bg); color: var(--color-gray); }
   .mo-chip-gold { background: var(--color-gold-tint); color: var(--color-gold-ink); }
 }
+
+/*
+ * Window scroll for the phone-width screens (rider and driver app), from 768 px
+ * (docs/design/responsive.md, #342). MobileShell sets data-scroll="window" on the
+ * column. The column grows with its content, the header sticks to the top of the
+ * window and the footer or tab bar to the bottom, so the browser's scrollbar is
+ * the only one. Below 768 px none of this applies. Written outside the layers so it
+ * wins over the frame's `h-dvh overflow-hidden` utilities.
+ */
+@media (min-width: 768px) {
+  [data-scroll='window'] {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  [data-scroll='window'] .mo-scroll {
+    min-height: auto;
+    overflow: visible;
+  }
+  [data-scroll='window'] .mo-top {
+    position: sticky;
+    top: 0;
+  }
+  [data-scroll='window'] .mo-foot,
+  [data-scroll='window'] .mo-tabs {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+  }
+}

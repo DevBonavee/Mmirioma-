@@ -22,6 +22,11 @@ from [partners.md](partners.md). See [Changes](#changes).
 ([authentication.md](../features/authentication.md)). See
 [Change password](#change-password-8).
 
+**Password rule and recorded acceptance (2026-11-02, #332): agreed** (G3) on
+2026-11-02 by @nnamdi-security (technical lead), who is not the author. Built
+in #332, and live only with the rollout order in [Rollout](#rollout). See
+[Password rule and recorded acceptance](#password-rule-and-recorded-acceptance-332).
+
 ## Roles
 
 | Role | Who | Can |
@@ -136,8 +141,10 @@ provider's delivery report:
 - Phone: Nigerian mobile number. Accepted inputs `08000000001`,
   `2348000000001`, `+2348000000001` (spaces and dashes ignored). Stored and
   returned as `+234` followed by 10 digits starting with 7, 8 or 9.
-- Password: 8–128 characters. No composition rules (NIST SP 800-63B). Stored
-  only as a salted scrypt hash.
+- Password: a new one needs 8–128 characters, an uppercase letter, a number and
+  a symbol ([#332](#password-rule-and-recorded-acceptance-332)). Sign-in checks
+  only the maximum length, so older passwords keep working. Stored only as a
+  salted scrypt hash.
 
 ## Sessions
 
@@ -183,7 +190,7 @@ Only the signed-in user's own object is returned by these endpoints.
 
 | Method | Path | Auth | Body | Success | Errors |
 | --- | --- | --- | --- | --- | --- |
-| POST | `/auth/register` | none | `{name, phone, password}` | 201 `Session` + cookie | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` |
+| POST | `/auth/register` | none | `{name, phone, password, accepted_terms}` | 201 `Session` + cookie | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` |
 | POST | `/auth/partner-register` | none | see [partners.md](partners.md#post-authpartner-register) | 201 `Session` + cookie, role `driver` | 409 `phone_already_registered`, 422 `validation_error`, 429 `too_many_attempts` (shares the registration limit) |
 | POST | `/auth/login` | none | `{phone, password}` | 200 `Session` + cookie | 401 `invalid_credentials`, 422 `validation_error`, 429 `too_many_attempts` |
 | POST | `/auth/logout` | session + CSRF | none | 204, cookie cleared | 401 `not_authenticated`, 403 `csrf_failed` |
@@ -225,7 +232,7 @@ same screen in the partner and admin apps) had no endpoint. Agreed in #8, built 
 Request ([examples/change-password-request.json](examples/change-password-request.json)):
 
 ```json
-{ "current_password": "sample-current-password", "new_password": "sample-new-password" }
+{ "current_password": "sample-current-password", "new_password": "Sample-New-Passw0rd" }
 ```
 
 Rules:
@@ -238,9 +245,8 @@ Rules:
   endpoint cannot be used to guess passwords faster than login
   (NFR-002). Example:
   [examples/error-password-incorrect.json](examples/error-password-incorrect.json).
-- `new_password` follows the [password rules](#identifier-and-password-rules)
-  (8-128 characters, no composition rules); otherwise 422 `validation_error`
-  with `loc` `["body", "new_password"]`. It is stored only as a salted scrypt
+- `new_password` follows the [password rule](#the-password-rule); otherwise 422
+  `validation_error` with `loc` `["body", "new_password"]`. It is stored only as a salted scrypt
   hash. Whether it may equal the current one is not checked (no SRS rule).
 - **Other sessions end** (decided by @chidimmamogbo, 2026-10-26): on success,
   every other session of the account is revoked server-side
@@ -256,6 +262,153 @@ Rules:
 Frontend note: the mock (`mockChangePassword`) answers 400
 `invalid_current_password`; the link issue changes it to 403
 `password_incorrect`, as here.
+
+## Password rule and recorded acceptance (#332)
+
+**Status: agreed** (G3) on 2026-11-02 by @nnamdi-security (technical lead).
+Recommendation recorded with the agreement: accept every decision listed in
+PR #349 as written (the character classes, one 422 entry per field, the
+date-constant `TERMS_VERSION` without re-acceptance, the same rule for
+`create-user`, clearing both columns on anonymize, not returning the fields,
+and null covering command-line and seeded accounts), because each follows the
+issue or is the narrowest choice where it is silent, and the rollout order
+removes the sign-up break. The team asked for composition rules. Length matters more than
+symbols for security, so the 8-character minimum stays visible and passwords up
+to 128 characters stay allowed. The SRS sets no password rule (NFR-001 asks only
+for hashing), so the rule comes from #332. The 18+ rule is already in the Terms
+of Use (`/terms`).
+
+### The password rule
+
+A new password must have all of these:
+
+| Rule | What counts |
+| --- | --- |
+| Length | 8 to 128 characters, both included |
+| Uppercase letter | `A` to `Z` |
+| Number | `0` to `9` |
+| Symbol | Any character that is not a letter, a number or whitespace, for example `!`, `@`, `_`, `₦` |
+
+- A lowercase letter is not required.
+- Spaces are allowed but do not count as a symbol. Accented letters such as `É`
+  are allowed but count as neither uppercase nor symbol.
+- Uppercase and number use plain `A-Z` and `0-9` so the server and the form give
+  the same answer. For symbols, the server tests
+  `not (c.isalnum() or c.isspace())` and the form tests `/[^\p{L}\p{N}\s]/u`.
+
+Where it applies:
+
+| Field | Rule |
+| --- | --- |
+| `password` on `POST /auth/register` | Full rule |
+| `password` on `POST /auth/partner-register` | Full rule |
+| `new_password` on `POST /auth/password` | Full rule |
+| `password` on `POST /auth/login` | Maximum length only (1 to 128), so existing accounts can still sign in |
+| `current_password` on `POST /auth/password` | Maximum length only (1 to 128) |
+| `password` on `POST /auth/phone-change` | Maximum length only (1 to 128) |
+
+- There is no password reset endpoint ([open question 3](#open-questions)). If
+  one is added, it uses the full rule.
+- The `create-user` command-line tool is not an endpoint, but it creates admin
+  accounts, so it uses the same rule (recommendation; the issue is silent).
+- Existing passwords keep working and nobody is forced to change one. The rule
+  applies the next time the person sets a password.
+
+Refusal: 422 `validation_error`, with **one** entry for the field that names
+everything still missing, so a person fixes it in one go. `msg` is plain English
+that a screen can show as it is; it never repeats the password.
+
+```json
+{
+  "error": {
+    "code": "validation_error",
+    "message": "Request validation failed",
+    "details": [
+      {
+        "loc": ["body", "password"],
+        "msg": "Your password needs an uppercase letter and a symbol.",
+        "type": "value_error"
+      }
+    ]
+  }
+}
+```
+
+| Case | `msg` |
+| --- | --- |
+| Over 128 characters | `Use 128 characters or fewer.` |
+| Under 8 characters, or a missing kind of character | `Your password needs ` followed by the missing items in this order: `at least 8 characters`, `an uppercase letter`, `a number`, `a symbol` |
+
+The field in `loc` is `new_password` on `POST /auth/password`. Length failures
+today return pydantic's own wording and `type` (`string_too_short`); they move
+to this wording and `value_error`. The status, the code and the `details` shape
+do not change.
+
+### Recorded acceptance
+
+`POST /auth/register` and `POST /auth/partner-register` gain one required field:
+
+```json
+{ "name": "Sample Customer", "phone": "08000000001", "password": "Sample-Passw0rd", "accepted_terms": true }
+```
+
+| Field | Rule |
+| --- | --- |
+| `accepted_terms` | Required, and must be the JSON value `true`. Absent, `false` or anything else is 422 `validation_error` with `loc` `["body", "accepted_terms"]` |
+
+- **What it means:** the person ticked one box confirming three things: they are
+  18 or older, they accept the Terms of Service (`/terms`), and they accept the
+  Privacy Notice (`/privacy`). The age is the person's own statement. No date of
+  birth is collected and the server cannot check it.
+- **`msg` when refused:** `Confirm you are 18 or older and accept the Terms of
+  Service and Privacy Notice.` An absent field gets the standard `missing` entry, as
+  for any other required field.
+- **What the server records:** on success, in the same transaction as the new
+  account, `users.terms_accepted_at` (server time, UTC) and `users.terms_version`.
+  The client sends neither, and sending either is 422 `validation_error`, as for
+  any unknown field.
+- **The version** is one constant in the backend, `TERMS_VERSION`: the date of
+  the latest change to either page, written `YYYY-MM-DD`. It is `2026-11-03`,
+  the Privacy Notice's last update (the Terms were last updated on 27 October
+  2026). It is bumped in the same change that edits either page.
+  Bumping it does not ask existing users to accept again; no such flow is
+  proposed.
+- **Not returned:** the `User` object does not change. No screen needs these
+  values.
+
+### Accounts without a recorded acceptance
+
+- Both columns are nullable and set together. There is **no backfill**.
+- Null means "no acceptance was recorded", and is never read as acceptance. It
+  covers two cases: accounts created before this rule, and accounts created with
+  the command-line tool or the demo seed, which do not go through sign-up.
+- These accounts are not asked to accept when they next sign in.
+- Anonymizing an account (`anonymize-customer`, `anonymize-partner`) clears both
+  columns, as it clears `phone_verified_at`.
+
+### Rollout
+
+Today's sign-up forms send no `accepted_terms`, and the box is added by #336. The
+backend must not go live ahead of that form: every sign-up would be refused, and
+the customer form would show nothing, because it hides the notice for
+`validation_error` and has no field for `accepted_terms`. The forms must never
+send `true` on the person's behalf.
+
+Decided by @chidimmamogbo on 2026-11-02:
+
+- **Order:** this contract merges first. #336 is built on top of the #332 backend
+  branch, and the two merge back to back, with no deploy or promotion to `main`
+  in between.
+- **Privacy notice:** the #332 build adds the acceptance record to
+  `PRIVACY_NOTICE.md` and the `/privacy` page, as version 7.0, and `TERMS_VERSION`
+  takes that version's date. The notice's legal review is still open.
+- **Change password screen:** the #332 build tightens `newPasswordField` in
+  `frontend/src/lib/forms.ts` to this rule, because #336 covers only the sign-up
+  forms.
+- **Frontend types:** the #332 build adds `accepted_terms` as an optional field,
+  including on `PartnerSignupInput` in `frontend/src/domain/partner.ts`, so type
+  checks keep passing. The mocks refuse a sign-up without it, as the server does,
+  and #336 makes it required in the types.
 
 ## Planned (not in Sprint 1)
 
@@ -282,6 +435,8 @@ Frontend note: the mock (`mockChangePassword`) answers 400
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-03 | #332 build, amending what was agreed on 2026-11-02: the acceptance message names the pages as they call themselves, "Terms of Service" and "Privacy Notice", and the notice becomes version 7.0, not 3.1, because the privacy procedure asks for a major version when new data is collected, and #339, #346 and #340 had already taken 4.0, 5.0 and 6.0 | @chidimmamogbo's decision; needs the reviewer's agreement in the PR |
+| 2026-11-02 | Proposed (#332): new passwords need 8-128 characters, an uppercase letter, a number and a symbol; `accepted_terms` required on `POST /auth/register` and `POST /auth/partner-register`, with the time and terms version stored. **Breaking** for clients that do not send `accepted_terms`, and for clients that send weak passwords | @nnamdi-security (technical lead, G3, 2026-11-02) |
 | 2026-10-31 | Additive: `delivery_status` on `PhoneCodeSent`, and `GET /auth/phone-verification/status` and `GET /auth/phone-change/status` (Termii delivery reports). No existing field, status or error code changes | Proposed in the `fix/termii-otp-and-driver-area` branch; needs one reviewer's agreement in the PR |
 | 2026-10-26 | Change password (#8): `POST /auth/password`; a change ends the account's other sessions | @nnamdi-security (technical lead, #36), with @chidimmamogbo's decisions on #8 |
 | 2026-10-26 | Partner amendment (#47, [partners.md](partners.md)): partners sign up with `POST /auth/partner-register`, the one exception to "no self-registration for staff"; drivers may use the phone-verification endpoints (not phone change); admins still come only from the command-line tool | @nnamdi-security (technical lead, #36), with @chidimmamogbo's decisions on #47 |

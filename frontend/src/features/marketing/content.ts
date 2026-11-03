@@ -20,32 +20,64 @@ export const CONTACT = {
   place: 'Enugu, Nigeria',
 } as const
 
+/** The one-line description of the service, as the footer and the About page say it. */
+export const BRAND_LINE = 'Water delivery for homes, offices and businesses in Enugu. Poured into your drums or tank.'
+
+/**
+ * The four steps from order to a full tank, in the words of the landing page's
+ * "How MmiriOma works" and the About page's "How delivery works" (#338). One copy,
+ * so the two pages cannot drift apart.
+ */
+export const HOW_STEPS: { title: string; text: string }[] = [
+  { title: 'Order', text: 'Pick keke or tanker, the size and your address.' },
+  { title: 'We bring it', text: 'A rider collects the water and heads to you.' },
+  { title: 'We pour it', text: 'Into your drums, or your ground or overhead tank.' },
+  { title: 'Give your code', text: 'Share your delivery code once all the water is in.' },
+]
+
+/** The About page's title and description (`/about`, docs/design/about.md "Search tags"). */
+export const ABOUT_TITLE = 'About MmiriOma | Water delivery in Enugu'
+export const ABOUT_DESCRIPTION = 'MmiriOma brings water to homes, offices and businesses in Enugu by keke or tanker. See how delivery works and who to contact.'
+
+/** The Contact page's title (`/contact`, docs/design/contact.md "Search tags"). */
+export const CONTACT_TITLE = 'Contact MmiriOma | Water delivery in Enugu'
+/**
+ * The Contact page's description: the design's while the message form is on,
+ * and without "send a message" while it is switched off, so the tag never
+ * offers what the page does not have.
+ */
+export const CONTACT_DESCRIPTION = {
+  withForm: 'Call, WhatsApp or send a message to the MmiriOma team in Enugu.',
+  withoutForm: 'Call or WhatsApp the MmiriOma team in Enugu.',
+} as const
+
+/**
+ * The Contact page's lead line (docs/design/contact.md, "Page"): it offers only
+ * what the page has, so "or WhatsApp" goes while WhatsApp support is off and
+ * the message half goes while the form is switched off. It promises no reply
+ * time.
+ *
+ * @param form - Whether the message form is switched on (`CONTACT_FORM_ENABLED`).
+ * @param whatsapp - Whether WhatsApp support is on (`GET /public/contact`).
+ */
+export function contactLead(form: boolean, whatsapp: boolean): string {
+  const reach = whatsapp ? 'Call or WhatsApp us' : 'Call us'
+  return form ? `${reach}, or send a message and our team will answer by phone.` : `${reach}.`
+}
+
 /** Label of every "order" button on the public pages (owner's choice, 2026-10-21). */
 export const ORDER_CTA = 'Order Water'
 
-/** Header and footer "Quick Links": sections of the landing page, plus the FAQ page. */
+/** Header and footer "Quick Links": sections of the landing page, plus the About, FAQ and Contact pages. */
 export const NAV_LINKS: { label: string; to: string }[] = [
   { label: 'Home', to: '/' },
   { label: 'How It Works', to: '/#how' },
   { label: 'Our Services', to: '/#options' },
   { label: 'For Drivers', to: '/#drivers' },
+  { label: 'About', to: '/about' },
   { label: 'FAQs', to: '/faq' },
+  { label: 'Contact', to: '/contact' },
   { label: 'Service Areas', to: '/#areas' },
-]
-
-/** Planned areas from the design. A sample until the pilot zone is confirmed (PRD §13.1, decision Q5). */
-export const SERVICE_AREAS = [
-  'GRA',
-  'Ogui',
-  'Independence Layout',
-  'Trans-Ekulu',
-  'Abakpa',
-  'New Haven',
-  'Thinkers Corner',
-  'Anyika',
-  'Emene',
-  'Uwani',
-  'and nearby areas',
 ]
 
 export const FAQ_CATEGORIES = ['Ordering', 'Delivery', 'Delivery code', 'Payments', 'Riders & drivers', 'Account & safety'] as const
@@ -205,6 +237,25 @@ export const OBJECTIONS: { q: string; a: string }[] = [
 ]
 
 export type FaqFilter = FaqCategory | 'All'
+
+/**
+ * How full a size tile's water layer gets, from 0 to 1 (#330): the tile's size
+ * divided by the largest size in its group, so 12 is the lowest of 12, 24, 30
+ * and 60, and 60 is full. A tile with no number, such as "Custom", fills
+ * completely. The figure only sets how high the water rises; it is not a
+ * price, a quantity claim or a recommendation (FR-022).
+ *
+ * @param label - The tile's text, e.g. "12", "1,000" or "Custom".
+ * @param group - Every label in the tile's group, in any order.
+ * @returns A number above 0 and at most 1.
+ */
+export function tileFill(label: string, group: readonly string[]): number {
+  const size = (text: string) => Number(text.replace(/,/g, ''))
+  const own = size(label)
+  const largest = Math.max(...group.map(size).filter((n) => Number.isFinite(n) && n > 0))
+  if (!Number.isFinite(own) || own <= 0 || !Number.isFinite(largest)) return 1
+  return Math.min(1, own / largest)
+}
 
 /** True when `search` appears in the question or answer (case-insensitive). Empty search matches all. */
 function matches(faq: Faq, search: string): boolean {

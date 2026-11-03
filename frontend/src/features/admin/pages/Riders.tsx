@@ -49,7 +49,7 @@ export function Riders() {
   return (
     <AdminFrame searchPlaceholder="Search riders by name, phone or plate" onSearch={(q) => setParams(q ? { q } : {}, { replace: true })}>
       <SplitLayout
-        sideWidth="lg:w-[360px]"
+        sideWidth="w-[360px]"
         main={
           <>
             <PageHead
@@ -73,7 +73,7 @@ export function Riders() {
             {list.isPending && <LoadingBlock label="Loading riders" />}
             {list.isError && <ErrorBlock error={list.error} onRetry={() => list.refetch()} />}
             {list.isSuccess && (
-              <Card className="rise-3 overflow-x-auto px-1 py-1.5">
+              <Card className="rise-3 px-1 py-1.5">
                 <DataTable<AdminRider>
                   caption="Riders and drivers"
                   rows={rows}

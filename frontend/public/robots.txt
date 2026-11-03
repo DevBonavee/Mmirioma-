@@ -1,0 +1,36 @@
+# MmiriOma, https://mmiriomadelivery.com
+# Search engines may read the public pages. Every page below needs a sign-in or
+# belongs to an app, so none of them is worth indexing.
+# This file asks crawlers to stay out. It does not protect anything: the pages
+# are protected by sign-in. See docs/features/seo.md.
+
+User-agent: *
+Allow: /
+
+# Staff, partner and API
+Disallow: /admin
+Disallow: /partner
+Disallow: /api
+
+# Ordering and the signed-in customer app
+Disallow: /order
+Disallow: /home
+Disallow: /menu
+Disallow: /addresses
+Disallow: /notifications
+Disallow: /profile
+Disallow: /settings
+Disallow: /points
+Disallow: /support
+Disallow: /verify-phone
+
+# Sign-in and account pages
+Disallow: /signin
+Disallow: /signup
+Disallow: /forgot-password
+
+# The installed app's start address (a bare /app, so /apple-touch-icon.png stays open)
+Disallow: /app$
+Disallow: /app/
+
+Sitemap: https://mmiriomadelivery.com/sitemap.xml

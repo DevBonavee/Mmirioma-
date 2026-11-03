@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from 'react-router-dom'
 import { POINTS_ENABLED } from '../../lib/features'
+import { ShellScope } from '../../components/layout/ShellScope'
 import { SignedOutOnly } from '../auth/SessionRedirects'
 import { CustomerArea } from './CustomerArea'
 
@@ -10,10 +11,10 @@ import { CustomerArea } from './CustomerArea'
  * do not download customer screens.
  */
 export const customerRoutes: RouteObject[] = [
-  { path: '/signin', lazy: () => import('./pages/SignIn').then((m) => ({ element: <SignedOutOnly><m.SignIn /></SignedOutOnly> })) }, // c-signin
-  { path: '/signup', lazy: () => import('./pages/SignUp').then((m) => ({ element: <SignedOutOnly><m.SignUp /></SignedOutOnly> })) }, // c-signup
-  { path: '/forgot-password', lazy: () => import('./pages/AccountPages').then((m) => ({ Component: m.ForgotPassword })) }, // added
-  { path: '/support/contact', lazy: () => import('./pages/SupportContact').then((m) => ({ Component: m.SupportContact })) }, // added
+  { path: '/signin', lazy: () => import('./pages/SignIn').then((m) => ({ element: <ShellScope width="card"><SignedOutOnly><m.SignIn /></SignedOutOnly></ShellScope> })) }, // c-signin
+  { path: '/signup', lazy: () => import('./pages/SignUp').then((m) => ({ element: <ShellScope width="card"><SignedOutOnly><m.SignUp /></SignedOutOnly></ShellScope> })) }, // c-signup
+  { path: '/forgot-password', lazy: () => import('./pages/AccountPages').then((m) => ({ element: <ShellScope width="card"><m.ForgotPassword /></ShellScope> })) }, // added
+  { path: '/support/contact', lazy: () => import('./pages/SupportContact').then((m) => ({ element: <ShellScope width="card"><m.SupportContact /></ShellScope> })) }, // added
   {
     element: <CustomerArea />,
     children: [
@@ -26,8 +27,8 @@ export const customerRoutes: RouteObject[] = [
       { path: '/order/address', lazy: () => import('./pages/order/AddressPick').then((m) => ({ Component: m.AddressPick })) }, // c-address-pick
       { path: '/order/save-address', lazy: () => import('./pages/order/SaveAddress').then((m) => ({ Component: m.SaveAddress })) }, // c-save
       { path: '/order/review', lazy: () => import('./pages/order/Review').then((m) => ({ Component: m.Review })) }, // c-review
-      { path: '/orders', lazy: () => import('./pages/Orders').then((m) => ({ Component: m.Orders })) }, // c-orders
-      { path: '/orders/:reference', lazy: () => import('./pages/OrderDetail').then((m) => ({ Component: m.OrderDetail })) }, // c-order-detail
+      { path: '/orders', lazy: () => import('./pages/Splits').then((m) => ({ Component: m.OrdersRoute })) }, // c-orders
+      { path: '/orders/:reference', lazy: () => import('./pages/Splits').then((m) => ({ Component: m.OrderDetailRoute })) }, // c-order-detail
       { path: '/orders/:reference/placed', lazy: () => import('./pages/order/OrderPlaced').then((m) => ({ Component: m.OrderPlaced })) }, // c-confirmed
       { path: '/orders/:reference/track', lazy: () => import('./pages/order/Track').then((m) => ({ Component: m.Track })) }, // c-track
       { path: '/orders/:reference/delivered', lazy: () => import('./pages/order/Delivered').then((m) => ({ Component: m.Delivered })) }, // c-delivered
@@ -36,9 +37,9 @@ export const customerRoutes: RouteObject[] = [
       POINTS_ENABLED
         ? { path: '/points', lazy: () => import('./pages/Points').then((m) => ({ Component: m.Points })) }
         : { path: '/points', element: <Navigate to="/home" replace /> },
-      { path: '/addresses', lazy: () => import('./pages/SavedAddresses').then((m) => ({ Component: m.SavedAddresses })) }, // c-saved
-      { path: '/addresses/new', lazy: () => import('./pages/AddressForm').then((m) => ({ Component: m.AddressForm })) }, // added
-      { path: '/addresses/:id/edit', lazy: () => import('./pages/AddressForm').then((m) => ({ Component: m.AddressForm })) }, // added
+      { path: '/addresses', lazy: () => import('./pages/Splits').then((m) => ({ Component: m.AddressesRoute })) }, // c-saved
+      { path: '/addresses/new', lazy: () => import('./pages/Splits').then((m) => ({ Component: m.AddressFormRoute })) }, // added
+      { path: '/addresses/:id/edit', lazy: () => import('./pages/Splits').then((m) => ({ Component: m.AddressFormRoute })) }, // added
       { path: '/notifications', lazy: () => import('./pages/Notifications').then((m) => ({ Component: m.Notifications })) }, // c-notifications
       { path: '/support', lazy: () => import('./pages/Support').then((m) => ({ Component: m.Support })) }, // c-support
       { path: '/profile', lazy: () => import('./pages/Profile').then((m) => ({ Component: m.Profile })) }, // c-profile

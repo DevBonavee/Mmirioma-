@@ -97,6 +97,7 @@ def test_anonymize_output_has_ids_and_counts_but_no_phone(
         return service.AnonymizeResult(
             customer_id=CUSTOMER_ID,
             orders_anonymized=2,
+            order_locations_cleared=1,
             gps_points_cleared=1,
             addresses_removed=2,
             support_messages_removed=1,
@@ -229,6 +230,7 @@ def test_review_output_lists_the_manual_checks(
             unverified_accounts_anonymized=1,
             gps_points_cleared=0,
             orders_anonymized=0,
+            order_locations_cleared=0,
             support_requests_deleted=5,
             deletion_requests_deleted=2,
             applied=True,
@@ -322,3 +324,84 @@ def test_a_refused_status_change_exits_1(
     argv = ["set-deletion-status", "--by", "08000000009", "--request", "DR-8H3N6P2W"]
     assert cli.main([*argv, "--status", "completed"]) == 1
     assert "Refused: the account is not anonymized yet" in capsys.readouterr().err
+
+
+VISITOR_PHONE = "+2348000000002"
+
+
+def test_delete_website_messages_parses_the_phone_and_defaults_to_a_dry_run() -> None:
+    args = build_parser().parse_args(
+        ["delete-website-messages", "--by", "0800 000 0009", "--phone", "08000000002"]
+    )
+    assert (args.by, args.phone, args.apply) == (ADMIN_PHONE, VISITOR_PHONE, False)
+    applied = build_parser().parse_args(
+        ["delete-website-messages", "--by", "08000000009", "--phone", "08000000002", "--apply"]
+    )
+    assert applied.apply is True
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["delete-website-messages", "--by", "08000000009"],
+        ["delete-website-messages", "--phone", "08000000002"],
+        ["delete-website-messages", "--by", "08000000009", "--phone", "12345"],
+    ],
+)
+def test_delete_website_messages_rejects_bad_arguments(argv: list[str]) -> None:
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(argv)
+
+
+def test_delete_website_messages_output_has_counts_but_no_phone(
+    fake_service: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    async def delete(session: object, **kwargs: Any) -> service.WebsiteMessagesResult:
+        fake_service.update(kwargs)
+        return service.WebsiteMessagesResult(messages_deleted=3, still_open=1, applied=False)
+
+    monkeypatch.setattr(service, "delete_website_messages", delete)
+    code = cli.main(["delete-website-messages", "--by", "08000000009", "--phone", "08000000002"])
+    out = capsys.readouterr().out
+
+    assert code == 0
+    assert fake_service["visitor_phone"] == VISITOR_PHONE
+    assert fake_service["apply"] is False
+    assert "Website messages deleted: 3" in out
+    assert "not yet resolved by staff: 1" in out
+    assert "Dry run: nothing was saved" in out
+    assert "0800" not in out and "+234" not in out
+
+
+def test_delete_website_messages_says_saved_when_applied(
+    fake_service: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    async def delete(session: object, **kwargs: Any) -> service.WebsiteMessagesResult:
+        return service.WebsiteMessagesResult(messages_deleted=1, still_open=0, applied=True)
+
+    monkeypatch.setattr(service, "delete_website_messages", delete)
+    argv = ["delete-website-messages", "--by", "08000000009", "--phone", "08000000002", "--apply"]
+    assert cli.main(argv) == 0
+    out = capsys.readouterr().out
+    assert "Saved." in out and "Dry run" not in out
+
+
+def test_delete_website_messages_exits_1_when_none_were_sent_from_the_number(
+    fake_service: dict[str, Any],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    async def none_found(session: object, **kwargs: Any) -> service.WebsiteMessagesResult:
+        raise LookupError("no website message was sent from this number")
+
+    monkeypatch.setattr(service, "delete_website_messages", none_found)
+    code = cli.main(["delete-website-messages", "--by", "08000000009", "--phone", "08000000002"])
+    captured = capsys.readouterr()
+
+    assert code == 1
+    assert "no website message was sent from this number" in captured.err
+    assert "+234" not in captured.err and "0800" not in captured.err

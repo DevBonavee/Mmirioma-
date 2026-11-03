@@ -104,6 +104,7 @@ async def count_orders(
     created_to: datetime,
     simulated: bool,
     include_open: bool,
+    exclude_cancelled_from_breakdowns: bool = False,
 ) -> OrderCounts:
     """Count the orders created in ``[created_from, created_to)``.
 
@@ -115,6 +116,10 @@ async def count_orders(
         include_open: Also count older orders that are still open (not
             delivered, cancelled or failed): the dashboard's "Orders today,
             including open orders".
+        exclude_cancelled_from_breakdowns: Leave cancelled orders out of
+            ``by_delivery_type`` and ``by_zone`` (the reports page's default,
+            #333). ``total`` and ``by_status`` still count them, so the screen
+            can say how many were left out.
 
     Returns:
         The counts.
@@ -136,6 +141,8 @@ async def count_orders(
     by_zone: Counter[uuid.UUID | None] = Counter()
     for status, delivery_type, zone_id, count in rows:
         by_status[status.value] += count
+        if exclude_cancelled_from_breakdowns and status is OrderStatus.CANCELLED:
+            continue
         by_type[delivery_type.value if delivery_type is not None else NOT_RECORDED] += count
         by_zone[zone_id] += count
     return OrderCounts(

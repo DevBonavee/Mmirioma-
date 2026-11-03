@@ -53,6 +53,7 @@ export function SavedAddresses() {
                 <div className="text-[13px] text-slate">{a.address}</div>
                 {a.landmark && <div className="text-chip text-mute">{a.landmark}</div>}
                 <AddressArea zone={a.zone} />
+                {a.location && <Chip tone="blue" className="mt-1 px-2 py-0.5 text-chip">Pin on map</Chip>}
               </div>
               <IconLink to={`/addresses/${a.id}/edit`} label={`Edit ${a.label}`} className="size-[38px] text-mute">
                 <PencilIcon size={18} />

@@ -18,6 +18,7 @@
   "receiver": null,
   "delivery_address": "9 Sample Crescent, Trans-Ekulu, Enugu",
   "landmark": "Next to the yellow kiosk",
+  "delivery_location": null,
   "delivery_instructions": "Narrow gate. Tank is behind the house.",
   "source": {
     "id": "1d2c3b4a-5e6f-4a7b-8c9d-0e1f2a3b4c5d",

@@ -27,8 +27,13 @@ export interface RegisterInput {
   name: string
   /** Any Nigerian mobile format; the server normalizes it. */
   phone: string
-  /** 8–128 characters. */
+  /** The new-password rule: `lib/format/password.ts`. */
   password: string
+  /**
+   * The person ticked the box: 18 or older, Terms of Service and Privacy Notice. The
+   * server requires `true`. Never set it for the person.
+   */
+  accepted_terms: boolean
 }
 
 export interface LoginInput {

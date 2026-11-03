@@ -22,16 +22,15 @@ from app.core.database import dispose_engine, get_sessionmaker
 from app.core.errors import APIError
 from app.modules.auth import service
 from app.modules.auth.models import UserRole
-from app.modules.auth.schemas import PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH
+from app.modules.auth.schemas import password_problem
 from app.shared.phone import normalize_nigerian_phone
 
 
 def _read_password() -> str:
     password = getpass.getpass("Password: ")
-    if not PASSWORD_MIN_LENGTH <= len(password) <= PASSWORD_MAX_LENGTH:
-        raise SystemExit(
-            f"Password must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters."
-        )
+    problem = password_problem(password)
+    if problem:
+        raise SystemExit(problem)
     if getpass.getpass("Repeat password: ") != password:
         raise SystemExit("Passwords do not match.")
     return password

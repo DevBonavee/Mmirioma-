@@ -101,6 +101,16 @@ describe('Pills', () => {
     await user.click(screen.getByRole('tab', { name: 'Active' }))
     expect(onChange).toHaveBeenCalledWith('active')
   })
+
+  it('has a 44 px hit area, or 48 px with largeHit (the rider and driver filter chips, #342)', () => {
+    const options = [{ value: 'all', label: 'All' }]
+    const { rerender } = render(<Pills label="Period" value="all" onChange={() => undefined} options={options} />)
+    expect(screen.getByRole('tab', { name: 'All' })).toHaveClass('hit-44')
+    expect(screen.getByRole('tab', { name: 'All' })).not.toHaveClass('hit-48')
+    rerender(<Pills label="Period" value="all" onChange={() => undefined} options={options} largeHit />)
+    expect(screen.getByRole('tab', { name: 'All' })).toHaveClass('hit-48')
+    expect(screen.getByRole('tab', { name: 'All' })).not.toHaveClass('hit-44')
+  })
 })
 
 describe('Button', () => {
@@ -256,7 +266,7 @@ describe('DataTable', () => {
         ]}
       />,
     )
-    expect(screen.getByRole('table')).toHaveClass('hidden', 'md:table')
+    expect(screen.getByRole('table').closest('[data-table-scroll]')).toHaveClass('hidden', 'md:block')
     const list = screen.getByRole('list', { name: 'Riders' })
     expect(list).toHaveClass('md:hidden')
     const cards = list.querySelectorAll('li')
@@ -264,5 +274,40 @@ describe('DataTable', () => {
     expect(cards[1]).toHaveAttribute('aria-current', 'true')
     expect(cards[1]).toHaveTextContent('AreaIndependence Layout')
     expect(screen.getAllByRole('row')[2]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('puts the table in its own horizontal scroll box, so a wide table never widens the page (#343)', () => {
+    render(
+      <DataTable
+        caption="Riders"
+        rows={rows}
+        rowKey={(r) => r.id}
+        columns={[
+          { header: 'Rider', cell: (r) => r.name },
+          { header: 'Area', cell: (r) => r.area },
+        ]}
+      />,
+    )
+    const table = screen.getByRole('table')
+    // The table's direct parent is the box; the box is what scrolls.
+    expect(table.parentElement).toHaveClass('overflow-x-auto')
+    expect(table.parentElement).toHaveAttribute('data-table-scroll')
+  })
+
+  it('adds a caller class to a row in the table and in the phone card', () => {
+    render(
+      <DataTable
+        caption="Riders"
+        rows={rows}
+        rowKey={(r) => r.id}
+        rowClassName={(r) => r.id === 'a' && 'bg-gold-tint'}
+        columns={[{ header: 'Rider', cell: (r) => r.name }]}
+      />,
+    )
+    expect(screen.getAllByRole('row')[1]).toHaveClass('bg-gold-tint')
+    expect(screen.getAllByRole('row')[2]).not.toHaveClass('bg-gold-tint')
+    const cards = screen.getByRole('list', { name: 'Riders' }).querySelectorAll('li')
+    expect(cards[0]).toHaveClass('bg-gold-tint')
+    expect(cards[1]).not.toHaveClass('bg-gold-tint')
   })
 })

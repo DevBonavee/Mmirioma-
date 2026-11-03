@@ -15,12 +15,18 @@ nothing. Run from ``backend/`` with the virtualenv active and
         --partner 08000000011            # dry run; add --apply to save
     python -m app.modules.privacy.cli correct-name --by 08000000009 \\
         --customer 08000000001 --name "Corrected Name"
+    python -m app.modules.privacy.cli delete-website-messages --by 08000000009 \\
+        --phone 08000000002               # dry run; add --apply to save
     python -m app.modules.privacy.cli retention-review --by 08000000009          # dry run
     python -m app.modules.privacy.cli retention-review --by 08000000009 --apply
     python -m app.modules.privacy.cli set-deletion-status --by 08000000009 \\
         --request DR-8H3N6P2W --status acknowledged
     python -m app.modules.privacy.cli set-deletion-status --by 08000000009 \\
         --request DR-8H3N6P2W --status refused --reason "Open dispute on MO-7KQ2"
+
+``delete-website-messages`` deletes the contact-form messages sent from a
+phone number by a visitor with no account (#364). Run it after calling the
+number back to verify the requester.
 
 ``set-deletion-status`` records the outcome of a deletion request made in
 the app (docs/api/customer-account.md, decision 10): ``acknowledged``, then
@@ -75,7 +81,9 @@ async def _run(args: argparse.Namespace) -> str:
                 [
                     f"Customer {result.customer_id}: account anonymized and deactivated.",
                     f"Orders anonymized: {result.orders_anonymized}",
+                    f"Order map locations cleared: {result.order_locations_cleared}",
                     f"GPS points cleared: {result.gps_points_cleared}",
+                    f"Quote map pins cleared: {result.quote_locations_cleared}",
                     f"Saved addresses deleted: {result.addresses_removed}",
                     f"Support request messages removed: {result.support_messages_removed}",
                     f"Staff notes on support requests removed: {result.resolution_notes_removed}",
@@ -99,6 +107,17 @@ async def _run(args: argparse.Namespace) -> str:
                     f"Audit reasons removed: {partner.reasons_cleared}",
                     f"Incident and pickup notes kept, to check by hand: {partner.notes_to_review}",
                     _dry_run_line(partner.applied),
+                ]
+            )
+        if args.command == "delete-website-messages":
+            deleted = await service.delete_website_messages(
+                session, actor=actor, visitor_phone=args.phone, apply=args.apply
+            )
+            return "\n".join(
+                [
+                    f"Website messages deleted: {deleted.messages_deleted}",
+                    f"Of these, not yet resolved by staff: {deleted.still_open}",
+                    _dry_run_line(deleted.applied),
                 ]
             )
         if args.command == "correct-name":
@@ -126,7 +145,9 @@ async def _run(args: argparse.Namespace) -> str:
                 "Never-verified accounts anonymized (they have audit rows): "
                 f"{review.unverified_accounts_anonymized}",
                 f"GPS points cleared: {review.gps_points_cleared}",
+                f"Quote map pins cleared: {review.quote_locations_cleared}",
                 f"Orders anonymized (finished over 3 years ago): {review.orders_anonymized}",
+                f"Order map locations cleared (those orders): {review.order_locations_cleared}",
                 "Support requests deleted (resolved over 3 years ago): "
                 f"{review.support_requests_deleted}",
                 "Deletion requests deleted (completed or refused over 3 years ago): "
@@ -192,6 +213,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--partner", required=True, type=_phone, help="the rider's or driver's phone"
     )
     partner.add_argument("--apply", action="store_true", help="save (default: dry run)")
+
+    website = commands.add_parser(
+        "delete-website-messages",
+        help="delete the website contact messages sent from a phone number (no account)",
+    )
+    website.add_argument("--by", required=True, type=_phone, help="your admin account's phone")
+    website.add_argument("--phone", required=True, type=_phone, help="the visitor's phone")
+    website.add_argument("--apply", action="store_true", help="save (default: dry run)")
 
     correct = commands.add_parser("correct-name", help="correct a customer's account name")
     correct.add_argument("--by", required=True, type=_phone, help="your admin account's phone")

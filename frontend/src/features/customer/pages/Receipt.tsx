@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom'
+import { HomeLogo } from '../../../components/brand/HomeLogo'
 import { Logo } from '../../../components/brand/Logo'
 import { BackLink, Footer, MobileShell, ScrollArea, TopBar, TopBarSpacer, TopBarTitle } from '../../../components/layout/MobileShell'
 import { ErrorBlock, LoadingBlock } from '../../../components/layout/StateScreens'
@@ -36,7 +37,9 @@ export function Receipt() {
         {o && (
           <Card pad className="rise-1">
             <div className="mb-3 flex items-center justify-between">
-              <Logo height={30} />
+              <HomeLogo>
+                <Logo height={30} alt="" />
+              </HomeLogo>
               {o.quote?.is_sample && <SampleTag>SAMPLE</SampleTag>}
             </div>
             <KeyValue label="Order" value={o.reference} />

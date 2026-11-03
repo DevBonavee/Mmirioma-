@@ -37,9 +37,18 @@ export interface AddressRead {
   address: string
   landmark: string | null
   zone: AddressZoneRead
+  /** The map pin, or `null` (docs/api/delivery-location.md, #340). Absent from an older server. */
+  location?: DeliveryLocationBody | null
   is_default: boolean
   created_at: string
   updated_at: string
+}
+
+/** The location object of docs/api/delivery-location.md; `source` is required with a point. */
+export interface DeliveryLocationBody {
+  latitude: number
+  longitude: number
+  source: 'device_location' | 'map_pin'
 }
 
 /** Body of `POST /me/addresses` and `PATCH /me/addresses/{id}`. */
@@ -54,6 +63,11 @@ export interface AddressInput {
   zone_id: string
   /** The first address is the default whatever this says. */
   make_default: boolean
+  /**
+   * On `POST`: absent or `null` saves no pin. On `PATCH`: absent leaves the
+   * saved pin unchanged, `null` removes it, an object replaces it.
+   */
+  location?: DeliveryLocationBody | null
 }
 
 /** Query parameters of `GET /me/addresses`. */

@@ -67,13 +67,13 @@ describe('auth endpoints', () => {
     ])
 
     await register(
-      { name: 'Sample', phone: '08000000001', password: 'secret pw' },
+      { name: 'Sample', phone: '08000000001', password: 'secret pw', accepted_terms: true },
       client,
     )
     await logout(client)
 
     expect(fetch.mock.calls[0][1]?.body).toBe(
-      '{"name":"Sample","phone":"08000000001","password":"secret pw"}',
+      '{"name":"Sample","phone":"08000000001","password":"secret pw","accepted_terms":true}',
     )
     expect(headersOf(fetch, 1)[CSRF_HEADER]).toBe('csrf-1')
   })

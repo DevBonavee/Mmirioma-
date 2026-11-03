@@ -100,6 +100,10 @@ already has its own route or rule:
 
 ## Saved addresses
 
+> **Amended by [delivery-location.md](delivery-location.md) (#340):** `Address` and
+> `AddressInput` gain an optional `location` (latitude, longitude and `source`).
+> On `PATCH`, an absent `location` leaves the saved one unchanged.
+
 The SRS data model gives orders a "customer/address" and quotes an
 `address_id` (SRS §5, §6), so customers keep addresses to reuse. A saved
 address is profile data: kept while the account is open and removed with it

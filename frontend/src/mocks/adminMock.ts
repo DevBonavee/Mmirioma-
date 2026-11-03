@@ -39,7 +39,7 @@ import type {
   NewRiderInput,
   SamplePriceTable,
   SamplePriceTableInput,
-  ReportRange,
+  ReportQuery,
   ResolutionAction,
   ServiceArea,
   StaffMember,
@@ -1367,16 +1367,22 @@ export async function markPayoutPaid(partnerId: string, payoutId: string): Promi
 
 /* ---------- Reports ---------- */
 
-export async function getReport(range: ReportRange): Promise<AdminReport> {
+export async function getReport(query: ReportQuery): Promise<AdminReport> {
   await delay(null)
   const s = read()
   requireAdmin(s)
-  const days = range === 'today' ? 0 : range === '7d' ? 7 : 30
+  const range = query.range
+  const days = range === 'today' || range === 'custom' ? 0 : range === '7d' ? 7 : 30
   const since = Date.now() - days * 86_400_000
-  const inRange = allOrders(s).filter((o) => (range === 'today' ? isToday(o.created_at) : Date.parse(o.created_at) >= since))
+  const inRange = allOrders(s).filter((o) => {
+    if (query.range === 'custom') return o.created_at.slice(0, 10) >= query.from && o.created_at.slice(0, 10) <= query.to
+    return range === 'today' ? isToday(o.created_at) : Date.parse(o.created_at) >= since
+  })
+  // Like the backend: cancelled orders stay in the totals but not in the area and vehicle tables unless asked.
+  const counted = query.includeCancelled ? inRange : inRange.filter((o) => o.status !== 'cancelled')
   const delivered = inRange.filter((o) => o.status === 'delivered')
   const byArea = new Map<string, { orders: number; delivered: number }>()
-  for (const o of inRange) {
+  for (const o of counted) {
     const a = byArea.get(o.area) ?? { orders: 0, delivered: 0 }
     a.orders += 1
     if (o.status === 'delivered') a.delivered += 1
@@ -1392,13 +1398,21 @@ export async function getReport(range: ReportRange): Promise<AdminReport> {
   }
   const byStation = new Map<string, number>()
   for (const o of inRange.filter((x) => x.station_name)) byStation.set(o.station_name, (byStation.get(o.station_name) ?? 0) + 1)
+  const today = new Date().toISOString().slice(0, 10)
   return {
     range,
+    from: query.range === 'custom' ? query.from : new Date(Date.now() - Math.max(days - 1, 0) * 86_400_000).toISOString().slice(0, 10),
+    to: query.range === 'custom' ? query.to : today,
+    includes_cancelled: query.includeCancelled,
     orders: inRange.length,
     delivered: delivered.length,
     cancelled: inRange.filter((o) => o.status === 'cancelled').length,
     revenue_minor_units: delivered.reduce((sum, o) => sum + (o.total_minor_units ?? 0), 0),
-    by_type: { keke: inRange.filter((o) => o.choice.delivery_type === 'keke').length, tanker: inRange.filter((o) => o.choice.delivery_type === 'tanker').length },
+    by_type: {
+      keke: counted.filter((o) => o.choice.delivery_type === 'keke').length,
+      tanker: counted.filter((o) => o.choice.delivery_type === 'tanker').length,
+      not_recorded: counted.filter((o) => o.choice.delivery_type !== 'keke' && o.choice.delivery_type !== 'tanker').length,
+    },
     by_area: [...byArea].map(([area, v]) => ({ area, ...v })).sort((a, b) => b.orders - a.orders),
     by_rider: [...byRider.values()].sort((a, b) => b.trips - a.trips),
     by_station: [...byStation].map(([name, loads]) => ({ name, loads })).sort((a, b) => b.loads - a.loads),
@@ -1426,6 +1440,8 @@ export async function getIssuePeople(issueId: string): Promise<{ name: string; r
   if (!issue) throw mockError(404, 'issue_not_found', 'Issue not found')
   const row = issue.reference ? orderRow(s, issue.reference) : null
   const people: { name: string; role: string; phone: string }[] = []
+  // SAMPLE DATA: a website message has one contact, the visitor, with a made-up number.
+  if (issue.source === 'website') return [{ name: issue.reporter_name, role: 'Website visitor', phone: '+2348000000001' }]
   if (row) people.push({ name: row.customer_name, role: 'Customer', phone: row.customer_phone })
   const partner = row?.partner ? s.users.find((u) => u.id === row.partner!.id) : undefined
   if (partner && row?.partner) people.push({ name: partner.name, role: row.partner.vehicle === 'keke' ? 'Rider' : 'Driver', phone: partner.phone })

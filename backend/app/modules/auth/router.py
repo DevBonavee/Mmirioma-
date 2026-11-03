@@ -98,7 +98,12 @@ async def register(
     """
     limits.check_and_record_registration(_client_ip(request))
     user = await service.create_user(
-        db, name=body.name, phone=body.phone, password=body.password, role=UserRole.CUSTOMER
+        db,
+        name=body.name,
+        phone=body.phone,
+        password=body.password,
+        role=UserRole.CUSTOMER,
+        terms_accepted=body.accepted_terms,
     )
     auth = await service.start_session(db, user)
     _set_session_cookie(response, auth)

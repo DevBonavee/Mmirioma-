@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { WHATSAPP_GREETING, whatsappLink } from '../../lib/whatsapp'
+import { CARD_BUTTON } from './buttonStyles'
 import { CONTACT, FAQ_CATEGORIES, filterFaqs, type FaqFilter } from './content'
 import { ArrowRightIcon, ChevronIcon, MailIcon, SearchIcon, WhatsAppIcon } from './icons'
 import { Kicker, MarketingFooter, MarketingHeader, Pic } from './MarketingParts'
@@ -9,9 +10,6 @@ import { formatPhone } from '../../lib/format/phone'
 import { useSupportContact } from './queries'
 import { FloatingActions } from './SiteExtras'
 import { useMarketingPage } from './useMarketingPage'
-
-const CARD_BUTTON =
-  'inline-flex min-h-12 items-center justify-center gap-2 rounded-[10px] px-5 text-center text-[15px] font-bold no-underline transition-colors duration-150'
 
 /**
  * FAQ page (`/faq`): search and category filters over the questions in

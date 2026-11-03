@@ -154,6 +154,7 @@ export async function partnerSignup(input: PartnerSignupInput, client: ApiClient
         name: input.name,
         phone: input.phone,
         password: input.password,
+        accepted_terms: input.accepted_terms,
         delivery_type: input.vehicle_type,
         plate: input.plate,
         declared_capacity_gallons: input.vehicle_type === 'tanker' ? input.tank_gallons : null,

@@ -124,7 +124,7 @@ function NotifyCard({ app, tone, className }: { app: AppKind; tone: 'blue' | 'gr
               snooze(key)
               setHidden(true)
             }}
-            className="hit-44 cursor-pointer border-0 bg-transparent px-2 text-[13px] font-bold text-mute"
+            className="hit-48 cursor-pointer border-0 bg-transparent px-2 text-[13px] font-bold text-mute"
           >
             Not now
           </button>

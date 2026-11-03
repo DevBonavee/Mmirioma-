@@ -32,3 +32,6 @@ dist/
 /design/
 # Logo export pack: the app uses the copies in frontend/public (fork only)
 /web-ready-logos/
+
+# OSRM routing files built off the server for the production stack (deploy/osrm-build.sh)
+/osrm-data/

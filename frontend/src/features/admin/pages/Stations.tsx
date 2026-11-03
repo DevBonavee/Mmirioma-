@@ -40,7 +40,7 @@ export function Stations() {
   return (
     <AdminFrame searchPlaceholder="Search stations" onSearch={setQuery}>
       <SplitLayout
-        sideWidth="lg:w-[380px]"
+        sideWidth="w-[380px]"
         main={
           <>
             <PageHead

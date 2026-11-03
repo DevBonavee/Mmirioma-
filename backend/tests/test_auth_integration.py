@@ -28,7 +28,7 @@ pytestmark = [
     pytest.mark.skipif(not TEST_DATABASE_URL, reason="TEST_DATABASE_URL is not set"),
 ]
 
-PASSWORD = "correct horse battery"
+PASSWORD = "Correct-horse-battery-1"
 
 
 def random_phone() -> str:
@@ -66,7 +66,8 @@ def register(client: TestClient, phones: list[str], name: str = "Sample Customer
     phone = random_phone()
     phones.append(phone)
     response = client.post(
-        "/api/v1/auth/register", json={"name": name, "phone": phone, "password": PASSWORD}
+        "/api/v1/auth/register",
+        json={"name": name, "phone": phone, "password": PASSWORD, "accepted_terms": True},
     )
     assert response.status_code == 201, response.text
     return {"phone": phone, **response.json()}
@@ -114,7 +115,8 @@ def test_session_cookie_flags(db_client: TestClient, created_phones: list[str]) 
     created_phones.append(phone)
 
     response = db_client.post(
-        "/api/v1/auth/register", json={"name": "Sample", "phone": phone, "password": PASSWORD}
+        "/api/v1/auth/register",
+        json={"name": "Sample", "phone": phone, "password": PASSWORD, "accepted_terms": True},
     )
 
     set_cookie = response.headers["set-cookie"].lower()
@@ -146,7 +148,12 @@ def test_duplicate_phone_in_any_format_conflicts(
 
     response = db_client.post(
         "/api/v1/auth/register",
-        json={"name": "Other", "phone": session["user"]["phone"], "password": PASSWORD},
+        json={
+            "name": "Other",
+            "phone": session["user"]["phone"],
+            "password": PASSWORD,
+            "accepted_terms": True,
+        },
     )
 
     assert response.status_code == 409

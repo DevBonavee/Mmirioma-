@@ -43,8 +43,8 @@ saving settings are out of the MVP).
    (`GET /admin/settings`).
 5. **Dashboard and reports.** The dashboard reads `GET /admin/dashboard`
    (one Lagos date), `GET /admin/live-map` and `GET /admin/activity`; the
-   Reports page reads `GET /admin/reports` (today, 7 or 30 days) and builds
-   its CSV from the response. Both count real records unless
+   Reports page reads `GET /admin/reports` (today, 7 or 30 days, or chosen
+   Lagos dates up to 90 days, #333) and builds its CSV from the response. Both count real records unless
    `simulated=only` is sent, and then simulated records only (BR-09).
 
 ## 3. Important files and their responsibilities
@@ -78,7 +78,9 @@ saving settings are out of the MVP).
 | `frontend/src/features/admin/real/support.ts` | Adapters: request to issue, the audit action wording, the audit reason and record, notification links |
 | `frontend/src/features/admin/auditWording.ts` | The audit log's words that the contract does not fix: the four actions whose reason shows, the names of the kinds of record, the short id's length and the Riders hint (#293) |
 | `frontend/src/features/admin/support.screens.test.tsx` | The Support page, the audit log and the notifications in real-API mode |
-| `frontend/src/features/admin/operations.screens.test.tsx` | The screens in real-API mode, on the contract's example responses |
+| `frontend/src/features/admin/operations.screens.test.tsx` | The screens in real-API mode, on the contract's example responses; the Reports page's custom dates, cancelled orders and vehicle table (#333) |
+| `frontend/src/features/admin/reportDates.ts` | The custom range's date rules and the Lagos date, checked before sending (#333) |
+| `frontend/src/features/admin/real/reports.ts` | Adapter for `GET /admin/reports`, sending `range` or `from` and `to`, and `include_cancelled` (#218, #333) |
 | `backend/tests/test_admin_reports_api.py` | Dashboard, reports, live map and activity: roles, query rules, bodies against the examples (no database) |
 | `backend/tests/test_admin_reports_integration.py` | Real against simulated counts, ranges, on time, cash, buckets, per driver and per source, holds, live map, activity |
 
@@ -122,7 +124,7 @@ response with its example in `docs/api/examples/`.
 | GET | `/admin/notifications` | 200 page plus `unread_count`, newest first | 422 `validation_error` (paging) |
 | POST | `/admin/notifications/read` | 204; `{"ids": [...]}` (up to 100), `{}` or no body | 422 `validation_error` |
 | GET | `/admin/dashboard` | 200; `date` (Lagos, default today, not in the future), `simulated` (`exclude` default, `only`) | 422 `validation_error` |
-| GET | `/admin/reports` | 200; `range` (`today`, `7d`, `30d`; required), `simulated` | 422 `validation_error` |
+| GET | `/admin/reports` | 200; `range` (`today`, `7d`, `30d`) **or** `from` and `to` (Lagos dates, up to 90 days, `to` not in the future; #333), `include_cancelled` (default false), `simulated` | 422 `validation_error` |
 | GET | `/admin/live-map` | 200 jobs on the road and every source; no GPS, no customer data | shared only |
 | GET | `/admin/activity` | 200 newest order status changes and support requests; `limit` 1-20, default 5 | 422 `validation_error` |
 
@@ -174,8 +176,17 @@ Shared errors on every endpoint: 401 `not_authenticated`, 403 `forbidden`,
 - **On time** (FR-052): delivered at or before the confirmed window's end;
   an order without a window is never on time. The screen computes the rate
   (`on_time / with_window`).
-- **`range` is required** on `GET /admin/reports` (contract decision 7):
-  a missing `range` is 422 `validation_error`.
+- **`range`, or `from` and `to`, is required** on `GET /admin/reports`
+  (contract decision 7 and the #333 amendment). Neither, both, only one
+  of `from` and `to`, a start after the end, an end in the future or more
+  than 90 days is 422 `validation_error`; the date errors name `to`. The
+  response's `range` is `custom` for chosen dates.
+- **Cancelled orders (#333).** `by_zone` and `by_delivery_type` leave out
+  cancelled orders unless `include_cancelled=true`. `orders.total` and
+  `orders.by_status` always count them, so the screen can say how many
+  were left out. A cancelled order is never delivered, so
+  `by_zone[].delivered` does not change. The default changes the numbers
+  for a request that sends only `range` (agreed, G3, 2026-11-02).
 - **Buckets, never guessed.** Orders without a delivery type count as
   `not_recorded`; orders without a zone go in one `by_zone` row with `null`
   id and name, left out when empty. `by_zone[].delivered` counts the
@@ -257,14 +268,31 @@ in the database does not affect them.
   urgent support requests (2), an order-level CSV (3), support hours (4),
   reopening a resolved request (5).
 - **Linked in #217: shell, dashboard, live map, activity and settings. Linked
-  in #219: support requests, the audit log and admin notifications.** The
-  reports screen still runs on its mock in real mode until its link issue.
+  in #219: support requests, the audit log and admin notifications. Linked
+  in #218 and extended in #333: the Reports page.** On the Reports page the
+  Custom pill opens From and To fields (checked against the same rules
+  before sending, so a bad range shows its message and keeps the last
+  valid report), "Include cancelled orders" is off by default, and the
+  "Orders by area" and "Orders by vehicle" tables show each count with a
+  bar and the number beside it ([design](../design/admin-reports.md)).
 - **Support in real mode resolves with one note** (5 to 500 characters),
   kept on the request and not in the audit log. There is no resolution
   picker, no points and no urgent count; a refused note shows under the
   field in the server's words. Confirming without the code, withdrawing and
   cancelling are done from the order's page and the hold review. A driver in
   the contacts reads "Driver" (the contacts carry no delivery type).
+- **Website messages on the Support page (#365,
+  [design](../design/admin-support-website-messages.md)).** A request with
+  `source` `website` (the public contact form, [public-contact-form.md](public-contact-form.md))
+  is titled "Website message" with a blue "Website" tag; its list line reads
+  `Website · <name> · <time>`. The detail has no order timeline: it shows the
+  message, "Topic: <as the visitor chose it>" (`other` when none) and a
+  "Sender" block with the name, "Website visitor · Not linked to an account"
+  (the server never looks up whether the phone is a customer's), the phone as
+  text and a Call button. No customer link, order, points or email. Resolving
+  is the same note form. The adapter sets `source` and `topic` on the admin
+  issue only for a website message, so an app request is exactly as before;
+  the mock has one labelled sample website message.
 - **The audit log shows plain words for the codes the backend writes** and
   any other code as it is. Codes built from a status
   (`deletion_request_<status>`, `water_source_<status>`) show as the code until

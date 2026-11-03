@@ -348,6 +348,80 @@ def test_report_ranges_end_today_in_lagos(created: Created) -> None:
     run(scenario)
 
 
+def test_report_leaves_cancelled_out_of_the_breakdowns_unless_asked(created: Created) -> None:
+    """#333: cancelled orders stay in ``orders`` but not in ``by_zone`` or ``by_delivery_type``."""
+
+    async def scenario(sessions: Sessions) -> None:
+        customer = await dispatch_tests.add_user(sessions, created, UserRole.CUSTOMER)  # type: ignore[arg-type]
+        async with sessions() as session:
+            before = await reporting.report(session, range_name="7d", simulated=False)
+            before_all = await reporting.report(
+                session, range_name="7d", simulated=False, include_cancelled=True
+            )
+        await add_order(sessions, customer, status=OrderStatus.CONFIRMED, keke=True)
+        await add_order(sessions, customer, status=OrderStatus.CANCELLED, keke=True)
+        async with sessions() as session:
+            default = await reporting.report(session, range_name="7d", simulated=False)
+            with_cancelled = await reporting.report(
+                session, range_name="7d", simulated=False, include_cancelled=True
+            )
+        # Both orders are counted in the totals and by status either way.
+        assert default.orders.total - before.orders.total == 2
+        assert with_cancelled.orders.total - before_all.orders.total == 2
+        assert (
+            default.orders.by_status["cancelled"] - before.orders.by_status.get("cancelled", 0) == 1
+        )
+        # The breakdowns drop the cancelled one unless asked.
+        assert default.orders.by_delivery_type["keke"] - before.orders.by_delivery_type["keke"] == 1
+        assert (
+            with_cancelled.orders.by_delivery_type["keke"]
+            - before_all.orders.by_delivery_type["keke"]
+            == 2
+        )
+        no_zone = {row.zone_id: row.orders for row in default.by_zone}.get(None, 0)
+        no_zone_before = {row.zone_id: row.orders for row in before.by_zone}.get(None, 0)
+        assert no_zone - no_zone_before == 1
+
+    run(scenario)
+
+
+def test_report_for_chosen_dates_uses_those_lagos_days(created: Created) -> None:
+    """#333: ``from_day`` and ``to_day`` replace the preset range, both days inclusive."""
+
+    async def scenario(sessions: Sessions) -> None:
+        customer = await dispatch_tests.add_user(sessions, created, UserRole.CUSTOMER)  # type: ignore[arg-type]
+        day = lagos_today() - timedelta(days=20)
+        noon = lagos_day_start_utc(day) + timedelta(hours=12)
+        async with sessions() as session:
+            before = await reporting.report(
+                session, range_name="custom", simulated=False, from_day=day, to_day=day
+            )
+            outside = await reporting.report(
+                session,
+                range_name="custom",
+                simulated=False,
+                from_day=day + timedelta(days=1),
+                to_day=day + timedelta(days=2),
+            )
+        await add_order(sessions, customer, status=OrderStatus.CONFIRMED, created_at=noon)
+        async with sessions() as session:
+            after = await reporting.report(
+                session, range_name="custom", simulated=False, from_day=day, to_day=day
+            )
+            after_outside = await reporting.report(
+                session,
+                range_name="custom",
+                simulated=False,
+                from_day=day + timedelta(days=1),
+                to_day=day + timedelta(days=2),
+            )
+        assert (after.range, after.from_day, after.to_day) == ("custom", day, day)
+        assert after.orders.total - before.orders.total == 1
+        assert after_outside.orders.total == outside.orders.total
+
+    run(scenario)
+
+
 def test_live_map_holds_and_activity(created: Created) -> None:
     async def scenario(sessions: Sessions) -> None:
         admin = await part1.add_admin(sessions, created)

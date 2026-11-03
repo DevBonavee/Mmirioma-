@@ -19,6 +19,10 @@ Cash (#123) is checked by ``payments.retention``: anonymizing is refused
 while a customer's cash is unsettled in the app, and part payments and
 overpayments settled outside the app (F9, F7) are reported as warnings for
 the privacy contact to check.
+
+Website contact messages (#339) belong to no account, so a visitor's request
+to delete one is a separate command, :func:`delete_website_messages`, which
+finds them by the visitor's phone number (#364).
 """
 
 import uuid
@@ -33,16 +37,20 @@ from app.modules.auth import service as auth_service
 from app.modules.auth.models import User, UserRole
 from app.modules.customers import requests as customer_requests
 from app.modules.customers import retention as addresses
-from app.modules.customers.models import DeletionRequestStatus
+from app.modules.customers.models import DeletionRequestStatus, SupportRequestStatus
 from app.modules.deliveries import retention as deliveries
 from app.modules.dispatch import retention as jobs
 from app.modules.notifications import service as notifications
 from app.modules.orders import retention as orders
 from app.modules.payments import retention as payments
+from app.modules.pricing import retention as quotes
 
 # Retention periods from PRIVACY_NOTICE.md section 8.
 UNVERIFIED_ACCOUNT_PERIOD = timedelta(days=30)
 GPS_PERIOD = timedelta(days=90)
+#: A quote that never became an order keeps the customer's map pin this long after its
+#: price expired (technical lead, 2026-11-03, #385).
+QUOTE_LOCATION_PERIOD = timedelta(days=90)
 ORDER_PERIOD_YEARS = 3
 COMPLAINT_PERIOD_YEARS = 3
 #: Deletion requests, after they are completed or refused (#118).
@@ -68,6 +76,7 @@ class AnonymizeResult:
     Attributes:
         customer_id: The account's id, for the request register.
         orders_anonymized: Orders whose contact and address were removed.
+        order_locations_cleared: Map points cleared from those orders (#340).
         gps_points_cleared: GPS points removed from those orders.
         addresses_removed: Saved addresses deleted (profile data, notice §8).
         support_messages_removed: Support request messages replaced; the
@@ -82,10 +91,12 @@ class AnonymizeResult:
             app (F9, F7), one line per order, for the privacy contact to
             check before applying.
         applied: False for a dry run (nothing was saved).
+        quote_locations_cleared: Quotes whose map pin was removed (#385).
     """
 
     customer_id: uuid.UUID
     orders_anonymized: int
+    order_locations_cleared: int
     gps_points_cleared: int
     addresses_removed: int
     support_messages_removed: int
@@ -94,6 +105,7 @@ class AnonymizeResult:
     notes_to_review: int
     cash_warnings: list[str]
     applied: bool
+    quote_locations_cleared: int = 0
 
 
 class PartnerNotReady(Exception):
@@ -136,6 +148,22 @@ class PartnerAnonymizeResult:
 
 
 @dataclass(frozen=True)
+class WebsiteMessagesResult:
+    """What deleting a visitor's website contact messages changed (or would change).
+
+    Attributes:
+        messages_deleted: Website messages sent from the phone that were deleted.
+        still_open: Of those, how many staff had not resolved yet, so the
+            privacy contact knows an unanswered message is gone.
+        applied: False for a dry run (nothing was saved).
+    """
+
+    messages_deleted: int
+    still_open: int
+    applied: bool
+
+
+@dataclass(frozen=True)
 class ReviewResult:
     """What the monthly review changed (or would change, in a dry run).
 
@@ -148,11 +176,15 @@ class ReviewResult:
             instead, because audit rows name them as the actor (NFR-004).
         gps_points_cleared: GPS points older than 90 days removed.
         orders_anonymized: Orders finished over 3 years ago anonymized.
+        order_locations_cleared: Map points cleared from those orders (#340).
         support_requests_deleted: Support requests resolved over 3 years
             ago deleted (complaints, notice §8; #82).
         deletion_requests_deleted: Deletion requests completed or refused
             over 3 years ago deleted (notice §8; #118).
         applied: False for a dry run (nothing was saved).
+        quote_locations_cleared: Quotes whose map pin was removed: those of
+            anonymized orders and accounts, and unplaced quotes whose price
+            expired over 90 days ago (#385).
     """
 
     phone_codes_cleared: int
@@ -162,9 +194,11 @@ class ReviewResult:
     unverified_accounts_anonymized: int
     gps_points_cleared: int
     orders_anonymized: int
+    order_locations_cleared: int
     support_requests_deleted: int
     deletion_requests_deleted: int
     applied: bool
+    quote_locations_cleared: int = 0
 
 
 async def get_acting_admin(session: AsyncSession, *, phone: str) -> User:
@@ -264,9 +298,11 @@ async def anonymize_customer(
     notes += await payments.count_notes(session, order_ids=order_ids)
     marker = await accounts.new_phone_marker(session)
     await accounts.anonymize_account(session, customer, phone_marker=marker)
+    locations = await orders.count_order_locations(session, order_ids=order_ids)
     anonymized = await orders.anonymize_orders(session, order_ids=order_ids, now=now)
     gps = await deliveries.clear_order_gps(session, order_ids=order_ids, now=now)
     removed = await addresses.delete_addresses(session, customer_ids=[customer_id])
+    quote_pins = await quotes.clear_customer_quote_locations(session, customer_ids=[customer_id])
     cleared = await addresses.clear_requests(session, customer_ids=[customer_id])
     deleted_notes = await notifications.delete_for_users(session, user_ids=[customer_id])
     audit.record(
@@ -277,17 +313,20 @@ async def anonymize_customer(
         target_id=customer_id,
         details={
             "orders_anonymized": anonymized,
+            "order_locations_cleared": locations,
             "gps_points_cleared": gps,
             "addresses_removed": removed,
             "support_messages_removed": cleared.messages,
             "resolution_notes_removed": cleared.resolution_notes,
             "notifications_deleted": deleted_notes,
+            "quote_locations_cleared": quote_pins,
         },
     )
     await _finish(session, apply)
     return AnonymizeResult(
         customer_id=customer_id,
         orders_anonymized=anonymized,
+        order_locations_cleared=locations,
         gps_points_cleared=gps,
         addresses_removed=removed,
         support_messages_removed=cleared.messages,
@@ -296,6 +335,7 @@ async def anonymize_customer(
         notes_to_review=notes,
         cash_warnings=warnings,
         applied=apply,
+        quote_locations_cleared=quote_pins,
     )
 
 
@@ -402,6 +442,64 @@ async def anonymize_partner(
     )
 
 
+async def delete_website_messages(
+    session: AsyncSession,
+    *,
+    actor: User,
+    visitor_phone: str,
+    apply: bool,
+) -> WebsiteMessagesResult:
+    """Delete the website contact messages sent from a phone number (#364).
+
+    A person who used the website contact form has no account, so
+    :func:`anonymize_customer` cannot reach their messages (docs/api/public-site.md,
+    "POST /public/contact"; notice section 9). The privacy contact verifies the
+    requester by calling the number back (procedure "Deletion: website contact
+    messages"), then runs this. The whole row is deleted: with the name, phone
+    and message gone nothing useful is left, and the 3-year review deletes
+    resolved ones whole as well. Open (unresolved) messages are deleted too,
+    and counted, because the requester asked for it.
+
+    Only ``website`` requests are touched, never a customer's own support
+    requests, and the phone is not looked up against accounts, so a message is
+    never linked to one (NFR-002). One audit row is written for each deleted
+    message (NFR-004), with the request's id and status and no name, phone or
+    message (NFR-003).
+
+    Args:
+        session: Database session.
+        actor: The admin running it (:func:`get_acting_admin`).
+        visitor_phone: The visitor's normalized phone.
+        apply: Save the changes; otherwise roll them back (dry run).
+
+    Returns:
+        What changed.
+
+    Raises:
+        LookupError: No website message was sent from this number.
+    """
+    found = await addresses.website_requests_by_phone(session, phone=visitor_phone)
+    if not found:
+        raise LookupError("no website message was sent from this number")
+    request_ids = [request_id for request_id, _ in found]
+    deleted = await addresses.delete_website_requests(session, request_ids=request_ids)
+    for request_id, status in found:
+        audit.record(
+            session,
+            actor_id=actor.id,
+            action="website_message_deleted",
+            target_type="support_request",
+            target_id=request_id,
+            details={"status": status.value},
+        )
+    await _finish(session, apply)
+    return WebsiteMessagesResult(
+        messages_deleted=deleted,
+        still_open=sum(1 for _, status in found if status is SupportRequestStatus.OPEN),
+        applied=apply,
+    )
+
+
 async def correct_customer_name(
     session: AsyncSession, *, actor: User, customer_phone: str, name: str
 ) -> uuid.UUID:
@@ -490,12 +588,14 @@ async def retention_review(
     await addresses.delete_requests(session, customer_ids=to_delete)
     accounts_deleted = await accounts.delete_accounts(session, user_ids=to_delete)
     accounts_anonymized = 0
+    quote_pins = 0
     for user in await accounts.get_users(session, user_ids=actors):
         if accounts.is_anonymized_phone(user.phone):
             continue
         marker = await accounts.new_phone_marker(session)
         await accounts.anonymize_account(session, user, phone_marker=marker)
         await addresses.clear_requests(session, customer_ids=[user.id])
+        quote_pins += await quotes.clear_customer_quote_locations(session, customer_ids=[user.id])
         await notifications.delete_for_users(session, user_ids=[user.id])
         accounts_anonymized += 1
     support_deleted = await addresses.delete_resolved_support_requests(
@@ -514,8 +614,15 @@ async def retention_review(
     old_orders = await orders.completed_order_ids(
         session, completed_before=years_before(now, ORDER_PERIOD_YEARS)
     )
+    locations = await orders.count_order_locations(session, order_ids=old_orders)
     anonymized = await orders.anonymize_orders(session, order_ids=old_orders, now=now)
     gps += await deliveries.clear_order_gps(session, order_ids=old_orders, now=now)
+    # A quote keeps its pin while its order keeps the location (#385); an unplaced
+    # quote keeps it 90 days after its price expired.
+    quote_pins += await quotes.clear_order_quote_locations(session, order_ids=old_orders)
+    quote_pins += await quotes.clear_expired_unplaced_quote_locations(
+        session, expired_before=now - QUOTE_LOCATION_PERIOD
+    )
 
     result = ReviewResult(
         phone_codes_cleared=phone_codes,
@@ -525,9 +632,11 @@ async def retention_review(
         unverified_accounts_anonymized=accounts_anonymized,
         gps_points_cleared=gps,
         orders_anonymized=anonymized,
+        order_locations_cleared=locations,
         support_requests_deleted=support_deleted,
         deletion_requests_deleted=deletion_deleted,
         applied=apply,
+        quote_locations_cleared=quote_pins,
     )
     audit.record(
         session,

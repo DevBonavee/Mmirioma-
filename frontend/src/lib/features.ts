@@ -110,3 +110,17 @@ export const PUSH_ENABLED = USE_MOCKS
  * While `false`: the vehicle page has no "Documents" section.
  */
 export const PARTNER_DOCUMENTS_ENABLED = USE_MOCKS
+
+/**
+ * The message form on the Contact page (`/contact`, #344). Built, but switched
+ * on only when the build sets `VITE_CONTACT_FORM_ENABLED=true`, in mock and
+ * real mode alike, because the technical lead set four conditions before it
+ * goes live (docs/design/contact.md, "Switching the form on"): the honeypot
+ * test, #364 and #365 merged, and the privacy notice's wording reviewed by its
+ * legal operator, with its date set to the day the form goes live. The value
+ * is read when the frontend is built, so changing it needs a rebuild.
+ *
+ * While `false`: `/contact` shows the call, WhatsApp and email card only, with
+ * no form, placeholder or "coming soon".
+ */
+export const CONTACT_FORM_ENABLED = import.meta.env.VITE_CONTACT_FORM_ENABLED === 'true'

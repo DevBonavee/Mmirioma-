@@ -15,9 +15,15 @@ import { apiClient, ApiError, type ApiClient } from './client'
 /** The Reports page's date pills. `7d` is the 7 Lagos days ending today. */
 export type AdminReportRange = 'today' | '7d' | '30d'
 
+/**
+ * Query of `GET /admin/reports`: a preset `range`, or chosen Lagos dates
+ * `from` and `to` (never both, #333). `includeCancelled` defaults to false.
+ */
+export type AdminReportQuery = ({ range: AdminReportRange } | { from: string; to: string }) & { includeCancelled?: boolean }
+
 /** `GET /admin/reports`: aggregates for one range. Holds no customer data (FR-053). */
 export const reportSchema = z.object({
-  range: z.enum(['today', '7d', '30d']),
+  range: z.enum(['today', '7d', '30d', 'custom']),
   /** First and last Lagos date of the range, `YYYY-MM-DD`. */
   from: z.string(),
   to: z.string(),
@@ -43,20 +49,27 @@ export const reportSchema = z.object({
 export type AdminReportRead = z.infer<typeof reportSchema>
 
 /**
- * The report for a range (`GET /admin/reports`).
+ * The report for a preset range or chosen dates (`GET /admin/reports`).
  *
- * Always sends `range`: the server has no default and answers a missing one
- * with 422 `validation_error` (admin-operations.md, decision 7). The screens
- * send no `simulated` parameter, so the server excludes simulated records
- * (BR-09).
+ * Always sends `range`, or `from` and `to`: the server has no default and
+ * answers neither (or both) with 422 `validation_error` (admin-operations.md,
+ * decision 7 and the #333 amendment). Sends `include_cancelled=true` only
+ * when asked. The screens send no `simulated` parameter, so the server
+ * excludes simulated records (BR-09).
  *
- * @param range - The pill the admin picked.
+ * @param query - The pill or dates the admin picked.
  * @throws {ApiError} 401, 403; `validation_error` (422); `invalid_response`.
  */
-export async function getAdminReport(range: AdminReportRange, signal?: AbortSignal, client: ApiClient = apiClient): Promise<AdminReportRead> {
-  const query = new URLSearchParams()
-  if (range) query.set('range', range)
-  const value = await client.request<unknown>(`/api/v1/admin/reports?${query.toString()}`, { signal })
+export async function getAdminReport(query: AdminReportQuery, signal?: AbortSignal, client: ApiClient = apiClient): Promise<AdminReportRead> {
+  const params = new URLSearchParams()
+  if ('range' in query) {
+    if (query.range) params.set('range', query.range)
+  } else {
+    params.set('from', query.from)
+    params.set('to', query.to)
+  }
+  if (query.includeCancelled) params.set('include_cancelled', 'true')
+  const value = await client.request<unknown>(`/api/v1/admin/reports?${params.toString()}`, { signal })
   const result = reportSchema.safeParse(value)
   if (!result.success) {
     throw new ApiError({

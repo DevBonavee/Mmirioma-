@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { MobileShell, ScrollArea } from '../../../components/layout/MobileShell'
+import { usePane } from '../../../components/layout/shellContext'
 import { EmptyBlock, ErrorBlock, LoadingBlock } from '../../../components/layout/StateScreens'
 import { ButtonLink } from '../../../components/ui/Button'
 import { ScreenHeading } from '../../../components/ui/Content'
@@ -30,6 +32,9 @@ function countLine(orders: CustomerOrder[]): string {
 /** My orders (`c-orders`). */
 export function Orders() {
   const orders = useOrders()
+  // In the two-pane layout (1280 px and up) a card opens its details in the right pane.
+  const inPane = usePane() !== null
+  const open = useParams().reference
   const [filter, setFilter] = useState<Filter>('all')
   const list = (orders.data ?? []).filter(MATCH[filter])
   const anySample = orders.data?.some((o) => o.quote?.is_sample)
@@ -54,7 +59,15 @@ export function Orders() {
         />
         {orders.isPending && <LoadingBlock label="Loading your orders" />}
         {orders.isError && <ErrorBlock error={orders.error} onRetry={() => orders.refetch()} />}
-        {orders.isSuccess && list.map((o) => <OrderListCard key={o.reference} order={o} className="rise-3" />)}
+        {orders.isSuccess && list.map((o) => (
+            <OrderListCard
+              key={o.reference}
+              order={o}
+              className="rise-3"
+              to={inPane ? `/orders/${o.reference}` : undefined}
+              selected={inPane && o.reference === open}
+            />
+          ))}
         {orders.isSuccess && list.length === 0 && (
           <EmptyBlock
             illustration="keke"

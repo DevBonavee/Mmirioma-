@@ -33,6 +33,7 @@ from app.modules.customers.schemas import (
     SupportRequestRead,
 )
 from app.modules.orders.schemas import PageParams
+from app.shared.location import read_location
 
 router = APIRouter(prefix="/me", tags=["customer account"])
 
@@ -65,19 +66,25 @@ def address_read(view: service.AddressView) -> AddressRead:
         address=address.address,
         landmark=address.landmark,
         zone=AddressZoneRead(id=zone.id, name=zone.name, is_active=zone.is_active),
+        location=read_location(
+            address.location_latitude, address.location_longitude, address.location_source
+        ),
         is_default=address.is_default,
         created_at=address.created_at,
         updated_at=address.updated_at,
     )
 
 
-def _data(body: AddressInput) -> service.AddressData:
+def _data(body: AddressInput, *, patch: bool = False) -> service.AddressData:
     return service.AddressData(
         label=body.label,
         address=body.address,
         landmark=body.landmark,
         zone_id=body.zone_id,
         make_default=body.make_default,
+        location=body.location,
+        # PATCH: a location that was not sent is left alone (contract, "Saved addresses").
+        change_location=not patch or "location" in body.model_fields_set,
     )
 
 
@@ -127,7 +134,9 @@ async def update_address(
     Raises:
         APIError: 404 ``address_not_found`` or ``service_zone_not_found``.
     """
-    return address_read(await service.update_address(db, customer, address_id, _data(body)))
+    return address_read(
+        await service.update_address(db, customer, address_id, _data(body, patch=True))
+    )
 
 
 @router.post("/addresses/{address_id}/default", responses=_WRITE_ERRORS)

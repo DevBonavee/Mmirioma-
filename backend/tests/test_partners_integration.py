@@ -20,6 +20,7 @@ from app.core.config import get_settings
 from app.core.errors import APIError
 from app.modules.audit.models import AuditLog
 from app.modules.auth.models import User, UserRole
+from app.modules.auth.service import TERMS_VERSION
 from app.modules.dispatch import service as dispatch_service
 from app.modules.dispatch.models import (
     ApprovalStatus,
@@ -155,6 +156,8 @@ def test_sign_up_creates_a_pending_partner_with_the_declared_vehicle(created: Cr
         assert (profile.new_order_alerts, profile.sms_updates) == (True, True)
         assert [z.id for z in partner.zones] == [zone.id]
         assert [(a.action, a.target_id) for a in audit] == [("partner_registered", user.id)]
+        assert user.terms_accepted_at is not None
+        assert user.terms_version == TERMS_VERSION
 
     run(scenario)
 

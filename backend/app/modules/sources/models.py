@@ -25,6 +25,7 @@ import uuid
 from datetime import date
 from enum import StrEnum
 
+from geoalchemy2 import Geography, WKBElement
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
@@ -65,7 +66,11 @@ class WaterSource(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     Attributes:
         name: Supplier or source name shown to drivers, e.g. "Sample Borehole A".
         approximate_location: Approximate pickup location in words (FR-011),
-            enough for a driver to find it; no coordinates yet.
+            enough for a driver to find it.
+        location: The pickup point, a WGS 84 point an administrator sets, or
+            null (#385). Road-distance pricing needs it: a quote that could use
+            a source without one is priced with the zone's fee instead. Never
+            sent to a customer or a driver, and never guessed from the text.
         is_simulated: True for demo data (BR-09). A real order may still use
             a simulated source for now (order confirmation contract,
             decision 9); clients show its Simulated tag.
@@ -78,6 +83,9 @@ class WaterSource(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     name: Mapped[str] = mapped_column(String(SOURCE_NAME_MAX_LENGTH))
     approximate_location: Mapped[str] = mapped_column(String(APPROXIMATE_LOCATION_MAX_LENGTH))
+    location: Mapped[WKBElement | None] = mapped_column(
+        Geography(geometry_type="POINT", srid=4326, spatial_index=False)
+    )
     is_simulated: Mapped[bool] = mapped_column(default=False, server_default=false())
     kind: Mapped[WaterSourceKind | None] = mapped_column(
         Enum(

@@ -68,6 +68,8 @@ services:
         VITE_API_BASE_URL: https://${SITE_DOMAIN:?Set SITE_DOMAIN in .env.production}
         VITE_SUPPORT_PHONE: ${VITE_SUPPORT_PHONE:-}
         VITE_SUPPORT_WHATSAPP: ${VITE_SUPPORT_WHATSAPP:-}
+        # Off until the four conditions in docs/design/contact.md are met (#344).
+        VITE_CONTACT_FORM_ENABLED: ${VITE_CONTACT_FORM_ENABLED:-false}
     restart: unless-stopped
     # Settings (database, SMS, support) come from the file; the lines below win
     # over it so production cannot be started in a development mode by mistake.
@@ -139,6 +141,62 @@ services:
       db:
         condition: service_healthy
     mem_limit: 512m
+    logging: *logging
+
+  # Road distance for pricing (FR-022; docs/architecture/maps.md option R1, #384).
+  # NOT part of a normal "up": it is in the "routing" profile, so it starts only
+  # when you ask for it, after the routing files exist and the measurement in
+  # docs/deployment/hostinger.md passes:
+  #   deploy/prod.sh --profile routing up -d osrm
+  # The files are built OFF this server (deploy/osrm-build.sh) and copied to
+  # OSRM_DATA_DIR. Nothing calls it yet; the API reaches it at http://osrm:5000.
+  # The pinned image is the newest published tag (the v26.x releases have no image).
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:v6.0.0
+    profiles: [routing]
+    restart: unless-stopped
+    # One vCPU. --mmap reads the files in place instead of copying them into
+    # memory, so the kernel can drop pages under pressure. --max-table-size
+    # bounds a "table" request (a quote asks for a few sources at most).
+    command:
+      - osrm-routed
+      - --algorithm
+      - mld
+      - --mmap
+      - --threads
+      - "1"
+      - --max-table-size
+      - "50"
+      - /data/nigeria-latest.osrm
+    volumes:
+      # Read-only: the container can never change or fill the routing files.
+      - ${OSRM_DATA_DIR:-./osrm-data}:/data:ro
+    # Internal network only, no published port: the API is the only caller.
+    networks: [data]
+    # 1.5 GiB is the pass line in maps.md. Above it the container is killed, not
+    # allowed to starve the API and the database on a 4 GB machine.
+    mem_limit: 1536m
+    # Not root: it only reads the files (deploy/osrm-build.sh makes them world-readable).
+    user: "65534:65534"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      # OSRM answers "Ok" for ANY point on Earth, snapping it to the nearest road in
+      # whatever data it holds (Enugu coordinates against another country's data
+      # return a street thousands of km away). So the check reads the snap distance
+      # ("distance", in metres) of a point on Ogui Road, Enugu (from OpenStreetMap,
+      # 3 Nov 2026) and is healthy only if the loaded map has a road within 1 km of
+      # it. The image has wget and awk, not curl.
+      test:
+        - CMD-SHELL
+        - >-
+          wget -qO- http://127.0.0.1:5000/nearest/v1/driving/7.5095852,6.4586357
+          | grep -o '"distance":[0-9.]*' | awk -F: '{ exit !($2 < 1000) }'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     logging: *logging
 
   caddy:

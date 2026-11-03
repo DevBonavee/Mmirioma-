@@ -50,7 +50,7 @@ describe('profile phone verification link', () => {
   it('offers "Verify" while the phone is not verified', async () => {
     resetMockDb()
     const [area] = await listSignupAreas()
-    await partnerSignup({ name: 'Sample Rider', phone: '0800 000 0072', password: 'sample-password-1', vehicle_type: 'keke', plate: 'ENU 123 AB', tank_gallons: null, service_zone_id: area.id })
+    await partnerSignup({ name: 'Sample Rider', phone: '0800 000 0072', password: 'Sample-Passw0rd-1', accepted_terms: true, vehicle_type: 'keke', plate: 'ENU 123 AB', tank_gallons: null, service_zone_id: area.id })
     renderScreen(<PartnerProfilePage />)
     const link = await screen.findByRole('link', { name: 'Verify' })
     expect(link).toHaveAttribute('href', '/partner/verify-phone')

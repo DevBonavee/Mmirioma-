@@ -352,6 +352,33 @@ def test_only_active_zones_are_offered(created: Created, zone_ids: list[uuid.UUI
     run(scenario)
 
 
+def test_the_public_list_has_the_position_of_active_zones_only(
+    created: Created, zone_ids: list[uuid.UUID]
+) -> None:
+    """#346: ``centre`` always set, ``boundary`` only when entered, no inactive zone."""
+
+    async def scenario(sessions: Sessions) -> None:
+        admin = await add_user(sessions, created, UserRole.ADMIN)
+        with_boundary = await new_zone(sessions, zone_ids, admin, boundary=SQUARE)
+        without = await new_zone(sessions, zone_ids, admin)
+        inactive = await new_zone(sessions, zone_ids, admin, is_active=False, boundary=SQUARE)
+        async with sessions() as session:
+            offered = {v.zone.id: v for v in await zones.list_active_zone_geometry(session)}
+        assert inactive.zone.id not in offered
+        assert (offered[with_boundary.zone.id].centre, offered[with_boundary.zone.id].boundary) == (
+            CENTRE,
+            SQUARE,
+        )
+        assert (offered[without.zone.id].centre, offered[without.zone.id].boundary) == (
+            CENTRE,
+            None,
+        )
+        # Every offered zone has a centre, and the public list carries no fees.
+        assert all(v.centre is not None and v.fees == [] for v in offered.values())
+
+    run(scenario)
+
+
 # --- The pilot category in the admin list (amendment #74, #109) -------------------------
 
 

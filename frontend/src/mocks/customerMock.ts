@@ -8,6 +8,7 @@ import type {
   CustomerNotification,
   CustomerOrder,
   CustomerProfile,
+  DeliveryLocation,
   PointsSummary,
   ProblemType,
   Quote,
@@ -108,6 +109,24 @@ export interface AddressInput {
   /** Required: an address is saved only with an area (FR-020, customer-account.md). */
   zone_id: string
   make_default: boolean
+  /** On a save: absent leaves a saved pin unchanged, `null` removes it (docs/api/delivery-location.md). */
+  location?: DeliveryLocation | null
+}
+
+/**
+ * The server's check of a pin (docs/api/delivery-location.md): in range, a
+ * known `source`, and inside a box around Enugu State. The 422 names the
+ * location field, never the inner one.
+ */
+function validateLocation(location: DeliveryLocation | null | undefined, field: 'location' | 'delivery_location') {
+  if (!location) return
+  const { latitude, longitude, source } = location
+  const inEnugu = latitude >= 5.9 && latitude <= 7.1 && longitude >= 6.7 && longitude <= 8.0
+  if (!(source === 'device_location' || source === 'map_pin') || !inEnugu) {
+    throw mockError(422, 'validation_error', 'Request validation failed', [
+      { loc: ['body', field], msg: 'This location is outside the area we deliver in.', type: 'value_error' },
+    ])
+  }
 }
 
 function validateAddress(input: AddressInput): ServiceArea {
@@ -123,6 +142,7 @@ function validateAddress(input: AddressInput): ServiceArea {
 export async function addAddress(input: AddressInput): Promise<SavedAddress> {
   await delay(null)
   const area = validateAddress(input)
+  validateLocation(input.location, 'location')
   return clone(
     change((d) => {
       const first = d.addresses.length === 0
@@ -134,6 +154,7 @@ export async function addAddress(input: AddressInput): Promise<SavedAddress> {
         landmark: input.landmark?.trim() || null,
         is_default: input.make_default || first,
         zone: { id: area.id, name: area.name, is_active: area.enabled },
+        location: input.location ?? null,
       }
       d.addresses.push(created)
       return created
@@ -144,6 +165,7 @@ export async function addAddress(input: AddressInput): Promise<SavedAddress> {
 export async function updateAddress(id: string, input: AddressInput): Promise<SavedAddress> {
   await delay(null)
   const area = validateAddress(input)
+  validateLocation(input.location, 'location')
   return clone(
     change((d) => {
       const a = d.addresses.find((x) => x.id === id)
@@ -152,6 +174,7 @@ export async function updateAddress(id: string, input: AddressInput): Promise<Sa
       a.address = input.address.trim()
       a.landmark = input.landmark?.trim() || null
       a.zone = { id: area.id, name: area.name, is_active: area.enabled }
+      if (input.location !== undefined) a.location = input.location
       if (input.make_default) {
         d.addresses.forEach((x) => (x.is_default = x.id === id))
       }
@@ -197,7 +220,7 @@ export async function listServiceZones(): Promise<AreaOption[]> {
   await delay(null)
   return read()
     .admin.areas.filter((a) => a.enabled)
-    .map((a) => ({ id: a.id, name: a.name }))
+    .map((a) => ({ id: a.id, name: a.name, centre: a.centre }))
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
@@ -248,10 +271,16 @@ export interface CreateOrderInput {
   quote_id?: string | null
   /** The picked area (FR-020); `null` when the address is in no listed area. */
   service_zone_id?: string | null
+  /**
+   * The order's own copy of the address pin (FR-024, #340). The real server
+   * stores it; the mock checks it and shows no pin on any order screen.
+   */
+  delivery_location?: DeliveryLocation | null
 }
 
 export async function createOrder(input: CreateOrderInput): Promise<CustomerOrder> {
   await delay(null, 500)
+  validateLocation(input.delivery_location, 'delivery_location')
   // FR-003: the phone must be verified by SMS code before the first order (orders.md).
   const customerId = requireUserId()
   if (!read().users.find((u) => u.id === customerId)?.phone_verified) {

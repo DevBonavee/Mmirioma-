@@ -26,6 +26,71 @@
     display: none;
   }
 
+  /* ---------- Size tiles that fill with water (#330) ----------
+   * The water is a full-height layer scaled up from the bottom, so it moves with
+   * transform only (styles/motion.css: animate transform and opacity). `--mk-fill`
+   * (0 to 1, set by the tile) is how high it rises. The unit text turns ink when the
+   * water is up: the muted grey is 4.21:1 on this blue, ink is 11.3:1.
+   * Hover is limited to devices that have it, so a tap on a touch screen does not
+   * leave a stuck hover; the tile's data-filled attribute covers the tap. */
+  .mk-tile {
+    --mk-water: #bfe0fd;
+    position: relative;
+    isolation: isolate;
+    cursor: default;
+  }
+  /* Clips the water to the tile's rounded corners. The tile itself is not clipped, so a label wider
+     than a narrow tile (360 px) is never cut off. The water scales inside this unscaled box, so the
+     corner radius stays true at every fill. */
+  .mk-tile-clip {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+  .mk-tile-water {
+    position: absolute;
+    inset: 0;
+    background: var(--mk-water);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* The grey is set here, not with a text-mute class: a utility class outranks this layer and would keep it grey. */
+  .mk-tile-unit {
+    color: var(--color-mute);
+    transition: color 300ms ease;
+  }
+  .mk-tile:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .mk-tile:focus-visible .mk-tile-water,
+  .mk-tile[data-filled] .mk-tile-water {
+    transform: scaleY(var(--mk-fill));
+  }
+  .mk-tile:focus-visible .mk-tile-unit,
+  .mk-tile[data-filled] .mk-tile-unit {
+    color: var(--color-ink);
+  }
+  @media (hover: hover) {
+    .mk-tile:hover .mk-tile-water {
+      transform: scaleY(var(--mk-fill));
+    }
+    .mk-tile:hover .mk-tile-unit {
+      color: var(--color-ink);
+    }
+  }
+  /* Reduced motion: the water still appears on hover, focus or tap, but at once. */
+  @media (prefers-reduced-motion: reduce) {
+    .mk-tile-water,
+    .mk-tile-unit {
+      transition: none;
+    }
+  }
+
   /* ---------- Hero ---------- */
   .mk-hero {
     aspect-ratio: 734 / 300;

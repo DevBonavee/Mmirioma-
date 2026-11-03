@@ -5,7 +5,8 @@ lists" (agreed 2026-10-26, #37). The admin endpoints use
 ``CurrentAdmin``, so every other role gets 403 ``forbidden`` (FR-001); their
 writes also need the CSRF header, which the auth dependency enforces.
 ``GET /service-zones`` needs **no session**: partner sign-up lists the zones
-before an account exists, and it returns only active zone ids and names.
+before an account exists and the landing page draws the service-area map
+(#346). It returns only active zones: id, name, centre and boundary, no fees.
 
 ``POST /quotes`` (docs/api/order-details-and-price.md, agreed 2026-10-26,
 #21) is for customers only, with CSRF, and rate-limited
@@ -19,7 +20,7 @@ import uuid
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db_session
@@ -49,6 +50,10 @@ from app.modules.pricing.schemas import (
 )
 
 router = APIRouter(tags=["pricing"])
+
+#: ``GET /service-zones`` is cached for a minute: the address form reads the same
+#: list, so a zone just switched off must not be offered for long (#346).
+ZONE_LIST_CACHE_CONTROL = "public, max-age=60"
 
 DbSession = Annotated[AsyncSession, Depends(get_db_session)]
 QuoteLimits = Annotated[QuoteRateLimits, Depends(get_quote_rate_limits)]
@@ -122,10 +127,16 @@ async def update_zone(
 
 
 @router.get("/service-zones")
-async def list_zone_options(db: DbSession) -> ServiceZoneOptionList:
-    """Active zones to pick from (FR-020): ``id`` and ``name`` only, by name."""
-    zones = await service.list_active_zones(db)
-    return ServiceZoneOptionList(items=[ServiceZoneOption.model_validate(z) for z in zones])
+async def list_zone_options(response: Response, db: DbSession) -> ServiceZoneOptionList:
+    """Active zones by name: ``id``, ``name``, ``centre`` and ``boundary`` (FR-020, #346).
+
+    Public, no fees. Cached for 60 seconds: short, because the address form
+    reads the same list and a just-deactivated zone should not be offered for
+    minutes (technical lead, 2026-11-03).
+    """
+    views = await service.list_active_zone_geometry(db)
+    response.headers["Cache-Control"] = ZONE_LIST_CACHE_CONTROL
+    return ServiceZoneOptionList(items=[ServiceZoneOption.from_view(view) for view in views])
 
 
 # --- Price lists (#37) ----------------------------------------------------------------
@@ -215,5 +226,10 @@ async def create_quote(
     # The direct peer; see auth/rate_limit.py for running behind a reverse proxy.
     ip = request.client.host if request.client else "unknown"
     limits.check_and_record(str(customer.id), ip)
-    answer = await quotes.create_quote(db, customer_id=customer.id, choice=body.to_choice())
+    answer = await quotes.create_quote(
+        db,
+        customer_id=customer.id,
+        choice=body.to_choice(),
+        delivery_location=body.delivery_location,
+    )
     return quote_read(answer)

@@ -13,7 +13,7 @@ beforeEach(async () => {
   resetMockDb()
   vi.useRealTimers()
   vi.spyOn(console, 'info').mockImplementation(() => {})
-  await mockRegister({ name: 'Sample Customer', phone: '08000000071', password: 'sample-password-1' })
+  await mockRegister({ name: 'Sample Customer', phone: '08000000071', password: 'Sample-Passw0rd-1', accepted_terms: true })
 })
 
 describe('phone verification mock (auth.md)', () => {
@@ -47,9 +47,9 @@ describe('phone verification mock (auth.md)', () => {
   })
 
   it('changes the number only after the new one is verified', async () => {
-    await expect(mockRequestPhoneChange({ phone: '08000000071', password: 'sample-password-1' })).rejects.toMatchObject({ code: 'phone_unchanged' })
+    await expect(mockRequestPhoneChange({ phone: '08000000071', password: 'Sample-Passw0rd-1' })).rejects.toMatchObject({ code: 'phone_unchanged' })
     await expect(mockRequestPhoneChange({ phone: '08000000072', password: 'wrong' })).rejects.toMatchObject({ status: 403, code: 'password_incorrect' })
-    await mockRequestPhoneChange({ phone: '08000000072', password: 'sample-password-1' })
+    await mockRequestPhoneChange({ phone: '08000000072', password: 'Sample-Passw0rd-1' })
     expect(read().users.some((u) => u.phone === '+2348000000071')).toBe(true)
     await expect(mockVerifyPhoneChange(openCodeForTests()!)).resolves.toMatchObject({ phone: '+2348000000072', phone_verified: true })
   })

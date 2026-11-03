@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { HomeLogo } from '../../components/brand/HomeLogo'
 import { cx } from '../../lib/cx'
 import { CONTACT } from './content'
 import { ArrowLeftIcon } from './icons'
@@ -233,11 +234,11 @@ function Rows({ rows }: { rows: [ReactNode, ReactNode][] }) {
 }
 
 /*
- * The Privacy page mirrors PRIVACY_NOTICE.md (version 3.0) section by
+ * The Privacy page mirrors PRIVACY_NOTICE.md (version 8.0) section by
  * section, with the same facts (#93). Change both together; the notice is the
  * source.
  */
-const PRIVACY_VERSION = 'Version 3.0, last updated 1 November 2026.'
+const PRIVACY_VERSION = 'Version 8.0, last updated 3 November 2026.'
 
 const PRIVACY: Section[] = [
   {
@@ -279,12 +280,20 @@ const PRIVACY: Section[] = [
               'To create and protect your account and contact you about your orders. Your password is stored only in a scrambled (hashed) form.',
             ],
             [
+              'When you sign up: the time you confirmed you are 18 or older and accepted our Terms and this notice, and which version you accepted',
+              'To keep a record of your agreement.',
+            ],
+            [
               'Delivery details for each order: contact name and phone number, delivery address, landmark, delivery instructions, preferred date and quantity',
               'To check that we can serve the area, agree the price and time with you, and deliver.',
             ],
             [
               'Saved addresses: a name you give each one (for example "Home"), the address, landmark and the delivery area you choose',
               'To let you reuse an address when you order; the area tells us whether we can deliver there.',
+            ],
+            [
+              "A map location (latitude and longitude) of your delivery address, only if you choose to share your phone's location or place a pin on the map. It is saved with the address or order you add it to",
+              'To help the rider find your gate. When we price deliveries by road distance, it will also be used to work out the distance.',
             ],
             [
               'If you deliver for us as a rider or driver: your name, mobile number, password, vehicle type (keke or tanker), plate number, the tank capacity you declare, the area you serve, your approval status and whether you are available for work',
@@ -305,6 +314,14 @@ const PRIVACY: Section[] = [
             ['Cash payment records: amount due, amount collected, who collected and received it, and when', 'To account for cash paid on delivery.'],
             ['Bank account details, only if we pay you a refund by bank transfer', 'To make that refund.'],
             ['What you tell us when you call or message our support line', 'To answer your questions and handle complaints.'],
+            [
+              'The price we calculate when you ask for one, and, if you shared a map location, that location',
+              'To show you a price you can order at, check that your order matches it, and work out the delivery cost from the road distance. The price is kept with your order; the map location is kept only as long as section 8 says.',
+            ],
+            [
+              'Messages you send through the contact form on our website, whether or not you have an account: your name, your phone number, the type of question if you choose one, and your message',
+              'To answer you by phone, and handle your question or complaint. We do not link the message to an account, and we do not ask for your email address.',
+            ],
             [
               'Problems and questions you send in the app ("Report a problem" and Help): the type of problem, your message, the order it is about, its status and how our staff resolved it',
               'To investigate and resolve the problem, and handle complaints.',
@@ -365,9 +382,12 @@ const PRIVACY: Section[] = [
     title: '5. Addresses and location data',
     body: (
       <p>
-        We use the address, landmark and instructions you type to decide whether we can deliver, agree the price and find you. The app does not ask
-        for your phone's location. The only location we record is the optional GPS position of the <b>driver's</b> phone at arrival and at
-        delivery, with the driver's consent (section 2). We do not track you or show live vehicle locations.
+        We use the address, landmark and instructions you type to decide whether we can deliver, agree the price and find you. The app asks for your
+        phone's location <b>only when you choose "Use my location"</b>, after telling you why. You can refuse and type your address instead, or
+        place a pin on the map by hand; nothing else changes. A map location is saved only if you add it to an address or an order. We use it to
+        help the rider find you and, when we price by road distance, to work out the distance. We never use it to track you. The other location
+        we record is the optional GPS position of the <b>driver's</b> phone at arrival and at delivery, with the driver's consent (section 2).
+        We do not show live vehicle locations.
       </p>
     ),
   },
@@ -402,9 +422,10 @@ const PRIVACY: Section[] = [
         <p>We share only what is needed to run the service:</p>
         <List
           items={[
-            "The driver assigned to your order sees the contact's first name and last initial, phone number, delivery address, landmark, instructions and quantity, and only while they are assigned to the delivery.",
-            "Our authorized staff (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers.",
+            "The driver assigned to your order sees the contact's first name and last initial, phone number, delivery address, the map location if you gave one, landmark, instructions and quantity, and only while they are assigned to the delivery.",
+            "Our authorized staff (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers. They also see the messages sent through the website contact form, to answer them.",
             'Termii, our SMS provider, receives your phone number and the text of each message we send you.',
+            "OpenFreeMap (Hyperknot Software Kft., Hungary), our map provider, receives your IP address and the parts of the map your device downloads when you look at the map of our service areas on our website or place a pin on the map when you add an address. It does not receive any address you type. It may use Cloudflare to deliver the map, under Cloudflare's own privacy policy.",
             "Hostinger (HOSTINGER Global S.à r.l., Luxembourg), our hosting provider, runs the server and stores the service's data and backups in its data centre in Paris, France.",
             'Backblaze (Backblaze, Inc., United States) stores an off-site copy of our backups in its data centre in Amsterdam, the Netherlands.',
           ]}
@@ -447,10 +468,10 @@ const PRIVACY: Section[] = [
               'Your account and profile: while your account is open and needed for the service',
               'Deleted or anonymized after a verified deletion request (section 9), subject to the exceptions in section 10.',
             ],
-            ['Saved addresses: while your account is open', 'Deleted when your account is closed.'],
+            ['Saved addresses, including any map location: while your account is open', 'Deleted when your account is closed.'],
             ['Messages in the app: as long as the order they are about', 'Deleted when your account is closed.'],
             [
-              'Order and delivery records, including delivery addresses: 3 years after the order is completed',
+              'Order and delivery records, including delivery addresses and map locations: 3 years after the order is completed',
               'Personal details deleted or anonymized; the payment subset is kept as below.',
             ],
             [
@@ -467,6 +488,14 @@ const PRIVACY: Section[] = [
             [
               'Problems you report in the app: 3 years after our staff resolve it',
               "Deleted. If your account is closed sooner, your message and our staff's note about it are removed then, and the rest of the record is kept until the 3 years end.",
+            ],
+            [
+              'Messages you send through the website contact form: 3 years after our staff resolve them',
+              'Deleted. We keep no account for you, so to have a message deleted sooner, call or email us (section 9).',
+            ],
+            [
+              'The map location kept with a price we calculated for you',
+              'Removed when the order made with that price is anonymized, or 90 days after an unused price stopped being valid, or when your account is closed. The location is removed; the price, the distance and the rates stay, because they identify no one without it.',
             ],
             [
               'Account deletion requests: 3 years after we complete or refuse your request',
@@ -488,7 +517,9 @@ const PRIVACY: Section[] = [
         <p>
           You can ask us to access, correct or delete your personal information by calling <Phone /> or emailing <PrivacyEmail />. Before we
           disclose or change anything, we confirm the request comes from you, normally by calling back the phone number on your account.
-          For deletion, you can also use "Delete my account" in the customer app; we still call you back to confirm it is you.
+          For deletion, you can also use "Delete my account" in the customer app; we still call you back to confirm it is you. If you only
+          sent us a message through the website contact form and have no account, tell us your name and the phone number you gave, and we
+          find your messages by that number and call it back to confirm it is you.
         </p>
         <List
           items={[
@@ -613,9 +644,9 @@ function LegalPage({
     <div className="mk-page min-w-0 overflow-x-clip bg-white font-marketing text-[16px] leading-normal text-ink">
       <header className="sticky top-0 z-30 border-0 border-b border-solid border-[#E3EDF7] bg-white/95 backdrop-blur-sm">
         <div className="mx-auto box-border flex max-w-[1200px] items-center justify-between gap-6 px-6 py-3.5">
-          <Link to="/" aria-label="MmiriOma home" className="flex min-h-11 min-w-0 items-center no-underline">
+          <HomeLogo className="min-w-0">
             <BrandLogo className="h-auto w-[190px] max-w-full" />
-          </Link>
+          </HomeLogo>
           <Link
             to="/"
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-solid border-input-line px-[18px] text-center text-[15px] font-semibold whitespace-nowrap text-ink no-underline transition-colors duration-150 hover:border-primary hover:bg-mk-panel hover:text-ink"
@@ -631,7 +662,7 @@ function LegalPage({
             <p className={cx('m-0 text-[13px] font-bold tracking-[2px]', terms ? 'text-primary' : 'text-[#0B6A5F]')}>LEGAL</p>
             <h1 className="m-0 font-display text-[clamp(40px,5vw,60px)] font-extrabold tracking-[-1.5px] text-ink">{title}</h1>
             <p className="m-0 max-w-[640px] text-[17px] leading-[1.6] text-[#3A4F67]">{intro}</p>
-            <p className="mt-1.5 mb-0 text-[14px] font-semibold text-slate">Effective date: 1 November 2026</p>
+            <p className="mt-1.5 mb-0 text-[14px] font-semibold text-slate">Effective date: 3 November 2026</p>
           </div>
         </section>
         <section>
@@ -667,7 +698,10 @@ function LegalPage({
       <footer className="bg-mk-navy text-mk-foot-text">
         <div className="mx-auto box-border flex max-w-[1200px] flex-wrap items-center justify-between gap-4 px-6 py-8 text-[14px]">
           <span className="flex flex-wrap items-center gap-4 text-mk-foot-muted">
-            <BrandLogo dark className="h-8" />© 2026 MmiriOma. All rights reserved.
+            <HomeLogo>
+              <BrandLogo dark className="h-8" />
+            </HomeLogo>
+            © 2026 MmiriOma. All rights reserved.
           </span>
           <nav aria-label="Legal" className="flex flex-wrap gap-6">
             <Link to="/" className="text-mk-foot-text no-underline hover:text-white">

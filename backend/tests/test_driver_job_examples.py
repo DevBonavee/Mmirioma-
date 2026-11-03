@@ -49,6 +49,17 @@ def test_detail_examples_match_the_schema(name: str) -> None:
 
 
 @pytest.mark.parametrize("name", DETAIL_EXAMPLES)
+def test_delivery_location_is_shown_only_while_accepted(name: str) -> None:
+    # docs/api/delivery-location.md: the same rule as the receiver (FR-032), and
+    # only latitude and longitude: the customer's "source" stays with the customer.
+    job = load(name)
+    if job["job_status"] == JobStatus.OFFERED:
+        assert job["delivery_location"] is None
+    elif job["delivery_location"] is not None:
+        assert set(job["delivery_location"]) == {"latitude", "longitude"}
+
+
+@pytest.mark.parametrize("name", DETAIL_EXAMPLES)
 def test_receiver_is_hidden_from_offers(name: str) -> None:
     # FR-032: no receiver name or phone before the driver accepts.
     job = load(name)

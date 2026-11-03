@@ -32,6 +32,9 @@ function issueType(type: string): IssueType {
   return type === 'late' || type === 'wrong_quantity' ? type : 'other'
 }
 
+/** The title of a message sent through the website contact form (docs/design/admin-support-website-messages.md). */
+export const WEBSITE_MESSAGE_TITLE = 'Website message'
+
 /** The list title for a request type (api-mapping.md, "Admin support, audit log and notifications"). */
 function issueTitle(type: string): string {
   if (type === 'late') return 'Delivery was late'
@@ -44,11 +47,14 @@ function issueTitle(type: string): string {
  * (`urgent` is always `false`), and a resolution is its note only.
  */
 export function issueFromRead(read: AdminSupportRequest): AdminIssue {
+  // A visitor's message from the website form (#365): a fixed title, the topic kept apart, and no order.
+  const website = read.source === 'website'
   return {
     id: read.reference,
     number: read.reference,
-    type: issueType(read.type),
-    title: issueTitle(read.type),
+    type: website ? 'other' : issueType(read.type),
+    title: website ? WEBSITE_MESSAGE_TITLE : issueTitle(read.type),
+    ...(website ? { source: 'website' as const, topic: read.type } : {}),
     message: read.message,
     reference: read.order_reference,
     reported_by: 'customer',
@@ -75,14 +81,18 @@ export async function listIssues(query?: string, client: ApiClient = apiClient):
 /**
  * The people the "Call" buttons dial for a request: its customer and, with an
  * order, the order's receiver and driver. The contacts carry no delivery
- * type, so a driver is "Driver".
+ * type, so a driver is "Driver". For a website message the one contact is the
+ * visitor, "Website visitor": the server sends `customer`, but it never looks
+ * up whether the phone belongs to a customer, so the screen does not claim it
+ * does (#365).
  *
  * @param issueId - The request's `reference`.
  * @throws {ApiError} `support_request_not_found` (404).
  */
 export async function getIssuePeople(issueId: string, client: ApiClient = apiClient): Promise<{ name: string; role: string; phone: string }[]> {
   const detail = await getAdminSupportRequest(issueId, undefined, client)
-  return detail.contacts.map((c) => ({ name: c.name, role: c.role === 'customer' ? 'Customer' : c.role === 'driver' ? 'Driver' : c.role, phone: c.phone }))
+  const customerRole = detail.source === 'website' ? 'Website visitor' : 'Customer'
+  return detail.contacts.map((c) => ({ name: c.name, role: c.role === 'customer' ? customerRole : c.role === 'driver' ? 'Driver' : c.role, phone: c.phone }))
 }
 
 /**
@@ -131,6 +141,7 @@ const AUDIT_WORDS: Record<string, string> = {
   water_source_kind_set: "Set a water source's kind",
   water_source_activated: 'Activated a water source',
   water_source_updated: 'Edited a water source',
+  website_message_deleted: 'Deleted a website contact message',
 }
 
 /**

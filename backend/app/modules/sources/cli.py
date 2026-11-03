@@ -33,6 +33,7 @@ from collections.abc import Callable
 from datetime import date
 
 import app.models  # noqa: F401  (registers every model: commands write across modules)
+from app.core.config import get_settings
 from app.core.database import dispose_engine, get_sessionmaker
 from app.modules.sources import service
 from app.modules.sources.models import (
@@ -43,6 +44,7 @@ from app.modules.sources.models import (
     ActivationStatus,
     WaterSourceKind,
 )
+from app.shared.location import OUT_OF_BOUNDS_MESSAGE
 from app.shared.phone import normalize_nigerian_phone
 
 CATEGORY_CODES = ("potable", "utility")
@@ -63,6 +65,7 @@ async def _run(args: argparse.Namespace) -> str:
 
         actor = await service.get_acting_admin(session, phone=args.by)
         if args.command == "add-source":
+            location = _location_from(args)
             source = await service.add_source(
                 session,
                 actor=actor,
@@ -70,6 +73,7 @@ async def _run(args: argparse.Namespace) -> str:
                 approximate_location=args.location,
                 is_simulated=args.simulated,
                 kind=args.kind,
+                location=location,
             )
             return f"Added water source {source.id}: {source.name}. It serves no category yet."
         if args.command == "set-kind":
@@ -166,6 +170,28 @@ def _cost(raw: str) -> int:
     return kobo
 
 
+def _degrees(value: str) -> float:
+    try:
+        return float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a number of degrees") from None
+
+
+def _location_from(args: argparse.Namespace) -> service.SourceLocation | None:
+    """The pickup point from ``--latitude`` and ``--longitude``: both or neither.
+
+    Raises:
+        SystemExit: Only one was given, or the point is outside the delivery bounds.
+    """
+    if (args.latitude is None) != (args.longitude is None):
+        raise SystemExit("Give both --latitude and --longitude, or neither.")
+    if args.latitude is None:
+        return None
+    if not get_settings().delivery_bounds.contains(args.latitude, args.longitude):
+        raise SystemExit(OUT_OF_BOUNDS_MESSAGE)
+    return service.SourceLocation(round(args.latitude, 6), round(args.longitude, 6))
+
+
 def build_parser() -> argparse.ArgumentParser:
     """The command-line interface (exposed for tests)."""
     parser = argparse.ArgumentParser(prog="python -m app.modules.sources.cli")
@@ -184,6 +210,9 @@ def build_parser() -> argparse.ArgumentParser:
         choices=list(WaterSourceKind),
         help="ninth_mile or borehole; Tanker preferences match it (can be set later)",
     )
+
+    add.add_argument("--latitude", type=_degrees, help="pickup point, with --longitude (#385)")
+    add.add_argument("--longitude", type=_degrees, help="pickup point, with --latitude (#385)")
 
     kind = commands.add_parser("set-kind", help="set where a source collects water")
     kind.add_argument("--by", required=True, type=_phone, help="your admin account's phone")

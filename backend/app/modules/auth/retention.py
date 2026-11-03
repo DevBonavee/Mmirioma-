@@ -134,6 +134,8 @@ async def anonymize_account(
     user.password_hash = await asyncio.to_thread(security.hash_password, secrets.token_urlsafe(32))
     user.is_active = False
     user.phone_verified_at = None
+    user.terms_accepted_at = None
+    user.terms_version = None
     await session.execute(delete(UserSession).where(UserSession.user_id == user.id))
     await session.execute(delete(PhoneVerification).where(PhoneVerification.user_id == user.id))
 

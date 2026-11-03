@@ -73,7 +73,7 @@ request made in the app, the app shows the customer an acknowledge-by date
 ### Access
 
 Give the requester what section 2 of the notice lists for their account:
-name and phone, saved addresses, each order's delivery details, status
+name and phone, saved addresses and their map locations, each order's delivery details and map location, status
 history, agreed price and window, delivery record and cash record, their
 feedback, their support requests and their in-app messages. Read it from
 the admin screens or with a read-only database query; never change data to
@@ -158,6 +158,32 @@ number, or by email to an address the requester confirms on that call.
 6. **Confirm** the outcome to the requester on the confirmed number and
    record it. The app does not send it.
 
+### Deletion: website contact messages
+
+A person who sent a message through the website contact form has no account
+and no "Delete my account" button (notice section 9). They ask by the support
+line or the privacy email; confirm identity by call-back to the number they
+gave, as above, and ask which number they wrote from (#364).
+
+1. **Check what would go** with a dry run, which changes nothing:
+
+   ```bash
+   python -m app.modules.privacy.cli delete-website-messages --by <your admin phone> --phone <phone>
+   ```
+
+   It prints how many messages were sent from that number and how many staff
+   had not resolved yet. If some are unresolved, check the admin Support queue
+   first: the requester may want an answer before the message goes. It refuses,
+   with no change, when no website message was sent from the number.
+2. **Delete:** run the same command with `--apply`. It deletes each message whole
+   (name, phone and message) and writes one audit row per message with its id
+   and status only. Record the counts in the register.
+3. **If they are also a customer,** the account steps above do not touch
+   website messages (the form never links a message to an account): run this
+   command too, and `anonymize-customer` if they asked for the account.
+4. **Confirm** the outcome on the confirmed number and record it. The 3-year
+   review deletes resolved website messages by itself.
+
 ### Deletion: riders and drivers
 
 A rider or driver asks by the support line or the privacy email (the
@@ -200,13 +226,15 @@ in section 8 has passed:
 | --- | --- |
 | Phone verification codes, delivery codes | Tool: blank the scrambled code of every expired code; the rows stay as the record of the verification, phone change (NFR-004) or confirmed delivery (technical lead, 2026-10-23) |
 | Accounts never verified | Tool: customer accounts with no verified phone, created more than 30 days ago and without orders, are deleted with their saved addresses and requests. One that audit rows name as the actor (a password or address change) is anonymized and closed instead, so the audit record stays (technical lead, 2026-10-27, #82). The notice says so since version 2.0: wording accepted by the privacy contact on PR #106 (2026-10-27) |
-| Saved addresses, in-app messages | Nothing monthly: they are removed when the account is closed (Deletion, step 3) |
-| Order and delivery records | Tool: anonymize orders completed more than 3 years ago, as in "Deletion" step 3; their feedback messages are blanked too |
+| Saved addresses (with any map location), in-app messages | Nothing monthly: they are removed when the account is closed (Deletion, step 3) |
+| Order and delivery records | Tool: anonymize orders completed more than 3 years ago, as in "Deletion" step 3; their map locations are cleared and their feedback messages are blanked too (#340) |
 | Feedback on an order | Goes with the order (above) |
 | Driver GPS points | Tool: clear GPS points recorded more than 90 days ago, unless an open complaint or dispute needs them |
 | Cash payment and refund records | Nothing to do until the first records reach 6 years; before then, confirm the accounting period (open item 3) |
 | Complaints, disputes and incidents | Tool: the order's personal details go with the order at 3 years. By hand: staff notes are kept, so check notes on incidents resolved more than 3 years ago for personal details |
 | Problems you report in the app | Tool: support requests resolved more than 3 years ago are deleted (technical lead, 2026-10-27, #82). Open ones are kept until resolved |
+| Messages sent through the website contact form | Tool: deleted with the support requests resolved more than 3 years ago (they are support requests with no account, #339). Open ones are kept until resolved. They have no account, so the account-based steps never reach them: a visitor who asks to delete one is found by the phone number they gave and handled by hand until the privacy tool can look up a request by phone (follow-up issue, before the form goes live) |
+| Map location kept on a price quote | Tool: `anonymize-customer` clears it on the customer's quotes; the monthly review clears it on a quote when its order is anonymized (3 years after the order finishes) and on a quote that never became an order 90 days after its price expired (technical lead, 2026-11-03, #385). The price, the distance and the rates stay. Output line "Quote map pins cleared" |
 | Account deletion requests | Tool: requests completed or refused more than 3 years ago are deleted (privacy contact, 2026-10-27, #118). Requests still received or acknowledged are open work and are never deleted |
 | Support line messages (by hand) | Delete messages on the support phone 12 months after the matter was resolved |
 | Sign-in sessions | Tool: delete expired or ended sessions |
@@ -235,6 +263,7 @@ restore in the register (notice section 10).
 
 Deactivation is `app.modules.auth.cli deactivate`. Anonymizing a customer
 or (with `anonymize-partner`) a rider or driver,
+deleting a website contact message by phone (`delete-website-messages`, #364),
 correcting a name, recording the outcome of a deletion request made in the
 app (`set-deletion-status`) and the monthly database steps are
 `app.modules.privacy.cli` (how it works:
@@ -267,7 +296,7 @@ admin account and writes an audit row.
 ## Changing the notice
 
 1. Edit `PRIVACY_NOTICE.md`: raise the version (2.0 to 2.1 for a
-   clarification, 3.0 when what is collected or shared changes) and set the
+   clarification, a new major version when what is collected or shared changes) and set the
    "Last updated" date.
 2. Make the same change on the website's Privacy page,
    `frontend/src/features/marketing/LegalPages.tsx` (`/privacy`). In the
@@ -282,5 +311,11 @@ admin account and writes an audit row.
 
 | Date | Change | By |
 | --- | --- | --- |
+| 2026-11-03 | Notice 7.0 (#332): adds the record of the acceptance at sign-up. Anonymizing an account also clears that record | @chidimmamogbo (+ Claude Code) |
+| 2026-11-03 | "Deletion: website contact messages" with `delete-website-messages` (#364): a visitor with no account is found by phone number and their messages are deleted whole, with one audit row each. No change to the notice (section 9 already says to call or email) | @nnamdi-security (+ Claude Code), #364 |
+| 2026-11-03 | Notice 6.0 (#340): a map location of the delivery address is collected, only if the customer chooses "Use my location" or places a pin (section 2); section 5 says the app asks for the phone's location only on that choice and never to track; the assigned driver sees the pin (section 7); saved-address locations are kept with the address and an order's location follows the order's 3 years (section 8). `anonymize-customer` and the review clear order locations. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, decision on #340 and `docs/architecture/maps.md`) + Claude Code, #340 |
+| 2026-11-03 | Notice 8.0 (#385): the price we calculate, and the map location kept with it, are collected (section 2) and kept as the retention table says (section 8); the tool clears the location (above). Wording for the notice's legal operator to review | @nnamdi-security (technical lead and privacy contact, condition on the #385 contract) + Claude Code, #385 |
+| 2026-11-03 | Notice 5.0 (#346): section 7 names OpenFreeMap, the map-tile provider of the landing page's service-area map (the visitor's IP address and the map tiles viewed, not any typed address), as agreed in #334 and the #346 review. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, #346 review) + Claude Code, #346 |
+| 2026-11-02 | Notice 4.0 (#339): messages sent through the website contact form are collected (section 2), seen by staff (section 7), kept 3 years after resolution (section 8) and found by phone number on request (section 9); the retention table row above. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, answer on the #339 contract) + Claude Code, #339 |
 | 2026-10-27 | "Deletion: riders and drivers" with `anonymize-partner`, by the rules the privacy contact confirmed on #119; open item 4 closed | @nnamdi-security (+ Claude Code), #119 |
 | 2026-10-27 | Copied into the fork from the main repo (`c4d972c`) and extended: deletion requests made in the app (`set-deletion-status`), what anonymizing also removes (saved addresses, in-app messages, support request messages, the deletion reason, feedback messages), never-verified accounts with audit rows anonymized, support requests in the monthly review, rider and driver accounts (open item 4), and the website copy of the notice. The notice question in #104 (section 8, never-verified accounts) is decided: the wording from PR #106, accepted by the privacy contact. Privacy contact's decisions (2026-10-27): the notice becomes 2.0, as the version rule asks when what is collected changes (it had been numbered 1.2 and was never published); section 9 names "Delete my account" in the app; rider and driver deletion gets its own issue (#119) | @nnamdi-security (+ Claude Code), #104 |

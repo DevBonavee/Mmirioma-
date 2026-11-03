@@ -35,8 +35,11 @@ Decisions:
 - **Build on the server, tag by commit.** One deployer and one VPS do not
   justify a registry. Each build is tagged `mmirioma-api:<git commit>`, so the
   previous release's image is still on the disk for a rollback.
-- **Resend, Geoapify and Paystack are not configured** because the code has no
+- **Resend and Paystack are not configured** because the code has no
   integration for them (only Termii for SMS). There is no setting to fill in.
+- **The map needs nothing on the server.** The landing page's service-area map
+  (#346) loads OpenFreeMap tiles straight from the visitor's browser, so the
+  server sees no tile traffic. See [maps.md](../architecture/maps.md).
 
 ## 2. Files
 
@@ -49,6 +52,8 @@ Decisions:
 | `deploy/production-migrate.sh` | Explicit migrations with a destructive-change check and a backup |
 | `deploy/production-backup.sh` | Backup, retention, optional off-VPS copy; wraps `deploy/backup.sh` |
 | `deploy/restore.sh` | Restore (existing script) |
+| `deploy/osrm-build.sh` | Builds the OSRM routing files for Nigeria; run on a developer machine, never the VPS (section 16) |
+| `deploy/osrm-measure.sh` | Measures OSRM on the VPS and says PASS or FAIL (section 16) |
 | `backend/tests/test_deployment_config.py` | Checks these files stay safe and match the code |
 
 ## 3. Security model
@@ -163,6 +168,16 @@ URL: `openssl rand -hex 24`), `SESSION_SECRET` (32+ characters), and the Termii
 settings. Support number and WhatsApp are optional. `VITE_*` values are public
 and baked into the bundle at build time, so changing them needs
 `deploy/prod.sh build api`. Changing `SESSION_SECRET` signs everyone out.
+
+**The contact form** on `/contact` (#344) is off unless `.env.production` sets
+`VITE_CONTACT_FORM_ENABLED=true`; without it the page shows the call, WhatsApp
+and email card only. Leave it off until the four conditions in
+[contact.md](../design/contact.md#switching-the-form-on) are met (the last
+open one is the legal review of the privacy notice, #392, with the notice's
+date set to the day the form goes live). Then set it and rebuild:
+`deploy/prod.sh build api`, then `deploy/prod.sh up -d` (as in section 7).
+Setting it without a rebuild changes nothing. To switch it off again, remove
+the line and rebuild the same way.
 
 ## 6. Commands
 
@@ -488,25 +503,41 @@ migration run with the helper script against a populated database.
 
 ## 13. Outstanding before go-live
 
-1. **Privacy notice:** version 3.0 names Hostinger (Paris) and Backblaze
-   (Amsterdam) (#319). It still needs @nnamdi-security's approval as data
-   controller and the legal review in `docs/process/privacy-retention.md`,
-   "Open items".
+1. **Privacy notice:** the current version (5.0 at the time of writing, see
+   `PRIVACY_NOTICE.md`) names Hostinger (Paris), Backblaze (Amsterdam) and
+   OpenFreeMap (Hungary, possibly Cloudflare). It still needs
+   @nnamdi-security's approval as data controller and the legal review in
+   `docs/process/privacy-retention.md`, "Open items".
 2. **Off-VPS backups:** Backblaze B2 EU Central chosen (section 10). Set it up
    and test a first restore.
 3. **Termii:** sender ID registered, DND channel activated, a live test on a
    team phone (`python -m app.modules.messaging.live_test`, `docs/features/sms.md`).
-4. **Email (Resend), maps (Geoapify) and payments (Paystack)** are not in the
-   code. If the pilot needs them, each is its own issue with a contract.
-5. **Road distance (OSRM)** is still open (SRS section 12.1); pricing uses
-   zone rates. KVM 1 is too small to host the map data.
-6. **Web push** (VAPID keys) is not implemented; leave `VITE_VAPID_PUBLIC_KEY` unset.
-7. **Monitoring:** an external uptime check on `/api/v1/health/ready` and a
+4. **Email (Resend) and payments (Paystack)** are not in the code. If the pilot
+   needs them, each is its own issue with a contract. There is no address
+   search provider by decision (maps.md, option G1).
+5. **Road distance (OSRM)** is built but not deployed and **not measured**
+   ([maps.md](../architecture/maps.md), option R1, SRS section 12.1; section 16
+   of this guide). Pricing uses zone rates, which FR-022 allows. The `osrm`
+   service, the build script and the measurement script exist; a person with the
+   VPS must build and copy the files and run `deploy/osrm-measure.sh`. Deploy only
+   on a PASS; on a FAIL orders keep zone rates until there is budget for a second
+   server. No price uses road distance until the pricing code calls OSRM (#385).
+6. **Map provider:** a person confirms OpenFreeMap's privacy policy (recorded in
+   [landing-service-areas.md](../design/landing-service-areas.md), read on
+   2026-11-03 by an agent, to be confirmed). The tile style is
+   `VITE_MAP_STYLE_URL`, a build-time variable, and the production image does not
+   pass it (`backend/Dockerfile` and `compose.production.yaml` have no argument
+   for it), so production uses the OpenFreeMap default. Changing provider, the
+   fallback in maps.md, therefore needs a build argument added first.
+7. **Web push** (VAPID keys) is not implemented; leave `VITE_VAPID_PUBLIC_KEY` unset.
+8. **Monitoring:** an external uptime check on `/api/v1/health/ready` and a
    disk-space alert. Nothing is set up.
-8. **Continuous deployment:** none. Deploys are manual (section 7).
-9. **Water sources:** none exist on a new deployment. Add and activate at
+9. **Continuous deployment:** none. Deploys are manual (section 7).
+10. **Water sources:** none exist on a new deployment. Add and activate at
    least one (section 9) before taking orders, with a real laboratory
    report reference.
+11. **Search Console:** the domain is not verified and the sitemap is not
+    submitted (section 15). Nothing about search results has been checked.
 
 ## 14. Known limitations
 
@@ -519,3 +550,192 @@ migration run with the helper script against a populated database.
 - **Backups only as good as their off-site copy** until a target is chosen.
 - **Caddy certificates** live in the `caddy_data` volume; losing it means
   asking Let's Encrypt again (rate limits apply).
+
+## 15. Search Console
+
+The app serves `https://mmiriomadelivery.com/robots.txt` and `/sitemap.xml` as
+real files (#331, [seo.md](../features/seo.md)). Google only reports on the site
+once a person with the Google account has proved the domain is theirs and given
+it the sitemap. This has not been done. The steps below are what to do; the menu
+names in hPanel and Search Console may differ a little from the words here, so
+read the screen.
+
+1. **Check the files first**, from any machine:
+
+   ```bash
+   curl -i https://mmiriomadelivery.com/robots.txt     # 200, text/plain, starts "# MmiriOma"
+   curl -i https://mmiriomadelivery.com/sitemap.xml    # 200, text/xml, five <loc> entries
+   ```
+
+   If either answers with HTML (the app's page), the release does not include the
+   file; redeploy (section 7).
+
+2. **Add the property.** In [Google Search Console](https://search.google.com/search-console),
+   add a **Domain** property for `mmiriomadelivery.com`. A Domain property covers
+   `www`, `http` and `https` together, which matters because `www` redirects to
+   the main domain (section 5).
+
+3. **Verify with a DNS record.** Search Console shows a `TXT` record to add. In
+   Hostinger's hPanel, open the domain's DNS records and add a `TXT` record for
+   the root (`@`) with exactly that value, then press Verify in Search Console. DNS
+   can take from minutes to a few hours; Verify again later if it says it cannot
+   find the record. Keep the record afterwards: removing it drops the verification.
+   This needs no change to the app, which is why there is no verification file in
+   the repository.
+
+4. **Submit the sitemap.** In Search Console, open Sitemaps and enter
+   `sitemap.xml`. The status should change to "Success" and list five pages. If it
+   says it could not fetch the file, run the `curl` check again.
+
+5. **Ask for the landing page to be looked at.** Use URL inspection on
+   `https://mmiriomadelivery.com/`; the page's HTML should show the title and the
+   canonical `https://mmiriomadelivery.com/`. Indexing takes days, not minutes, so
+   do not expect results the same day.
+
+Then keep this up to date: when a new public page exists, add it to
+`frontend/public/sitemap.xml` and redeploy, and Search Console reads the new
+file on its own schedule. If the domain ever changes, change the four places
+listed in [seo.md](../features/seo.md) (section 6) first.
+
+## 16. OSRM (road distance)
+
+Road distance for delivery pricing (FR-022). The decision is
+[maps.md](../architecture/maps.md), option R1: one memory-limited container on
+this VPS, routing files built **off** the server, deployed **only if** a measurement
+on the real VPS passes. If it fails, OSRM is not deployed and orders keep using
+the delivery zone's rates (FR-022 allows it). Issue #384. Nothing calls OSRM
+yet: the pricing code that will is #385, and its `OSRM_BASE_URL` stays empty until
+this section's measurement passes.
+
+**Status: built, not deployed, not measured on the real VPS.** The measurement
+record at the end of this section is empty on purpose.
+
+### What exists
+
+| Thing | Where |
+| --- | --- |
+| The `osrm` service | `compose.production.yaml`. In the `routing` profile, so a plain `deploy/prod.sh up -d` never starts it; `deploy/prod.sh up -d osrm` does. Image `ghcr.io/project-osrm/osrm-backend:v6.0.0`, algorithm MLD, one thread, `--mmap`, a hard limit of 1536 MB (the 1.5 GiB pass line), read-only, no capabilities, run as user 65534, internal `data` network only, no published port |
+| Building the files | `deploy/osrm-build.sh`, on a developer machine |
+| Measuring on the VPS | `deploy/osrm-measure.sh` |
+| The data folder | `OSRM_DATA_DIR` in `.env.production`, default `./osrm-data` (ignored by git); mounted read-only at `/data` |
+
+**The image tag.** OSRM now numbers its releases v26.x, but no container image
+exists for those tags in the registry (checked 3 November 2026: v26.11.0, v26.10.0,
+v26.9.0, v26.7.3 and v26.6.5 are all missing). The newest published tags are
+`v6.0.0` and `v5.27.1`, so the stack pins `v6.0.0`. Revisit when an image for a
+newer release appears; rebuild the files with the same version you run.
+
+### Memory budget on the 4 GB machine
+
+| Service | Limit |
+| --- | --- |
+| Database | 1 GB |
+| API | 768 MB |
+| Caddy | 128 MB |
+| OSRM | 1.5 GB |
+| **Together** | **about 3.4 GB of 4 GB**, plus the operating system and the 2 GB swap |
+
+That is tight on purpose and is why the measurement exists. `--mmap` makes OSRM
+read its files in place, so most of its memory is file cache that the kernel can
+drop under pressure, but the limit still counts it, so the real test is the
+measurement under load. A migration job (512 MB) or a build (section 7) on top can
+push the machine into swap: do not run them while measuring.
+
+### Procedure
+
+1. **Build the files on a developer machine** (never the VPS: the build needs far
+   more memory than serving). It needs Docker and about 6 GB of free disk:
+
+   ```bash
+   deploy/osrm-build.sh                  # downloads Nigeria from Geofabrik, checks its checksum
+   deploy/osrm-build.sh --memory 6g      # same, but cap Docker's memory to see whether it fits
+   ```
+
+   It writes `osrm-data/` with the `nigeria-latest.osrm*` files and
+   `BUILD_INFO.txt` (dates, versions, sizes, timings). Keep that file's contents.
+2. **Copy the folder to the VPS**, for example
+   `rsync -a --delete ./osrm-data/ deploy@<vps>:/srv/mmirioma/osrm-data/`, and set
+   `OSRM_DATA_DIR=/srv/mmirioma/osrm-data` in `.env.production`.
+3. **Start it on purpose**, with the rest of the stack already running and nothing
+   else heavy going on:
+
+   ```bash
+   deploy/prod.sh up -d osrm
+   deploy/prod.sh ps                     # osrm should become "healthy" within about a minute
+   ```
+
+4. **Measure:** `deploy/osrm-measure.sh`. It sends a route, a table request and a
+   burst of 200 routes **from the API container over the internal network** (as the
+   pricing code will), then reports OSRM's memory, the machine's free memory and
+   swap, the health of OSRM and the API, and prints PASS or FAIL. Pass line: OSRM
+   under 1.5 GiB, healthy, not killed, a route answered, and the API still healthy.
+5. **On PASS:** leave it running and paste the block it printed into the record
+   below. **On FAIL:** `deploy/prod.sh stop osrm`, paste the block into the record,
+   and keep zone rates.
+6. **Refresh the data monthly** by hand: repeat steps 1 and 2 with the new extract,
+   then `deploy/prod.sh up -d --force-recreate osrm`. Automating this is a later issue.
+
+### Things worth knowing
+
+- **OSRM answers "Ok" for any point on Earth.** It snaps a point to the nearest
+  road in whatever data it holds. Tested with a Monaco extract: an Enugu point came
+  back "Ok", snapped to a street in Monaco 4,128 km away. The only warning is the
+  `distance` field, how far the point was moved onto a road. So the **health check
+  reads that distance** for a point on Ogui Road, Enugu, and is healthy only if the
+  loaded map has a road within 1 km of it; a service that was given the wrong
+  country's data shows as unhealthy instead of quietly returning nonsense.
+- **For the pricing code (#385):** because of the above, a quote must check the
+  snap distance of both the delivery pin and the source, and fall back to zone
+  rates when it is large. The agreed contract leaves a threshold out of version 1;
+  this finding is the reason to revisit that before road pricing is switched on.
+  The measurement prints the snap distances of the two test points.
+- **File permissions.** The build runs Docker as root, and one routing file is
+  readable by its owner only. The script makes the files world-readable and yours,
+  because the server runs OSRM as a non-root user with no capabilities.
+- **Windows.** `deploy/osrm-build.sh` sets `MSYS_NO_PATHCONV` so Git Bash does not
+  rewrite the container paths. Run it from Git Bash, with Docker Desktop running.
+- **A dry run of the whole pipeline** was done on 3 November 2026 with a Monaco
+  extract (707 KB): extract, partition and customize took 2 s together, produced
+  1.2 MB, and the service came up under these exact compose settings (non-root,
+  read-only, no capabilities, no published port) and answered a route, a table
+  request and 20 routes. Those requests were sent from the host to the container's
+  address on the internal network, and the measurement script's own probe code was
+  run that way; the script itself has not run against a real API container. That
+  checks the scripts and the service definition. It says nothing about Nigeria's
+  size or about the real server.
+
+### Route quality: what has and has not been checked
+
+The issue asks to compare OSRM with known Enugu routes. **No real driving
+distances were available**, so that comparison is **not done**. What exists is a
+plausibility hint: `deploy/osrm-measure.sh` prints the road distance divided by the
+straight-line distance between two OpenStreetMap points on Ogui Road and
+Presidential Road (taken from OpenStreetMap on 3 November 2026). A ratio between
+about 1.0 and 2.0 is a rule of thumb for a city, not a measured standard; a ratio
+below 1.0 means a mistake; a very large one suggests a detour or a broken road
+network. Straight-line distance is
+used here only as that hint and is never used for any price.
+
+What the team should look into in a later version:
+
+1. **Real driving distances.** Collect a handful of trips between known places with
+   a trusted figure (a rider's odometer, or a phone trip) and compare them with
+   OSRM's. The driver GPS points recorded at arrival and delivery (with consent)
+   are a source once there are real deliveries.
+2. **A snap-distance threshold** in the pricing code (see above).
+3. **How complete the road data is.** OpenStreetMap coverage of Enugu streets was
+   reasonable in a few spot checks of street and neighbourhood names, but house
+   numbers and some landmarks are missing. Missing or one-way-wrong roads make
+   routes longer or shorter than real ones. There is an Enugu State routing project
+   on the OpenStreetMap wiki; its quality was not assessed.
+4. **Closed roads, flooding, and traffic.** OSRM routes on the road network as
+   mapped. It knows nothing about a road that is closed or flooded today.
+5. **Automating the monthly refresh** and keeping the image version current.
+
+### Measurement record
+
+| Where | Date | OSRM memory | Free memory / swap | API unaffected? | Verdict | By |
+| --- | --- | --- | --- | --- | --- | --- |
+| A developer machine with 16 GB (build of the real Nigeria extract) | not done | not done | not done | not done | not done | to be run by the issue owner (#384) |
+| The Hostinger KVM 1 (`deploy/osrm-measure.sh`) | not done | not done | not done | not done | not done | to be run by whoever holds the VPS |
+

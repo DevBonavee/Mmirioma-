@@ -464,6 +464,13 @@ export interface AdminIssue {
   reference: string | null
   reported_by: 'customer' | 'rider' | 'driver'
   reporter_name: string
+  /**
+   * `website`: a visitor's message from the public contact form, with no order (#365). Absent for a signed-in
+   * user's report: the real adapter sets it only for a website message, so an app request is exactly as before.
+   */
+  source?: 'website'
+  /** A website message's topic as the server sent it (`late`, `wrong_quantity`, `payment`, `rider` or `other`); absent otherwise. */
+  topic?: string
   at: string
   urgent: boolean
   status: 'open' | 'resolved'
@@ -529,13 +536,27 @@ export interface AdminDashboard {
 
 export type ReportRange = 'today' | '7d' | '30d'
 
+/**
+ * What the Reports page asks for (#333): a preset pill, or chosen Lagos dates
+ * (`YYYY-MM-DD`, both inclusive). Cancelled orders are left out of the area
+ * and vehicle tables unless `includeCancelled`.
+ */
+export type ReportQuery =
+  | { range: ReportRange; includeCancelled: boolean }
+  | { range: 'custom'; from: string; to: string; includeCancelled: boolean }
+
 export interface AdminReport {
-  range: ReportRange
+  range: ReportRange | 'custom'
+  /** First and last Lagos date of the report, `YYYY-MM-DD`. */
+  from: string
+  to: string
+  /** True when `by_type` and `by_area` count cancelled orders too. */
+  includes_cancelled: boolean
   orders: number
   delivered: number
   cancelled: number
   revenue_minor_units: number
-  by_type: { keke: number; tanker: number }
+  by_type: { keke: number; tanker: number; not_recorded: number }
   by_area: { area: string; orders: number; delivered: number }[]
   /**
    * `code` is the plate, `null` when the driver has none. `earned_minor_units` is not sent by the backend (partner pay is out of the MVP):

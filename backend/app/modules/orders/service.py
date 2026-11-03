@@ -56,6 +56,7 @@ from app.modules.pricing import service as pricing
 from app.modules.pricing.models import OrderPriceSnapshot
 from app.modules.sources.models import WaterCategory
 from app.shared.lagos_time import lagos_day_start_utc
+from app.shared.location import Location, LocationRead, read_location, to_point
 
 # Crockford base32: digits and upper-case letters without I, L, O and U, so a
 # reference read aloud or copied by hand is hard to get wrong.
@@ -80,6 +81,8 @@ class NewOrder:
         contact_phone: Receiver's phone in E.164 form.
         delivery_address: Trimmed free-text address.
         landmark: Optional trimmed landmark.
+        delivery_location: Optional map point of the address (#340), stored
+            as the order's own copy.
         delivery_instructions: Optional trimmed instructions.
         preferred_delivery_date: Optional preferred date (Africa/Lagos).
         delivery_type: Keke or Tanker, or ``None`` for the older
@@ -99,6 +102,7 @@ class NewOrder:
     contact_phone: str
     delivery_address: str
     landmark: str | None = None
+    delivery_location: Location | None = None
     delivery_instructions: str | None = None
     preferred_delivery_date: date | None = None
     delivery_type: DeliveryType | None = None
@@ -147,6 +151,7 @@ def _choice(request: NewOrder) -> quotes.Choice:
         quantity_litres=request.quantity_litres,
         delivery_address=request.delivery_address,
         service_zone_id=request.service_zone_id,
+        delivery_location=request.delivery_location,
     )
 
 
@@ -191,6 +196,23 @@ def _order_not_found() -> APIError:
     return APIError(HTTPStatus.NOT_FOUND, "order_not_found", "Order not found")
 
 
+def _stored_location(order: Order) -> LocationRead | None:
+    return read_location(
+        order.delivery_location_latitude,
+        order.delivery_location_longitude,
+        order.delivery_location_source,
+    )
+
+
+def _requested_location(request: NewOrder) -> LocationRead | None:
+    # Already rounded to the stored precision by the Location schema.
+    return (
+        None
+        if request.delivery_location is None
+        else LocationRead(**request.delivery_location.model_dump())
+    )
+
+
 def _matches_request(order: Order, request: NewOrder) -> bool:
     """Whether a stored order was created from exactly these details."""
     return (
@@ -199,6 +221,7 @@ def _matches_request(order: Order, request: NewOrder) -> bool:
         and order.contact_phone == request.contact_phone
         and order.delivery_address == request.delivery_address
         and order.landmark == request.landmark
+        and _stored_location(order) == _requested_location(request)
         and order.delivery_instructions == request.delivery_instructions
         and order.preferred_delivery_date == request.preferred_delivery_date
         and all(getattr(order, field) == getattr(request, field) for field in _DETAIL_FIELDS)
@@ -316,6 +339,12 @@ async def create_order(
             contact_phone=request.contact_phone,
             delivery_address=request.delivery_address,
             landmark=request.landmark,
+            delivery_location=(
+                to_point(request.delivery_location) if request.delivery_location else None
+            ),
+            delivery_location_source=(
+                request.delivery_location.source.value if request.delivery_location else None
+            ),
             delivery_instructions=request.delivery_instructions,
             preferred_delivery_date=request.preferred_delivery_date,
             is_simulated=is_simulated,

@@ -36,7 +36,7 @@ is not legal compliance (FR-012).
 
 ```
 technical lead (command line, --by <admin phone>)
-  add-source [--kind] ─────> water_sources            + audit "water_source_added"
+  add-source [--kind] [--latitude --longitude] > water_sources + audit "water_source_added"
   set-kind ───────────────> water_sources.kind       + audit "water_source_kind_set"
   activate ───────────────> water_source_categories  + audit "water_source_activated"
      (category, report reference, approved until, cost per litre)
@@ -61,7 +61,7 @@ R2 source review (holds.source_eligibility)
 | --- | --- |
 | `backend/app/modules/sources/models.py` | `WaterSource`, `WaterCategory`, `WaterSourceCategory`, `ActivationStatus` |
 | `backend/app/modules/sources/eligibility.py` | `EligibilityReason`, `REASON_ORDER`, `eligibility_reasons` (pure), `source_reasons` (loads the activation) |
-| `backend/app/modules/sources/service.py` | Add sources, set the kind, activate, suspend, revoke, list; one audit row per change; `get_acting_admin`; for quotes, `eligible_costs_per_litre` and `has_activation` |
+| `backend/app/modules/sources/service.py` | Add sources, set the kind and the pickup `location` (#385), activate, suspend, revoke, list; one audit row per change; `get_acting_admin`; for quotes, `eligible_sources`, `eligible_costs_per_litre` and `has_activation` |
 | `backend/app/modules/sources/cli.py` | The command-line tool (the fallback) |
 | `backend/app/modules/sources/admin.py` | What the admin endpoints do: look the source and category up by id (404 if missing), call the service function the command line uses, return the whole source |
 | `backend/app/modules/sources/admin_schemas.py` | Request and response bodies of the admin endpoints, the expiry state (30-day window) and the rule that `approved_until` is not in the past |

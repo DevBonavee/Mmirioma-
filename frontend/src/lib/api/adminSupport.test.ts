@@ -1,3 +1,4 @@
+import websiteSample from '../../../../docs/api/examples/admin-support-request-website.json'
 import { describe, expect, it, vi } from 'vitest'
 import auditSample from '../../../../docs/api/examples/admin-audit-logs-page.json'
 import notificationsSample from '../../../../docs/api/examples/admin-notifications-page.json'
@@ -99,6 +100,19 @@ describe('admin support requests client (admin-operations.md, #219)', () => {
     const { client } = setup(envelope('support_request_not_found'), 404)
     const error = await rejection(getAdminSupportRequest('SR-NOPE0000', undefined, client))
     expect([error.status, error.code]).toEqual([404, 'support_request_not_found'])
+  })
+
+  it('accepts a website visitor request: no account, so customer.id is null (#339)', async () => {
+    const { client } = setup({ ...requestsPageSample, items: [websiteSample] })
+    const page = await listAdminSupportRequests({}, undefined, client)
+    expect(page.items[0].source).toBe('website')
+    expect(page.items[0].customer).toEqual({ id: null, name: 'Sample Visitor', phone: '+2348000000001' })
+  })
+
+  it('reports a request with an unknown source as invalid_response', async () => {
+    const { client } = setup({ ...requestsPageSample, items: [{ ...requestsPageSample.items[0], source: 'email' }] })
+    const error = await rejection(listAdminSupportRequests({}, undefined, client))
+    expect(error.code).toBe('invalid_response')
   })
 
   it('reports a request with an unknown status as invalid_response, never as the wrong state', async () => {

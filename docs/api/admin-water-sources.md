@@ -61,6 +61,7 @@ driver's responses never contain the field.
   "id": "5c7e9a1b-3d5f-4a7c-8e1b-3d5f7a9c1e30",
   "name": "Sample Borehole A",
   "approximate_location": "Off Ogui Road, Enugu",
+  "location": { "latitude": 6.4361, "longitude": 7.5134 },
   "kind": "borehole",
   "is_simulated": true,
   "created_at": "2026-10-27T08:00:00Z",
@@ -82,7 +83,8 @@ driver's responses never contain the field.
 | Field | Rule |
 | --- | --- |
 | `name` | 1 to 120 characters, as stored (`water_sources.name`) |
-| `approximate_location` | 1 to 200 characters, the pickup place in words (FR-011). No coordinates |
+| `approximate_location` | 1 to 200 characters, the pickup place in words (FR-011) |
+| `location` | The pickup point, `{ "latitude", "longitude" }` (WGS 84, 6 places, inside the delivery bounds), or `null` (the default). Set by an administrator; used only to price the delivery by road distance ([#385](order-details-and-price.md#amendment-385-road-distance-pricing)). Never sent to a customer or a driver |
 | `kind` | `borehole`, `ninth_mile` or `null` while not set. A source with no kind serves no Tanker preference ([water-sources.md](../features/water-sources.md)) |
 | `is_simulated` | Demo source (BR-09). Clients show a Simulated tag |
 | `activations` | One entry per category the source has ever been activated for, by category label. A category with no entry is "not activated" and the client says so |
@@ -212,6 +214,21 @@ confirmed with it keep it ([deliveries.md](deliveries.md), decision 10).
 Audit: `water_source_suspended` or `water_source_revoked`, `details`
 `{ "water_category_id", "status" }`.
 
+## Amendment #385: a source `location` (built in #385)
+
+**Status: agreed** (G3) on 2026-11-03 by @nnamdi-security, who is not the author,
+with the road-distance amendment in
+[order-details-and-price.md](order-details-and-price.md#source-location).
+`WaterSourceRead` gains `location`: `{ "latitude", "longitude" }` (WGS 84,
+inside the [delivery bounds](delivery-location.md#delivery-bounds)) or `null`
+(the default). `POST` and `PATCH /admin/water-sources` accept the same optional
+field; the `add-source` command gains `--latitude` and `--longitude`, both or
+neither. It is never sent to a customer or a driver. It changes no existing
+field, and a source without one keeps working: any quote that could use it uses
+the zone fee. A PATCH that sets or clears it is audited as
+`water_source_updated` with `details.fields` naming `location`, never the
+coordinates. In `PATCH`, `location: null` clears it and leaving the field out keeps it. The Water sources screen gets no new field in #385.
+
 ## Error codes added
 
 | Status | Code | When |
@@ -249,3 +266,4 @@ All three were decided by the technical lead on 2026-11-01 (G3).
 | --- | --- | --- |
 | 2026-11-01 | Proposed (#309), from the technical lead's decisions on the issue | not yet agreed |
 | 2026-11-01 | Agreed, with the three open questions decided; the 401 code is `not_authenticated`, as in the README | @nnamdi-security |
+| 2026-11-03 | Additive (#385): an optional `location` on a water source, set by an administrator and never sent to a customer or a driver ([amendment](#proposed-amendment-385-a-source-location), with the road-distance rules in order-details-and-price.md) | @nnamdi-security (G3, 2026-11-03) |

@@ -47,5 +47,9 @@
   `PATH` must use the Git Bash form of the folder (`cygpath -u`, for example
   `/c/Users/...` or `/tmp/...`): a `C:/...` entry is split at its colon, and
   the real `docker` answered instead of the fake.
+- **Seen again (Daveoski + agent, #344, 2026-11-03):** 4 failures in a fresh
+  Windows checkout (the three `test_is_valid_bash_and_executable` cases passed
+  there): the tests that run a script, with `OSError: [WinError 193]`. The same
+  four failed with the #344 changes stashed, so they were left alone.
 - **Status:** workaround
 - **Refs:** #296, #320, #321; `backend/tests/test_deployment_config.py`, `deploy/`.

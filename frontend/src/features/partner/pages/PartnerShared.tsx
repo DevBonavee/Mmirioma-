@@ -83,6 +83,7 @@ export function PartnerHistory() {
         <Pills
           className="rise-1"
           wrap={false}
+          largeHit
           label="Period"
           value={period}
           onChange={setPeriod}

@@ -1,15 +1,17 @@
-import { Suspense, useId, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { Suspense, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject, type SelectHTMLAttributes } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { AdminShell } from '../../components/layout/AdminShell'
 import { LoadingBlock, LoadingScreen } from '../../components/layout/StateScreens'
+import { CloseIcon } from '../../components/icons/icons'
 import { Card } from '../../components/ui/Card'
 import { Chip, SampleTag } from '../../components/ui/Chip'
 import { INPUT } from '../../components/ui/Field'
+import { IconButton } from '../../components/ui/IconButton'
 import { ADMIN_STATUS_LABEL, type AdminOrderStatus, type AdminPaymentStatus } from '../../domain/admin'
 import type { ApprovalStatus } from '../../domain/partner'
 import { cx } from '../../lib/cx'
 import { RequireRole } from '../auth/RequireRole'
-import { APPROVAL_LABEL, APPROVAL_TONE, DETAIL_PANEL_ID, PAYMENT_LABEL, PAYMENT_TONE, STATUS_TONE } from './adminFormat'
+import { APPROVAL_LABEL, APPROVAL_TONE, DETAIL_PANEL_ID, PAYMENT_LABEL, PAYMENT_TONE, REVEAL_DETAIL_EVENT, STATUS_TONE } from './adminFormat'
 import { useShellData } from './queries'
 
 /** `/admin/*` layout route: staff only (RequireRole), each page loads on demand. */
@@ -135,14 +137,128 @@ export function PanelLoading({ label }: { label: string }) {
   )
 }
 
-/** The design's two-column page: main content and a sticky side panel on wide screens. */
-export function SplitLayout({ main, side, sideWidth = 'lg:w-[360px]' }: { main: ReactNode; side: ReactNode; sideWidth?: string }) {
+/** Side padding of the admin page content on a tablet and up (`md:p-6`), both sides. */
+const PAGE_PADDING_PX = 48
+
+/**
+ * The width of the page content area, in px, from which a side panel sits
+ * beside the table: 1400 px, as docs/design/responsive.md says. `SplitLayout`
+ * measures inside the page padding, so the constant is the width it sees:
+ * 1400 less the padding. (The content area is capped at 1440 px, so with the
+ * padding left in the measurement the panel could never sit beside the table.)
+ * Narrower than this the panel is a side sheet: a table plus a 380 px panel
+ * would squeeze the table into a scroll box.
+ */
+export const PANEL_BESIDE_MIN_PX = 1400 - PAGE_PADDING_PX
+
+/**
+ * The width of `ref`'s element in px, kept up to date, or `null` while it is
+ * not known (before the first measurement, and where nothing is laid out, as
+ * in the unit tests).
+ */
+function useElementWidth(ref: RefObject<HTMLElement | null>): number | null {
+  const [width, setWidth] = useState<number | null>(null)
+  // Measured before the first paint so a wide screen never flashes the narrow layout.
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const measure = () => setWidth(element.getBoundingClientRect().width || null)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [ref])
+  return width
+}
+
+/**
+ * The design's two-column page: the main content and a detail panel.
+ *
+ * Where the page content area is at least 1400 px wide ({@link PANEL_BESIDE_MIN_PX}) the panel
+ * sits beside the main content, sticky. Narrower (a tablet, or a laptop with
+ * the sidebar open) it is a side sheet over the page: closed until the person
+ * picks an item (the page calls `revealDetail`), then 420 px from the right on a
+ * tablet or the full screen on a phone. The sheet closes with its Close button,
+ * a click outside it, or Escape, and focus returns to what opened it.
+ *
+ * While the width is unknown the panel is shown beside the content, as it was
+ * before the sheet existed.
+ *
+ * @param main - The list or table.
+ * @param side - The panel's content; it is not mounted while the sheet is closed.
+ * @param sideWidth - Tailwind width class of the panel when it is beside the content.
+ */
+export function SplitLayout({ main, side, sideWidth = 'w-[360px]' }: { main: ReactNode; side: ReactNode; sideWidth?: string }) {
+  const root = useRef<HTMLDivElement>(null)
+  const width = useElementWidth(root)
+  const beside = width === null || width >= PANEL_BESIDE_MIN_PX
+  const [open, setOpen] = useState(false)
+  const sheet = useRef<HTMLElement>(null)
+  const opener = useRef<Element | null>(null)
+
+  // A page's row buttons call revealDetail(); in sheet mode that opens the sheet.
+  // Depends on `beside` only: the listener is replaced when the layout changes mode.
+  useEffect(() => {
+    if (beside) return
+    function onReveal() {
+      opener.current = document.activeElement
+      setOpen(true)
+    }
+    window.addEventListener(REVEAL_DETAIL_EVENT, onReveal)
+    return () => window.removeEventListener(REVEAL_DETAIL_EVENT, onReveal)
+  }, [beside])
+
+  const showSheet = !beside && open
+  useEffect(() => {
+    if (!showSheet) return
+    sheet.current?.focus()
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      if (opener.current instanceof HTMLElement) opener.current.focus()
+    }
+  }, [showSheet])
+
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+    <div ref={root} className={cx('flex gap-4', beside ? 'flex-row items-start' : 'flex-col')}>
       <div className="flex min-w-0 flex-1 flex-col gap-3.5">{main}</div>
-      <aside id={DETAIL_PANEL_ID} className={cx('flex w-full shrink-0 scroll-mt-4 flex-col gap-3 lg:sticky lg:top-4', sideWidth)}>
-        {side}
-      </aside>
+      {beside && (
+        <aside id={DETAIL_PANEL_ID} className={cx('flex shrink-0 scroll-mt-4 flex-col gap-3 sticky top-4', sideWidth)}>
+          {side}
+        </aside>
+      )}
+      {showSheet && (
+        <>
+          <button
+            type="button"
+            aria-hidden="true"
+            data-sheet-backdrop
+            tabIndex={-1}
+            className="fixed inset-0 z-30 cursor-default border-0 bg-[linear-gradient(160deg,#1570D8,#16A0B8)] opacity-55"
+            onClick={() => setOpen(false)}
+          />
+          <aside
+            id={DETAIL_PANEL_ID}
+            ref={sheet}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Details"
+            tabIndex={-1}
+            className="fixed inset-y-0 right-0 z-40 box-border flex w-full flex-col gap-3 overflow-y-auto bg-canvas p-4 shadow-[-16px_0_40px_rgba(0,0,0,0.25)] outline-none md:w-[420px]"
+          >
+            <div className="flex justify-end">
+              <IconButton label="Close details" onClick={() => setOpen(false)}>
+                <CloseIcon size={20} strokeWidth={2.4} roundJoin={false} />
+              </IconButton>
+            </div>
+            {side}
+          </aside>
+        </>
+      )}
     </div>
   )
 }
