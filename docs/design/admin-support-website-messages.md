@@ -12,10 +12,11 @@ agreed and built in #339 / #362, example
 [admin-support-request-website.json](../api/examples/admin-support-request-website.json)) ·
 Screens amended: `a-support` (see [handoff-v1.md](handoff-v1.md)) and the real-API
 Support page, [admin-operations.md](../features/admin-operations.md)
-Designer: @Cloudcrackamara + Claude Code (text design; no visual mockup) · Reviewed by: none yet · Status: draft
+Designer: @Cloudcrackamara + Claude Code (text design; no visual mockup) · Reviewed by: @nnamdi-security (2026-11-03) · Status: approved
 
-**Draft for a reviewer who is not the author.** Do not build the screen until
-this says `Status: approved` (G2).
+**Approved (G2) on 2026-11-03 by @nnamdi-security, who is not the author**, with
+the decisions under "Review decisions". One wording differs from the draft: the
+sender label is "Website visitor", not "Visitor, no account".
 
 ## What changes
 
@@ -54,7 +55,7 @@ name is in the detail.
 | Message | The quote block | The same quote block |
 | Topic | none (it is in the title) | One line under the quote: **"Topic: Delivery was late / Wrong quantity / Payment / Rider / Other"**, as the visitor chose it. Shown for every website message; a message sent without a topic says "Topic: Other", because the form sends `other` when none is chosen |
 | "Order timeline" | The order's steps, or "Not about an order." | **Not shown.** A website message never has an order |
-| "People" | The order's receiver and driver, each with Call | **"Sender"**: the visitor's name, the line **"Visitor, no account"**, the phone as text (`0813 377 4902` style) and a **Call** button for that phone. No avatar link, no profile link, no order history, no points |
+| "People" | The order's receiver and driver, each with Call | **"Sender"**: the visitor's name, the label **"Website visitor"** with the line **"Not linked to an account"**, the phone as text (`0813 377 4902` style) and a **Call** button for that phone. No avatar link, no profile link, no order history, no points |
 | Resolution | Real API: one required note and "Apply and resolve" | Unchanged: the same note form. Resolved: "Resolved by …, date. Note: …" |
 | Mock mode | Resolution choices by whether there is an order | A website message offers only "Call and close" (no points, no order actions), the choices that make sense without an order |
 
@@ -107,7 +108,7 @@ customer record, an order, an order history or points for a website message.
    was late" without an order does not look like a delivery report.
 2. **No order timeline for a website message**, instead of "Not about an
    order." — the section simply is not there.
-3. **Role "Visitor, no account"** instead of "Customer" for the sender. The
+3. **Role "Website visitor"** instead of "Customer" for the sender. The
    server sends `role: "customer"` for the one contact (agreed contract); the
    screen decides the label from `source`.
 4. **Show the phone as text for every person in "People"**, not only the
@@ -125,8 +126,36 @@ customer record, an order, an order history or points for a website message.
 1. Should the mock mode (demo data) include a website message? Recommendation:
    yes, one, labelled as sample data, so the new states can be seen without a
    backend.
-2. Is "Visitor, no account" the right wording for staff, or "Not a customer"?
+2. Is "Website visitor" the right wording for staff, or "Not a customer"? (Decided: see Review decisions.)
 
 ## Changes to the design system
 
 None. Uses the existing chip, quote block, avatar, list row and Call button.
+
+## Review decisions
+
+Recommendations by @nnamdi-security, 2026-11-03, approved with the design:
+
+1. **Title "Website message", topic on its own line:** agreed.
+2. **No order timeline for a website message:** agreed.
+3. **Sender label "Website visitor", with the line "Not linked to an account",
+   not "Visitor, no account":** the draft's wording claims the person has no
+   account, which the system cannot know. The contract never looks up whether the
+   phone belongs to a customer (NFR-002), so a customer could use the form. "Not
+   linked to an account" says only what is true of the record. "Not a customer"
+   has the same problem and is not used.
+4. **Phone as text for website messages only:** agreed. App requests keep their
+   name and Call button, so the amendment does not change a screen it does not
+   need to; showing the phone as text for them can be a separate decision.
+5. **`source` and `topic` on the admin issue type in `frontend/src/domain/admin.ts`:**
+   approved, additive only. `topic` carries the request's `type` as the server
+   sent it (`late`, `wrong_quantity`, `payment`, `rider`, `other`), because the
+   screen's own `IssueType` does not have `payment` or `rider`. The build says in
+   the PR that it edits a shared file, and changes no existing field.
+6. **Mock mode includes one website message,** labelled as sample data, offering
+   only "Call and close".
+7. **Condition:** the build tests a website message in the list and the detail
+   (tag, title, no timeline, sender block, Call), a website message without a
+   topic, the list mixing both kinds, and the unchanged app-request view. It
+   shows no customer link, order, email or points for a website message, and
+   checks 360, 768, 1280 and 1920 px.
