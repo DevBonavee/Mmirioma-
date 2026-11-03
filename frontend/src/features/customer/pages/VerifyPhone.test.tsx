@@ -12,7 +12,7 @@ import * as authApi from '../../auth/authApi'
 import { ChangePhone } from './ChangePhone'
 import { VerifyPhone } from './VerifyPhone'
 
-const PASSWORD = 'sample-password-1'
+const PASSWORD = 'Sample-Passw0rd-1'
 
 function renderAt(path: string, state?: unknown) {
   return render(
@@ -39,7 +39,7 @@ beforeEach(async () => {
   resetMockDb()
   vi.spyOn(console, 'info').mockImplementation(() => {})
   // A new, unverified customer, signed in.
-  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0061', password: PASSWORD })
+  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0061', password: PASSWORD, accepted_terms: true })
 })
 
 describe('VerifyPhone (mock mode)', () => {

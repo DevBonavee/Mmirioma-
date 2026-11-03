@@ -14,7 +14,7 @@ from pydantic import (
     field_validator,
 )
 
-from app.modules.auth.schemas import Password, PersonName, PhoneNumber
+from app.modules.auth.schemas import AcceptedTerms, Password, PersonName, PhoneNumber
 from app.modules.dispatch.models import (
     MAX_DECLARED_GALLONS,
     MIN_DECLARED_GALLONS,
@@ -44,6 +44,7 @@ class PartnerRegisterRequest(BaseModel):
     name: PersonName
     phone: PhoneNumber
     password: Password
+    accepted_terms: AcceptedTerms
     delivery_type: DeliveryType
     plate: Plate
     # Validated even when absent, so a tanker without it is refused with

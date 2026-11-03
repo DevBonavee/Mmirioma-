@@ -1,7 +1,8 @@
 {
   "name": "Sample Driver",
   "phone": "08000000302",
-  "password": "sample-password",
+  "password": "Sample-Passw0rd",
+  "accepted_terms": true,
   "delivery_type": "tanker",
   "plate": "enu 456 cd",
   "declared_capacity_gallons": 4000,

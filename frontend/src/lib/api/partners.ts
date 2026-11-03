@@ -91,6 +91,8 @@ export interface PartnerRegisterRequest {
   /** Any Nigerian mobile format; the server normalizes it. */
   phone: string
   password: string
+  /** See `RegisterInput.accepted_terms` in `auth.ts`. Optional only until #336. */
+  accepted_terms?: boolean
   delivery_type: DeliveryType
   /** Trimmed and upper-cased by the server, then 4 to 15 characters. */
   plate: string

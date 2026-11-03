@@ -27,7 +27,7 @@ beforeEach(async () => {
   resetMockDb()
   vi.spyOn(console, 'info').mockImplementation(() => {})
   // A customer who has just signed up: no orders yet.
-  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0071', password: 'sample-password-1' })
+  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0071', password: 'Sample-Passw0rd-1', accepted_terms: true })
 })
 
 describe('Home (mock mode)', () => {

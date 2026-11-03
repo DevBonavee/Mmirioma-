@@ -23,7 +23,7 @@ function renderAt(path: string) {
 
 beforeEach(async () => {
   resetMockDb()
-  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0081', password: 'sample-password-1' })
+  await mockRegister({ name: 'Sample Customer', phone: '0800 000 0081', password: 'Sample-Passw0rd-1', accepted_terms: true })
 })
 
 describe('Account settings, separate from My profile (#57)', () => {

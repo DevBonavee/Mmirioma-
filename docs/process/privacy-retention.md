@@ -310,6 +310,7 @@ admin account and writes an audit row.
 
 | Date | Change | By |
 | --- | --- | --- |
+| 2026-11-03 | Notice 7.0 (#332): adds the record of the acceptance at sign-up. Anonymizing an account also clears that record | @chidimmamogbo (+ Claude Code) |
 | 2026-11-03 | "Deletion: website contact messages" with `delete-website-messages` (#364): a visitor with no account is found by phone number and their messages are deleted whole, with one audit row each. No change to the notice (section 9 already says to call or email) | @nnamdi-security (+ Claude Code), #364 |
 | 2026-11-03 | Notice 6.0 (#340): a map location of the delivery address is collected, only if the customer chooses "Use my location" or places a pin (section 2); section 5 says the app asks for the phone's location only on that choice and never to track; the assigned driver sees the pin (section 7); saved-address locations are kept with the address and an order's location follows the order's 3 years (section 8). `anonymize-customer` and the review clear order locations. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, decision on #340 and `docs/architecture/maps.md`) + Claude Code, #340 |
 | 2026-11-03 | Notice 5.0 (#346): section 7 names OpenFreeMap, the map-tile provider of the landing page's service-area map (the visitor's IP address and the map tiles viewed, not any typed address), as agreed in #334 and the #346 review. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, #346 review) + Claude Code, #346 |

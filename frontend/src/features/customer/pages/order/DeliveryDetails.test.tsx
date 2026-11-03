@@ -38,7 +38,7 @@ beforeEach(() => {
 
 describe('a draft address id the account does not own is not trusted (#272)', () => {
   it('shows the address field for an account with no saved addresses', async () => {
-    await mockRegister({ name: 'New Customer', phone: '08051112233', password: DEMO_PASSWORD })
+    await mockRegister({ name: 'New Customer', phone: '08051112233', password: 'Sample-Passw0rd-1', accepted_terms: true })
     leaveForeignDraft()
     renderDetails()
     expect(await screen.findByRole('textbox', { name: 'Delivery address' }, { timeout: WAIT })).toBeInTheDocument()

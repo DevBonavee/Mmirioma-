@@ -21,7 +21,7 @@ function renderAt(path: string) {
   )
 }
 
-const asCustomer = () => mockRegister({ name: 'Sample Customer', phone: '0800 000 0083', password: 'sample-password-1' })
+const asCustomer = () => mockRegister({ name: 'Sample Customer', phone: '0800 000 0083', password: 'Sample-Passw0rd-1', accepted_terms: true })
 /** The demo rider (mocks/seed.ts). */
 const asRider = () => mockLogin({ phone: '0800 000 0101', password: DEMO_PASSWORD })
 

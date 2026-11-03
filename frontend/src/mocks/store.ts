@@ -53,6 +53,18 @@ export function mockError(status: number, code: string, message: string, details
   return new ApiError({ kind: 'http', status, code, message, details })
 }
 
+/**
+ * The 422 detail the server gives a sign-up without the acceptance
+ * (docs/api/auth.md, #332): the standard entry when absent, its own message otherwise.
+ *
+ * @returns The detail, or `null` when the value is `true`.
+ */
+export function acceptedTermsDetail(value: boolean | undefined): { loc: string[]; msg: string; type: string } | null {
+  if (value === true) return null
+  if (value === undefined) return { loc: ['body', 'accepted_terms'], msg: 'Field required', type: 'missing' }
+  return { loc: ['body', 'accepted_terms'], msg: 'Confirm you are 18 or older and accept the Terms of Service and Privacy Notice.', type: 'value_error' }
+}
+
 const CROCKFORD = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
 
 /** Public-safe order reference: `MO-` + 10 random Crockford base32 characters (orders.md). */

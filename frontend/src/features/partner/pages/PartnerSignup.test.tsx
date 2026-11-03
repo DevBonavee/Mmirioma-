@@ -55,7 +55,7 @@ async function submitForm(refusal: ApiError) {
   await user.type(screen.getByLabelText('Phone number'), '08031234567')
   await user.type(screen.getByLabelText('Plate number'), 'ENU 482 KK')
   await user.selectOptions(await screen.findByLabelText('Area you work in'), 'zone-1')
-  await user.type(screen.getByLabelText('Password'), 'long-enough')
+  await user.type(screen.getByLabelText('Password'), 'Sample-Passw0rd-1')
   await user.click(screen.getByRole('button', { name: 'Create account' }))
 }
 
@@ -95,7 +95,7 @@ describe('PartnerSignup after success', () => {
     await user.type(screen.getByLabelText('Phone number'), '08031234567')
     await user.type(screen.getByLabelText('Plate number'), 'ENU 482 KK')
     await user.selectOptions(await screen.findByLabelText('Area you work in'), 'zone-1')
-    await user.type(screen.getByLabelText('Password'), 'long-enough')
+    await user.type(screen.getByLabelText('Password'), 'Sample-Passw0rd-1')
     await user.click(screen.getByRole('button', { name: 'Create account' }))
     expect(await screen.findByText('Verify phone screen')).toBeInTheDocument()
   })
