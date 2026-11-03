@@ -210,8 +210,9 @@ edits it; this contract only lists what it needs):
    have no account and no "Delete my account" button).
 5. `docs/process/privacy-retention.md` gets the same row.
 
-The privacy tool deletes requests by customer; it cannot yet find a
-`website` request by phone ([open question 2](#open-questions-for-339)).
+The privacy tool deletes requests by customer. When this was proposed it could
+not find a `website` request by phone ([open question 2](#open-questions-for-339));
+`delete-website-messages` (#364) now does, by the visitor's normalized phone.
 
 ### Decisions proposed in #339
 
@@ -268,9 +269,11 @@ conditions:
    [admin-operations.md](admin-operations.md) with the `source` field and the
    nullable `customer.id`, in the same PR.
 2. **Not in #339; a follow-up issue that must be done before the form is
-   switched on** (#344). Until then, a deletion request for a website message
-   is handled by hand by an administrator on the owner's instruction; the
-   notice (section 9) says to call or email the privacy contact.
+   switched on** (#344). Built in #364 as `delete-website-messages` in the privacy
+   tool ([privacy-tool.md](../features/privacy-tool.md)); until it merged, a
+   deletion request for a website message would have been handled by hand by an
+   administrator on the owner's instruction. The notice (section 9) says to call
+   or email the privacy contact.
 3. **#339's build PR edits `PRIVACY_NOTICE.md` and the `/privacy` page** (as
    #340 does for location), and it merges before #344's form is switched on.
    The notice's legal operator reviews the wording.
@@ -303,6 +306,7 @@ git history of this file, for when an email provider is approved.
 
 | Date | Change | Agreed by |
 | --- | --- | --- |
+| 2026-11-03 | Note only, no contract change: the privacy tool can find and delete website messages by phone (`delete-website-messages`, #364) | n/a (documentation) |
 | 2026-11-02 | Built (#339), as agreed; examples added | @nnamdi-security (technical lead) |
 | 2026-11-02 | Proposed (#339): `POST /public/contact`, a website message stored as a support request (migration, admin queue fields, rate limits, privacy rows) | @nnamdi-security (technical lead, G3, 2026-11-02), with the conditions in the section |
 | 2026-10-27 | Built in #56; the per-IP limit set to 120 requests per 10 minutes | @nnamdi-security (technical lead, #56) |
