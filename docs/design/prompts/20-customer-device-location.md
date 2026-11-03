@@ -114,7 +114,7 @@ exact copy. Name components as in the handoff.
 | Item | Rule | Source |
 | --- | --- | --- |
 | Address, landmark, label, area, default | Unchanged: `AddressInput` | [customer-account.md](../../api/customer-account.md#saved-addresses) |
-| Area list | `GET /service-zones`: `{id, name}` only, no boundaries or centres | [admin-directory.md](../../api/admin-directory.md#get-service-zones) |
+| Area list | `GET /service-zones`: `{id, name, centre, boundary}`; `centre` always, `boundary` only when the administrator drew one (#346 amendment) | [admin-directory.md](../../api/admin-directory.md#amendment-346-zone-centre-and-boundary-on-get-service-zones) |
 | Pin | Optional `latitude`, `longitude` and how it was set (`device_location`, `map_pin`, `typed`) on saved addresses and the order's address; a point outside Nigeria or the Enugu bound is refused with 422 | #340 scope, **not agreed** |
 | Device position | Browser only until the customer saves or orders; never sent before | [maps.md](../../architecture/maps.md) section 8 |
 | Map tiles | OpenFreeMap style address, one configuration value; MapLibre loaded lazily | maps.md section 3 |

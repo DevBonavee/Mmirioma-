@@ -8,7 +8,7 @@ Requirements: FR-010, FR-020, FR-022, FR-024, NFR-012, NFR-020 · Prompt:
 Decision: [maps.md](../architecture/maps.md) (#334, approved 2026-11-02) ·
 Contracts: [customer-account.md](../api/customer-account.md#saved-addresses)
 and [admin-directory.md](../api/admin-directory.md#get-service-zones)
-(agreed); location fields from #340 (not agreed yet)
+(agreed); location fields from #340 (proposed in PR #370, not agreed yet)
 Designer: @Daveoski + Claude Code (written design; no visual mockup yet) ·
 Reviewed by: (not yet) · Status: draft
 
@@ -76,8 +76,8 @@ shown.
   under it: one thumb, no precise drag on a small pin. Arrow keys move the map
   when it has focus; `+` and `-` zoom. Label for screen readers: "Map. Move the
   map to put the pin on your gate."
-- **Start:** the phone's position (Found), otherwise the map's default centre
-  (open question 2).
+- **Start:** the phone's position (Found), otherwise the starting point in
+  open question 2.
 - **Loading:** the frame in the canvas colour with "Loading map…".
 - **Failed to load:** The map isn't loading. Your typed address is enough; we'll
   use your area's delivery rate. "Try again". The fields stay usable.
@@ -127,7 +127,7 @@ decides this on the phone (open question 1).
 
 | Screen | Element / action | Endpoint | Fields used |
 | --- | --- | --- | --- |
-| L1, L5 | Area picker | `GET /service-zones` (agreed) | `id`, `name` |
+| L1, L5 | Area picker; where the map starts (L2) | `GET /service-zones` (agreed, with the #346 amendment) | `id`, `name`; `centre` for the map's start (open question 2) |
 | L1 | Save a new address | `POST /me/addresses` (agreed) | `label`, `address`, `landmark`, `zone_id`, `make_default`; **needs contract change (#340):** `latitude`, `longitude`, location source |
 | L5 | Save an edit | `PATCH /me/addresses/{id}` (agreed) | same; **needs contract change (#340)** |
 | L4, L5 | List addresses, "Pin on map" chip | `GET /me/addresses` (agreed) | address fields; **needs contract change (#340):** the location on each address |
@@ -156,16 +156,25 @@ decides this on the phone (open question 1).
 
 ## Open questions (with recommendations)
 
-1. **"Outside our delivery areas" from a pin.** `GET /service-zones` sends no
-   boundaries, and the server never works out the area itself. Recommendation:
-   in this issue the area picker and the quote (`outside_service_zone`) decide,
-   as today; a pin is never checked on the phone. If the team wants a pin
-   check, #340 adds it to the contract first.
-2. **Where the map starts without the phone's position.** Zones expose no
-   centre point. Recommendation: one configuration value for the default
-   centre (central Enugu), set with the tile address, rather than a zone field.
+1. **"Outside our delivery areas" from a pin.** Since the
+   [#346 amendment](../api/admin-directory.md#amendment-346-zone-centre-and-boundary-on-get-service-zones)
+   (agreed 2026-11-03), `GET /service-zones` returns each zone's `boundary`,
+   but only when the administrator drew one, and the server never works out
+   the area from a point (#340). Recommendation: in this issue the area picker
+   and the quote (`outside_service_zone`) decide, as today; a pin is never
+   checked on the phone, because a zone without a boundary could not be
+   checked at all. If the team wants a pin check, #340 adds it to the contract
+   first.
+2. **Where the map starts without the phone's position.** Since the #346
+   amendment, `GET /service-zones` returns each zone's `centre`.
+   Recommendation: start at the centre of the area the customer chose; before
+   an area is chosen, show all the listed areas' centres in the frame. Both
+   come from the list the area picker already loads, so no configuration value
+   or new field is needed.
 3. **The error for a refused pin.** #340's scope says 422; confirm it comes as
-   `validation_error` on the location fields, so L3's wording applies.
+   `validation_error` on the location fields, so L3's wording applies. #340's
+   proposed contract (PR #370) says it does; this is settled when that
+   contract is agreed.
 4. **The "Pin on map" chip** (L5). Recommendation: show it, so a customer knows
    which addresses help the rider.
 5. **Edit an existing address's pin.** Recommendation: yes (L5), through the
