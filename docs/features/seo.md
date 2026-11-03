@@ -76,10 +76,12 @@ No new endpoint. Two static files, answered by the server that serves the app:
   into `index.html`, `robots.txt`, `sitemap.xml` and `seoTags.ts` (`SITE_URL`).
   If the domain changes, change all four; the tests name the domain, so they fail
   until they agree.
-- **JSON-LD says only what the team confirmed**: the name, the site, the support
-  phone `+234 813 377 4902`, and the city served (Enugu, Nigeria). No opening
-  hours, street address, coordinates, rating, price range or social links. The
-  support email is left out on purpose.
+- **JSON-LD says only what the team confirmed**: the name, the site, and the city
+  served (Enugu, Nigeria). It has no phone, because FR-055 says the official
+  support number comes from one central configuration value and a static file
+  cannot read it; a copy there would be one more place to change. It also has no
+  email, opening hours, street address, coordinates, rating, price range or
+  social links. A test fails if `telephone` comes back.
 - **A public page's canonical is its own path**, with no query and no `#section`
   and no trailing slash. When the page goes away the first values come back.
 - **`robots.txt` is a request, not protection.** The blocked pages are still

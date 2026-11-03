@@ -50,7 +50,7 @@ describe('the landing page HTML as the server sends it (index.html)', () => {
     for (const address of addresses) expect(address?.startsWith(`${SITE_URL}/`)).toBe(true)
   })
 
-  it('has LocalBusiness JSON-LD with only the confirmed facts', () => {
+  it('has LocalBusiness JSON-LD with only the confirmed facts, and no phone (FR-055)', () => {
     const script = served.querySelector('script[type="application/ld+json"]')
     expect(script).not.toBeNull()
     const data = JSON.parse(script!.textContent!)
@@ -58,11 +58,10 @@ describe('the landing page HTML as the server sends it (index.html)', () => {
     expect(data['@type']).toBe('LocalBusiness')
     expect(data.name).toBe('MmiriOma')
     expect(data.url).toBe(`${SITE_URL}/`)
-    expect(data.telephone).toBe('+2348133774902')
     expect(data.areaServed).toEqual({ '@type': 'City', name: 'Enugu' })
     expect(data.address).toEqual({ '@type': 'PostalAddress', addressLocality: 'Enugu', addressCountry: 'NG' })
     // Nothing the team has not confirmed.
-    for (const unconfirmed of ['email', 'openingHours', 'openingHoursSpecification', 'geo', 'sameAs', 'priceRange', 'aggregateRating', 'review', 'streetAddress']) {
+    for (const unconfirmed of ['telephone', 'email', 'openingHours', 'openingHoursSpecification', 'geo', 'sameAs', 'priceRange', 'aggregateRating', 'review', 'streetAddress']) {
       expect(JSON.stringify(data)).not.toContain(`"${unconfirmed}"`)
     }
   })
