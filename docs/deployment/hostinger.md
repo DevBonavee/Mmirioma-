@@ -35,8 +35,11 @@ Decisions:
 - **Build on the server, tag by commit.** One deployer and one VPS do not
   justify a registry. Each build is tagged `mmirioma-api:<git commit>`, so the
   previous release's image is still on the disk for a rollback.
-- **Resend, Geoapify and Paystack are not configured** because the code has no
+- **Resend and Paystack are not configured** because the code has no
   integration for them (only Termii for SMS). There is no setting to fill in.
+- **The map needs nothing on the server.** The landing page's service-area map
+  (#346) loads OpenFreeMap tiles straight from the visitor's browser, so the
+  server sees no tile traffic. See [maps.md](../architecture/maps.md).
 
 ## 2. Files
 
@@ -488,26 +491,43 @@ migration run with the helper script against a populated database.
 
 ## 13. Outstanding before go-live
 
-1. **Privacy notice:** version 3.0 names Hostinger (Paris) and Backblaze
-   (Amsterdam) (#319). It still needs @nnamdi-security's approval as data
-   controller and the legal review in `docs/process/privacy-retention.md`,
-   "Open items".
+1. **Privacy notice:** the current version (5.0 at the time of writing, see
+   `PRIVACY_NOTICE.md`) names Hostinger (Paris), Backblaze (Amsterdam) and
+   OpenFreeMap (Hungary, possibly Cloudflare). It still needs
+   @nnamdi-security's approval as data controller and the legal review in
+   `docs/process/privacy-retention.md`, "Open items".
 2. **Off-VPS backups:** Backblaze B2 EU Central chosen (section 10). Set it up
    and test a first restore.
 3. **Termii:** sender ID registered, DND channel activated, a live test on a
    team phone (`python -m app.modules.messaging.live_test`, `docs/features/sms.md`).
-4. **Email (Resend), maps (Geoapify) and payments (Paystack)** are not in the
-   code. If the pilot needs them, each is its own issue with a contract.
-5. **Road distance (OSRM)** is still open (SRS section 12.1); pricing uses
-   zone rates. KVM 1 is too small to host the map data.
-6. **Web push** (VAPID keys) is not implemented; leave `VITE_VAPID_PUBLIC_KEY` unset.
-7. **Monitoring:** an external uptime check on `/api/v1/health/ready` and a
+4. **Email (Resend) and payments (Paystack)** are not in the code. If the pilot
+   needs them, each is its own issue with a contract. There is no address
+   search provider by decision (maps.md, option G1).
+5. **Road distance (OSRM)** is decided but not built or deployed
+   ([maps.md](../architecture/maps.md), option R1, SRS section 12.1): pricing
+   uses zone rates, which FR-022 allows. The plan is one container on this VPS
+   with a hard memory limit and routing files built off the server, deployed
+   **only if** a measurement on the real VPS shows OSRM under 1.5 GiB and the
+   API unaffected; if not, orders keep zone rates until there is budget for a
+   second server. The compose limits today are 1 GB for the database and 768 MB
+   for the API on a 4 GB machine, so the room is tight and must be measured, not
+   assumed. Nothing has been measured. Until it is built, road distance is not
+   used in any price.
+6. **Map provider:** a person confirms OpenFreeMap's privacy policy (recorded in
+   [landing-service-areas.md](../design/landing-service-areas.md), read on
+   2026-11-03 by an agent, to be confirmed). The tile style is
+   `VITE_MAP_STYLE_URL`, a build-time variable, and the production image does not
+   pass it (`backend/Dockerfile` and `compose.production.yaml` have no argument
+   for it), so production uses the OpenFreeMap default. Changing provider, the
+   fallback in maps.md, therefore needs a build argument added first.
+7. **Web push** (VAPID keys) is not implemented; leave `VITE_VAPID_PUBLIC_KEY` unset.
+8. **Monitoring:** an external uptime check on `/api/v1/health/ready` and a
    disk-space alert. Nothing is set up.
-8. **Continuous deployment:** none. Deploys are manual (section 7).
-9. **Water sources:** none exist on a new deployment. Add and activate at
+9. **Continuous deployment:** none. Deploys are manual (section 7).
+10. **Water sources:** none exist on a new deployment. Add and activate at
    least one (section 9) before taking orders, with a real laboratory
    report reference.
-10. **Search Console:** the domain is not verified and the sitemap is not
+11. **Search Console:** the domain is not verified and the sitemap is not
     submitted (section 15). Nothing about search results has been checked.
 
 ## 14. Known limitations
