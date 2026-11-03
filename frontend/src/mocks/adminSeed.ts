@@ -223,6 +223,23 @@ export function seedAdmin(now = new Date()): AdminData {
       resolution: null,
     },
     {
+      // SAMPLE DATA: a message from the website contact form (#365). It has no order, so it can only be closed after a call.
+      id: 'is-13',
+      number: '#CP-013',
+      type: 'other',
+      title: 'Website message',
+      message: 'Sample message: do you deliver to Ogui Road?',
+      reference: null,
+      reported_by: 'customer',
+      reporter_name: 'Sample Visitor',
+      source: 'website',
+      topic: 'other',
+      at: minutesAgo(now, 30),
+      urgent: false,
+      status: 'open',
+      resolution: null,
+    },
+    {
       id: 'is-08',
       number: '#CP-008',
       type: 'wrong_quantity',

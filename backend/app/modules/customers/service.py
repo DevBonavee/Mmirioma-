@@ -41,6 +41,7 @@ from app.modules.customers.models import CustomerAddress
 from app.modules.orders import service as orders_service
 from app.modules.pricing import service as pricing_service
 from app.modules.pricing.models import ServiceZone
+from app.shared.location import Location, LocationRead, read_location, to_point
 
 #: Decision 6 of the contract.
 MAX_ADDRESSES_PER_CUSTOMER = 20
@@ -80,6 +81,11 @@ class AddressData:
         landmark: Trimmed, or None.
         zone_id: The picked zone.
         make_default: Make this the default address.
+        location: The map point, or None for none.
+        change_location: Whether the request carried ``location`` at all. On an
+            update, False leaves the saved point alone and True replaces or (with
+            ``location`` None) removes it, so a client that does not know the
+            field never removes a pin. A new address always takes ``location``.
     """
 
     label: str
@@ -87,6 +93,8 @@ class AddressData:
     landmark: str | None
     zone_id: uuid.UUID
     make_default: bool
+    location: Location | None = None
+    change_location: bool = True
 
 
 def _address_not_found() -> APIError:
@@ -177,6 +185,7 @@ async def add_address(session: AsyncSession, customer: User, data: AddressData) 
         address=data.address,
         landmark=data.landmark,
         is_default=make_default,
+        **_location_values(data.location),
     )
     session.add(address)
     await session.flush()
@@ -222,6 +231,10 @@ async def update_address(
     address.address = data.address
     address.landmark = data.landmark
     address.zone_id = data.zone_id
+    if data.change_location and _location_changes(address, data.location):
+        for column, value in _location_values(data.location).items():
+            setattr(address, column, value)
+        changed.append("location")
     if data.make_default and not address.is_default:
         await _clear_default(session, customer.id)
         address.is_default = True
@@ -331,6 +344,22 @@ async def _clear_default(session: AsyncSession, customer_id: uuid.UUID) -> None:
     # The partial unique index is checked per statement, so the old default
     # must be cleared in the database before the new one is written.
     await session.flush()
+
+
+def _location_values(location: Location | None) -> dict[str, object]:
+    # The point and its source are always written together (the table's CHECK).
+    if location is None:
+        return {"location": None, "location_source": None}
+    return {"location": to_point(location), "location_source": location.source.value}
+
+
+def _location_changes(address: CustomerAddress, location: Location | None) -> bool:
+    # Compared by value, at the stored precision, so saving the same pin again
+    # is not recorded as a change. The audit row names the field, never the point.
+    saved = read_location(
+        address.location_latitude, address.location_longitude, address.location_source
+    )
+    return saved != (None if location is None else LocationRead(**location.model_dump()))
 
 
 async def _view(session: AsyncSession, address: CustomerAddress) -> AddressView:

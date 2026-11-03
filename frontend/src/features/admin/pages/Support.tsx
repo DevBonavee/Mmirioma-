@@ -15,6 +15,7 @@ import { errorMessage } from '../../../lib/api/errorMessage'
 import { USE_MOCKS } from '../../../lib/api/mode'
 import { cx } from '../../../lib/cx'
 import { formatDateTime, formatTime } from '../../../lib/format/datetime'
+import { formatPhone } from '../../../lib/format/phone'
 import * as api from '../adminApi'
 import { DETAIL_PANEL_ID, revealDetail, timeAgo } from '../adminFormat'
 import { AdminFrame, PageHead } from '../AdminParts'
@@ -32,8 +33,24 @@ const ISSUE_ICON: Record<IssueType, { tone: IconBadgeTone; icon: ReactNode }> = 
   other: { tone: 'blue', icon: <AlertCircleIcon size={20} /> },
 }
 
-/** Which resolutions make sense for an issue (a code that fails points to confirming without it). */
+/** The words for a website message's topic (the server's request `type`); anything else reads as "Other". */
+const TOPIC_LABEL: Record<string, string> = {
+  late: 'Delivery was late',
+  wrong_quantity: 'Wrong quantity',
+  payment: 'Payment',
+  rider: 'Rider',
+  other: 'Other',
+}
+
+/** True for a visitor's message from the public contact form: no account, no order (#365). */
+const isWebsite = (issue: AdminIssue) => issue.source === 'website'
+
+/**
+ * Which resolutions make sense for an issue (a code that fails points to confirming without it). A website message
+ * has no order and no account, so it can only be closed after a call: no points, no order action.
+ */
 function actionsFor(issue: AdminIssue): ResolutionAction[] {
+  if (isWebsite(issue)) return ['call_and_close']
   const all: ResolutionAction[] = ['confirm_without_code', 'reassign', 'goodwill_points', 'cancel_order', 'call_and_close']
   return issue.reference ? all : ['goodwill_points', 'call_and_close']
 }
@@ -80,11 +97,16 @@ export function Support() {
               </IconBadge>
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-extrabold">{i.title}</span>
-                <span className="block text-caption text-mute">
-                  {i.reference?.slice(0, 7) ?? 'No order'} · {i.reported_by === 'customer' ? 'Customer' : i.reported_by === 'rider' ? 'Rider' : 'Driver'} · {timeAgo(i.at)}
+                <span className="block truncate text-caption text-mute">
+                  {isWebsite(i)
+                    ? `Website · ${i.reporter_name} · ${timeAgo(i.at)}`
+                    : `${i.reference?.slice(0, 7) ?? 'No order'} · ${i.reported_by === 'customer' ? 'Customer' : i.reported_by === 'rider' ? 'Rider' : 'Driver'} · ${timeAgo(i.at)}`}
                 </span>
               </span>
-              <Chip tone={i.status === 'resolved' ? 'green' : i.urgent ? 'red' : 'amber'}>{i.status === 'resolved' ? 'Resolved' : i.urgent ? 'Urgent' : 'Open'}</Chip>
+              <span className="flex shrink-0 flex-col items-end gap-1">
+                {isWebsite(i) && <Chip tone="blue">Website</Chip>}
+                <Chip tone={i.status === 'resolved' ? 'green' : i.urgent ? 'red' : 'amber'}>{i.status === 'resolved' ? 'Resolved' : i.urgent ? 'Urgent' : 'Open'}</Chip>
+              </span>
             </button>
           ))}
         </div>
@@ -108,6 +130,9 @@ function IssueDetail({ issue, onBeforeResolve }: { issue: AdminIssue; onBeforeRe
   const order = useAdminOrder(issue.reference)
   const people = useIssuePeople(issue.id)
   const actions = actionsFor(issue)
+  const website = isWebsite(issue)
+  // A website message's one contact is the visitor; the name shows from the list while this loads.
+  const visitor = website ? people.data?.[0] : undefined
   const [action, setAction] = useState<ResolutionAction>(actions[0])
   const [reason, setReason] = useState('')
   const [points, setPoints] = useState('50')
@@ -123,9 +148,32 @@ function IssueDetail({ issue, onBeforeResolve }: { issue: AdminIssue; onBeforeRe
           </div>
           <h2 className="m-0 text-[22px] font-extrabold">{issue.title}</h2>
         </div>
-        <Chip tone={issue.status === 'resolved' ? 'green' : issue.urgent ? 'red' : 'amber'}>{issue.status === 'resolved' ? 'Resolved' : issue.urgent ? 'Urgent' : 'Open'}</Chip>
+        <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+          {website && <Chip tone="blue">Website</Chip>}
+          <Chip tone={issue.status === 'resolved' ? 'green' : issue.urgent ? 'red' : 'amber'}>{issue.status === 'resolved' ? 'Resolved' : issue.urgent ? 'Urgent' : 'Open'}</Chip>
+        </div>
       </div>
-      <blockquote className="m-0 rounded-input bg-[#F4F7FB] px-4 py-3">“{issue.message}”</blockquote>
+      <blockquote className="m-0 rounded-input bg-[#F4F7FB] px-4 py-3 break-words">“{issue.message}”</blockquote>
+      {website && <p className="m-0 text-[14px] text-mute">Topic: {TOPIC_LABEL[issue.topic ?? 'other'] ?? 'Other'}</p>}
+      {website ? (
+        <section>
+          <h3 className="m-0 mb-2 text-[16px] font-extrabold">Sender</h3>
+          {people.isError && <ErrorBlock error={people.error} onRetry={() => people.refetch()} />}
+          <div className="flex items-center gap-3 py-1">
+            <Avatar name={issue.reporter_name} size={40} />
+            <span className="min-w-0 flex-1">
+              <span className="block font-bold break-words">{issue.reporter_name}</span>
+              <span className="block text-caption text-mute">Website visitor · Not linked to an account</span>
+              {visitor && <span className="block text-caption text-mute">{formatPhone(visitor.phone)}</span>}
+            </span>
+            {visitor && (
+              <a href={`tel:${visitor.phone}`} className="mo-mini mo-mini-alt hit-44 no-underline">
+                Call
+              </a>
+            )}
+          </div>
+        </section>
+      ) : (
       <div className="grid gap-5 md:grid-cols-2">
         <section>
           <h3 className="m-0 mb-2 text-[16px] font-extrabold">Order timeline</h3>
@@ -167,6 +215,7 @@ function IssueDetail({ issue, onBeforeResolve }: { issue: AdminIssue; onBeforeRe
           </ul>
         </section>
       </div>
+      )}
 
       {issue.status === 'resolved' && issue.resolution ? (
         <Notice tone="success">

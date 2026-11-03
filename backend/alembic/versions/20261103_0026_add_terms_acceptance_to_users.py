@@ -9,8 +9,8 @@ recorded and is never read as acceptance. A check constraint keeps the two colum
 set or cleared together. Columns only; no data is rewritten and the downgrade drops
 them.
 
-Revision ID: 0025
-Revises: 0024
+Revision ID: 0026
+Revises: 0025
 Create Date: 2026-11-03 12:00:00+00:00
 """
 
@@ -19,8 +19,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0025"
-down_revision: str | Sequence[str] | None = "0024"
+revision: str = "0026"
+down_revision: str | Sequence[str] | None = "0025"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

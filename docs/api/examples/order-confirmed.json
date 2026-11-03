@@ -6,6 +6,7 @@
   "contact_phone": "+2348000000001",
   "delivery_address": "12 Sample Close, Independence Layout, Enugu",
   "landmark": "Opposite the blue gate",
+  "delivery_location": null,
   "delivery_instructions": "Tank is behind the house",
   "preferred_delivery_date": "2026-10-27",
   "created_at": "2026-10-26T09:30:00Z",

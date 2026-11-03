@@ -75,8 +75,17 @@ None. The text ships with the frontend.
   requests, order feedback and deletion requests. It is 2.0, not 1.2,
   because what is collected changed (the procedure's version rule;
   privacy contact, 2026-10-27, #104).
-- Version 6.0 (3 November 2026, #332) adds the record of the acceptance at sign-up:
+- Version 7.0 (3 November 2026, #332) adds the record of the acceptance at sign-up:
   the time, and which version of the Terms and the notice was accepted.
+- Version 6.0 (3 November 2026, #340) adds the optional map location of a
+  delivery address: collected only when the customer chooses "Use my location" or
+  places a pin (section 2), the app asks for the phone's location only on that choice
+  and never tracks (section 5), the assigned driver sees the pin while assigned and
+  the map provider also sees the map the customer uses to place it (section 7), and
+  saved-address locations follow the address while an order's follows the order's
+  3 years (section 8). It is 6.0 because what is collected changed. The wording says the
+  location "will also be used" for road-distance prices: quotes use zone rates until OSRM
+  is deployed (maps.md R1).
 - Version 5.0 (3 November 2026, #346) names OpenFreeMap (Hyperknot Software
   Kft., Hungary) in section 7 as the provider of the landing page's service-area
   map: it receives the visitor's IP address and the map tiles they view, not any

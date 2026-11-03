@@ -212,6 +212,21 @@ confirmed with it keep it ([deliveries.md](deliveries.md), decision 10).
 Audit: `water_source_suspended` or `water_source_revoked`, `details`
 `{ "water_category_id", "status" }`.
 
+## Proposed amendment #385: a source `location`
+
+**Status: agreed** (G3) on 2026-11-03 by @nnamdi-security, who is not the author,
+with the road-distance amendment in
+[order-details-and-price.md](order-details-and-price.md#source-location).
+`WaterSourceRead` gains `location`: `{ "latitude", "longitude" }` (WGS 84,
+inside the [delivery bounds](delivery-location.md#delivery-bounds)) or `null`
+(the default). `POST` and `PATCH /admin/water-sources` accept the same optional
+field; the `add-source` command gains `--latitude` and `--longitude`, both or
+neither. It is never sent to a customer or a driver. It changes no existing
+field, and a source without one keeps working: any quote that could use it uses
+the zone fee. A PATCH that sets or clears it is audited as
+`water_source_updated` with `details.fields` naming `location`, never the
+coordinates. The Water sources screen gets no new field in #385.
+
 ## Error codes added
 
 | Status | Code | When |
@@ -249,3 +264,4 @@ All three were decided by the technical lead on 2026-11-01 (G3).
 | --- | --- | --- |
 | 2026-11-01 | Proposed (#309), from the technical lead's decisions on the issue | not yet agreed |
 | 2026-11-01 | Agreed, with the three open questions decided; the 401 code is `not_authenticated`, as in the README | @nnamdi-security |
+| 2026-11-03 | Additive (#385): an optional `location` on a water source, set by an administrator and never sent to a customer or a driver ([amendment](#proposed-amendment-385-a-source-location), with the road-distance rules in order-details-and-price.md) | @nnamdi-security (G3, 2026-11-03) |
