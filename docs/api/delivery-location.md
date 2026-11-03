@@ -8,9 +8,9 @@ issue ([decisions](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment
 and the [handover](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment-6590449932)
 to @Daveoski, both 2026-11-02).
 
-Requirements: FR-020, FR-022, FR-024, FR-032 · Design:
-[customer-device-location.md](../design/customer-device-location.md) (#345,
-in review) · Amends, additively:
+Requirements: FR-020, FR-022, FR-024, FR-032 · Design: #345
+(`docs/design/customer-device-location.md`, awaiting G2, not yet merged) ·
+Amends, additively:
 [customer-account.md](customer-account.md#saved-addresses),
 [order-details-and-price.md](order-details-and-price.md#post-orders-changes),
 [deliveries.md](deliveries.md#driver-job-object)
@@ -72,7 +72,8 @@ The server never works out a zone from a point.
 }
 ```
 
-`AddressInput` (`POST` and `PATCH /me/addresses`) gains optional `location`:
+`AddressInput` (`POST /me/addresses` and `PATCH /me/addresses/{id}`) gains
+optional `location`:
 
 | Request | Effect |
 | --- | --- |
