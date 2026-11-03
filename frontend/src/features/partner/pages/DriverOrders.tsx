@@ -34,6 +34,7 @@ export function DriverOrders() {
           className="rise-2"
           label="Tank type"
           wrap={false}
+          largeHit
           value={filter}
           onChange={setFilter}
           options={[

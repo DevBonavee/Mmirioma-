@@ -101,6 +101,16 @@ describe('Pills', () => {
     await user.click(screen.getByRole('tab', { name: 'Active' }))
     expect(onChange).toHaveBeenCalledWith('active')
   })
+
+  it('has a 44 px hit area, or 48 px with largeHit (the rider and driver filter chips, #342)', () => {
+    const options = [{ value: 'all', label: 'All' }]
+    const { rerender } = render(<Pills label="Period" value="all" onChange={() => undefined} options={options} />)
+    expect(screen.getByRole('tab', { name: 'All' })).toHaveClass('hit-44')
+    expect(screen.getByRole('tab', { name: 'All' })).not.toHaveClass('hit-48')
+    rerender(<Pills label="Period" value="all" onChange={() => undefined} options={options} largeHit />)
+    expect(screen.getByRole('tab', { name: 'All' })).toHaveClass('hit-48')
+    expect(screen.getByRole('tab', { name: 'All' })).not.toHaveClass('hit-44')
+  })
 })
 
 describe('Button', () => {

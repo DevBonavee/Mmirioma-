@@ -68,6 +68,39 @@ describe('MobileShell width', () => {
   })
 })
 
+describe('MobileShell window scroll (#342, docs/design/responsive.md)', () => {
+  function render_(width?: 'customer' | 'card', background?: 'ink') {
+    const screen_ = (
+      <MobileShell background={background}>
+        <TopBar />
+        <ScrollArea>Body</ScrollArea>
+      </MobileShell>
+    )
+    return render(<MemoryRouter>{width ? <ShellScope width={width}>{screen_}</ShellScope> : screen_}</MemoryRouter>)
+  }
+
+  it('marks the phone-width frame (rider and driver app) for window scroll from 768 px', () => {
+    const { container } = render_()
+    expect(frame(container)).toHaveAttribute('data-scroll', 'window')
+  })
+
+  it('keeps the viewport-high frame and inner scroll classes, so a phone is as it was', () => {
+    const { container } = render_()
+    // Below 768 px the CSS for data-scroll="window" does not apply: these classes decide.
+    expect(frame(container)).toHaveClass('h-dvh', 'overflow-hidden', 'max-w-phone')
+  })
+
+  it.each(['customer', 'card'] as const)('does not touch the %s width', (width) => {
+    const { container } = render_(width)
+    expect(frame(container)).not.toHaveAttribute('data-scroll')
+  })
+
+  it('keeps a drawer menu (ink background) in the viewport-high frame', () => {
+    const { container } = render_(undefined, 'ink')
+    expect(frame(container)).not.toHaveAttribute('data-scroll')
+  })
+})
+
 describe('header navigation', () => {
   const nav = <nav aria-label="Main">links</nav>
 

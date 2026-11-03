@@ -229,6 +229,13 @@ active job, for calling.
 
 - Every screen has loading, error and empty states; offline and
   waiting-for-approval explain why the pool is empty.
+- On a phone (under 768 px) every screen is as it was: the screen fills the
+  window and its middle part scrolls. From 768 px the app stays a centred 430 px
+  column, but the browser window scrolls, with the header and the footer or tab
+  bar sticking to the top and bottom of the window, so a desktop browser shows
+  one scrollbar (`docs/design/responsive.md`, #342). The drawer menus keep the
+  window-high frame. The filter chips on the history and tanker-orders screens
+  have a 48 px hit area; they look the same.
 - Errors that block a footer button show next to that button.
 - Reloading a trip screen at the wrong stage redirects to the right step.
 - A trip step whose request fails stays on its screen and shows its own notice:

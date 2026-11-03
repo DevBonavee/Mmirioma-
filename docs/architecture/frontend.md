@@ -217,6 +217,16 @@ use `hit-48`: the look stays, the touch area is 48 × 48.
   screens. `CustomerArea` and the customer routes set it, so the partner files
   need no change. Footer and tab bar pad above the phone's home bar
   (`env(safe-area-inset-bottom)`).
+- Window scroll (rider and driver app, #342): below 768 px the shell is as
+  above. From 768 px the `phone`-width shell marks its frame
+  `data-scroll="window"` (not for a `background="ink"` drawer menu, whose panel
+  fills the screen), and the rules at the end of `styles/components.css` let the
+  column grow with its content, so the browser window scrolls and a desktop
+  browser shows one scrollbar. The header (`.mo-top`) sticks to the top of the
+  window and the footer (`.mo-foot`) or tab bar (`.mo-tabs`) to the bottom. A
+  sheet drawn over the column (`AssignedSheet`) is `fixed` from 768 px, kept
+  inside the 430 px column, because the column is no longer one viewport high.
+  To undo it, remove the `data-scroll` attribute and that CSS block.
 - Two panes (customer Orders and Addresses, 1280 px and up): `pages/Splits.tsx`
   draws a list `Pane` and a detail `Pane` side by side. A screen inside a pane
   (`usePane()`) fills the pane instead of the page, and the list pane has no
