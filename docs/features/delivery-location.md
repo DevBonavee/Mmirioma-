@@ -124,10 +124,13 @@ alembic downgrade -1 && alembic upgrade head && alembic check
 
 ## 10. Known limitations
 
-- **The bounds value is an estimate.** The default, `5.9,6.8,7.2,7.9`, is a
-  rounded-outwards box around Enugu State chosen without a boundary file; whoever
-  owns the contract should confirm it against the OpenStreetMap boundary. It can
-  be changed with `DELIVERY_LOCATION_BOUNDS` and no code change.
+- **The bounds are a sanity box, not the service area.** The default,
+  `5.9,6.9,7.2,8.0` (south, west, north, east), is the OpenStreetMap boundary of
+  Enugu State rounded outwards to 0.1 degree, as the contract says. Checked on
+  3 November 2026 against the boundary's bounding box (south 5.9246, north
+  7.1037, west 6.9317, east 7.9034). It takes in parts of neighbouring states on
+  purpose; whether MmiriOma delivers somewhere is still the zone the customer
+  picked. It can be changed with `DELIVERY_LOCATION_BOUNDS` and no code change.
 - Quotes do not use the point yet. Road-distance pricing needs OSRM, which is
   gated by a memory measurement (maps.md R1); until then every quote uses zone
   rates.

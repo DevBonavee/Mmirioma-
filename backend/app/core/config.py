@@ -27,7 +27,7 @@ MIN_SECRET_LENGTH = 32
 OFFICIAL_SUPPORT_PHONE = "+2348133774902"
 #: south, west, north, east in degrees: a box around Enugu State, wider than the
 #: city on purpose (docs/api/delivery-location.md, "Delivery bounds").
-DEFAULT_DELIVERY_LOCATION_BOUNDS = "5.9,6.8,7.2,7.9"
+DEFAULT_DELIVERY_LOCATION_BOUNDS = "5.9,6.9,7.2,8.0"
 #: Nigeria's own extent, a sanity limit on the setting so a typo cannot widen
 #: the box to the world.
 NIGERIA_SOUTH, NIGERIA_WEST, NIGERIA_NORTH, NIGERIA_EAST = 4.0, 2.6, 14.0, 14.8

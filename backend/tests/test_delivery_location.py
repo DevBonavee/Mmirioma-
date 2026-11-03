@@ -79,7 +79,7 @@ def test_a_point_outside_the_delivery_bounds_fails_on_the_location_as_a_whole(
     (error,) = caught.value.errors()
     # Never the inner field, so a screen has one place to show it (contract).
     assert error["loc"] == ()
-    assert error["msg"] == f"Value error, {OUT_OF_BOUNDS_MESSAGE}"
+    assert error["msg"] == OUT_OF_BOUNDS_MESSAGE  # exactly the words in the contract
 
 
 def test_unknown_fields_are_refused() -> None:
@@ -91,8 +91,12 @@ def test_the_default_box_holds_the_city_and_the_state_edges_but_not_other_cities
     bounds = Settings().delivery_bounds
     assert bounds.contains(6.4584, 7.4951)  # Enugu city
     assert bounds.contains(6.0, 7.0)  # an outlying town is never refused by a tight box
+    # The OpenStreetMap boundary of Enugu State reaches 7.9034 east and 6.9317 west:
+    # rounded outwards, both edges are inside the box (the contract's rule).
+    assert bounds.contains(6.5, 7.9034)
+    assert bounds.contains(6.5, 6.9317)
     assert not bounds.contains(6.5244, 3.3792)  # Lagos
-    assert DEFAULT_DELIVERY_LOCATION_BOUNDS == "5.9,6.8,7.2,7.9"
+    assert DEFAULT_DELIVERY_LOCATION_BOUNDS == "5.9,6.9,7.2,8.0"
 
 
 def test_the_box_can_be_changed_by_the_setting(monkeypatch: pytest.MonkeyPatch) -> None:

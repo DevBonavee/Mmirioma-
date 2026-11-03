@@ -18,6 +18,7 @@ from typing import Any, Self
 
 from geoalchemy2 import Geography, Geometry, WKTElement
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic_core import PydanticCustomError
 from sqlalchemy import CheckConstraint, String, cast, func
 from sqlalchemy.orm import Mapped, column_property, mapped_column
 from sqlalchemy.sql.elements import ColumnElement
@@ -60,7 +61,9 @@ class Location(BaseModel):
     @model_validator(mode="after")
     def _round_and_check_bounds(self) -> Self:
         if not get_settings().delivery_bounds.contains(self.latitude, self.longitude):
-            raise ValueError(OUT_OF_BOUNDS_MESSAGE)
+            # Not ValueError: pydantic would put "Value error, " in front, and the contract
+            # (and the screens) use the message as it is.
+            raise PydanticCustomError("value_error", OUT_OF_BOUNDS_MESSAGE)
         self.latitude = round(self.latitude, DECIMAL_PLACES)
         self.longitude = round(self.longitude, DECIMAL_PLACES)
         return self
