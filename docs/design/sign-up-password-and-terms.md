@@ -9,10 +9,11 @@ NFR-001, NFR-012, NFR-020, NFR-021, NFR-022 · Contract:
 #332) and [partners.md](../api/partners.md#post-authpartner-register) · Amends:
 [authentication.md](authentication.md), screen C2, and the rider and driver sign-up
 form (`PartnerSignup.tsx`)
-Designer: @chidimmamogbo + Claude Code · Reviewed by: not yet · Status: draft
+Designer: @chidimmamogbo + Claude Code · Reviewed by: @nnamdi-security
+(2026-11-03) · Status: approved
 
-**G2 needs one reviewer who is not the author**: @nnamdi-security or
-@Cloudcrackamara. They set `Status: approved` with their name and the date.
+**Approved (G2) on 2026-11-03 by @nnamdi-security, who is not the author**, with
+the decisions under "Review decisions".
 
 This changes the customer sign-up form (`/signup`) and the rider and driver sign-up
 form (`/partner/signup`), which behave the same. Everything not listed here stays as
@@ -133,6 +134,28 @@ password goes no further than the screen. No row needs a contract change.
 ## Open questions
 
 None.
+
+## Review decisions
+
+Recommendations by @nnamdi-security, 2026-11-03, approved with the design:
+
+1. **Button off until the four rules are met; mismatch and missing tick caught on
+   tap:** agreed. An always-disabled button cannot explain itself, and the
+   checklist already says why it is off.
+2. **One box for the three statements:** agreed. The tick is the person's own
+   act; the form never sends `accepted_terms: true` without it, including after
+   a failed attempt (the person ticked it for this same form).
+3. **Same rule text in both places:** agreed, and `lib/format/password.ts` must
+   keep matching the server's check (`password_problem`, #332). A test compares
+   them on the same examples.
+4. **Change password is not in this design:** agreed, as the issue's scope
+   covers only the sign-up forms.
+5. **Page names in the box, "Terms of Service" and "Privacy Notice":** agreed.
+   They are what the pages call themselves, and #332's build changes the
+   contract's refusal message to match (recorded in `auth.md`).
+6. **Condition:** this design merges before the build, but the build merges back
+   to back with #332 (the agreed rollout), because sign-up is refused until the
+   box exists. No deploy or promotion to `main` happens between the two.
 
 ## Changes to the design system
 
