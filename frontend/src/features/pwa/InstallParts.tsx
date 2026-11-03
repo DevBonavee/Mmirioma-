@@ -3,6 +3,7 @@ import { CloseIcon, DownloadIcon } from '../../components/icons/icons'
 import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { IconBadge, MenuItem } from '../../components/ui/Content'
+import { useShellScope } from '../../components/layout/shellContext'
 import { cx } from '../../lib/cx'
 import { APP_NAME, type AppKind } from './manifest'
 import { isSnoozed, snooze } from './remindLater'
@@ -18,6 +19,8 @@ const GREEN = 'bg-[#15803D] shadow-[0_10px_22px_rgba(21,128,61,0.3)] hover:bg-[#
  */
 export function InstallHowToSheet({ app, onClose }: { app: AppKind; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
+  // On the customer desktop (1280 px and up) the bottom sheet is a centred 480 px dialog (docs/design/responsive.md).
+  const centred = useShellScope().width === 'customer'
 
   // Move focus into the dialog and close it on Escape.
   useEffect(() => {
@@ -28,7 +31,7 @@ export function InstallHowToSheet({ app, onClose }: { app: AppKind; onClose: () 
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className={cx('fixed inset-0 z-50 flex items-end justify-center', centred && 'xl:items-center')}>
       <div className="absolute inset-0 bg-[rgba(10,37,64,.55)]" aria-hidden="true" onClick={onClose} />
       <div
         ref={ref}
@@ -36,9 +39,12 @@ export function InstallHowToSheet({ app, onClose }: { app: AppKind; onClose: () 
         role="dialog"
         aria-modal="true"
         aria-labelledby="install-howto-title"
-        className="animate-sheet relative flex w-full max-w-[440px] flex-col gap-3 rounded-t-[28px] bg-white px-5 pt-2.5 pb-[max(22px,env(safe-area-inset-bottom))] text-ink shadow-[0_-16px_40px_rgba(10,37,64,0.25)] outline-none"
+        className={cx(
+          'animate-sheet relative flex w-full max-w-[440px] flex-col gap-3 rounded-t-[28px] bg-white px-5 pt-2.5 pb-[max(22px,env(safe-area-inset-bottom))] text-ink shadow-[0_-16px_40px_rgba(10,37,64,0.25)] outline-none',
+          centred && 'xl:max-w-[480px] xl:rounded-[28px] xl:pt-5',
+        )}
       >
-        <span aria-hidden="true" className="h-[5px] w-11 self-center rounded-[3px] bg-input-line" />
+        <span aria-hidden="true" className={cx('h-[5px] w-11 self-center rounded-[3px] bg-input-line', centred && 'xl:hidden')} />
         <div className="flex items-center justify-between gap-3">
           <h2 id="install-howto-title" className="m-0 text-[19px] font-extrabold">
             Add {APP_NAME[app]} to your home screen
@@ -114,7 +120,7 @@ export function InstallCard({ app, tone = 'blue', className }: { app: AppKind; t
                 snooze(key)
                 setHidden(true)
               }}
-              className="hit-44 cursor-pointer border-0 bg-transparent px-2 text-[13px] font-bold text-mute"
+              className="hit-48 cursor-pointer border-0 bg-transparent px-2 text-[13px] font-bold text-mute"
             >
               Not now
             </button>

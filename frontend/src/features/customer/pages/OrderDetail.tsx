@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Illustration } from '../../../components/brand/Illustration'
 import { DownloadIcon, RefreshIcon, StarIcon } from '../../../components/icons/icons'
+import { usePane } from '../../../components/layout/shellContext'
 import { BackLink, Footer, MobileShell, ScrollArea, TopBar } from '../../../components/layout/MobileShell'
 import { ErrorBlock, LoadingBlock } from '../../../components/layout/StateScreens'
 import { Button, ButtonLink } from '../../../components/ui/Button'
@@ -8,7 +9,7 @@ import { Card } from '../../../components/ui/Card'
 import { Chip, SampleTag } from '../../../components/ui/Chip'
 import { KeyValue, SectionTitle, Separator } from '../../../components/ui/Content'
 import { IconLink } from '../../../components/ui/IconButton'
-import { STAGE_LABEL, isProblemStage, type CustomerOrder } from '../../../domain/orders'
+import { STAGE_LABEL, isActiveStage, isProblemStage, type CustomerOrder } from '../../../domain/orders'
 import { cx } from '../../../lib/cx'
 import { formatShortDate, formatTime } from '../../../lib/format/datetime'
 import { formatNaira } from '../../../lib/format/money'
@@ -75,6 +76,8 @@ export function OrderDetail() {
   const addresses = useAddresses()
   const { reset } = useOrderDraft()
   const o = order.data
+  // Beside the list (1280 px and up) the list opens this page for every order, active ones too, so tracking needs its own link.
+  const inPane = usePane() !== null
 
   function reorder() {
     if (!o) return
@@ -191,6 +194,11 @@ export function OrderDetail() {
         )}
       </ScrollArea>
       <Footer row className="gap-2.5">
+        {inPane && o && isActiveStage(o.stage) && (
+          <ButtonLink to={`/orders/${reference}/track`} variant="line" className="flex-1">
+            Track order
+          </ButtonLink>
+        )}
         <ButtonLink to={`/support?order=${reference}`} variant="line" className="flex-1">
           Get help
         </ButtonLink>

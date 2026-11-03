@@ -52,3 +52,17 @@
     transform: translate(-50%, -50%);
   }
 }
+
+/* Same helper at the design system's 48 px minimum (--spacing-touch in design-system.md). */
+@utility hit-48 {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: max(100%, 48px);
+    height: max(100%, 48px);
+    transform: translate(-50%, -50%);
+  }
+}

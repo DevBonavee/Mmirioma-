@@ -49,7 +49,9 @@ export function Home() {
   return (
     <MobileShell>
       <CustomerTopBar />
-      <ScrollArea className="gap-3.5">
+      {/* From 1280 px the home screen uses the whole 1120 px as two columns; the wide rows span both. */}
+      <ScrollArea wide className="gap-3.5 xl:grid xl:grid-cols-2 xl:content-start xl:gap-4 xl:px-8 xl:pt-6">
+        <div className="contents xl:col-span-2 xl:flex xl:flex-col xl:gap-3.5">
         <VerifyPhoneBanner from="/home" />
         {defaultAddress ? (
           <CardLink to="/order/details" className="rise-1 flex items-center gap-3 px-3.5 py-2.5">
@@ -77,18 +79,19 @@ export function Home() {
           )
         )}
 
-        <div className="rise-2 relative min-h-[172px] overflow-hidden rounded-[22px] bg-[#DCEBFB]">
+        <div className="rise-2 relative min-h-[172px] overflow-hidden rounded-[22px] bg-[#DCEBFB] xl:min-h-[200px]">
           <Illustration name="drop-hero" className="absolute top-0 right-[-36px] h-full w-auto max-w-none" />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(234,243,254,.97)_0%,rgba(234,243,254,.88)_46%,rgba(234,243,254,0)_72%)]" />
-          <div className="relative max-w-[220px] px-[18px] py-5">
+          <div className="relative max-w-[220px] px-[18px] py-5 xl:max-w-[360px] xl:px-8 xl:py-7">
             <div className="text-[22px] leading-[1.15] font-extrabold tracking-[-0.4px]">Welcome,</div>
             <div className="text-[26px] leading-[1.15] font-extrabold tracking-[-0.5px] text-primary">{firstName ? `${firstName}!` : ' '}</div>
             {/* Design said "Clean water poured...": quality claim removed (decision 15). */}
             <p className="mt-2 mb-0 text-[13px] text-slate">Water poured straight into your tank. No lifting, no stress.</p>
           </div>
         </div>
+        </div>
 
-        <div className="rise-3 grid grid-cols-2 gap-3">
+        <div className="rise-3 grid grid-cols-2 gap-3 xl:col-span-2 xl:gap-4">
           <VehicleCard
             onClick={() => startOrder('keke')}
             title="Order with Keke"
@@ -112,7 +115,7 @@ export function Home() {
           />
         </div>
 
-        <div className={`rise-4 grid gap-2.5 ${POINTS_ENABLED ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <div className={`rise-4 grid gap-2.5 xl:col-span-2 ${POINTS_ENABLED ? 'grid-cols-4' : 'grid-cols-3'}`}>
           <ActionTile onClick={reorder} icon={<IconBadge tone="blue"><HistoryAltIcon size={22} /></IconBadge>} label="Reorder" />
           <ActionTile to="/addresses" icon={<IconBadge tone="green"><MapPinIcon size={22} /></IconBadge>} label="Addresses" />
           {POINTS_ENABLED && (
@@ -126,7 +129,7 @@ export function Home() {
         </div>
 
         {POINTS_ENABLED && (
-          <div className="rise-5 relative box-border min-h-32 overflow-hidden rounded-card bg-[linear-gradient(120deg,#FFF7E2_0%,#FFE9B8_100%)] py-4 pr-4 pl-[18px]">
+          <div className="rise-5 relative box-border min-h-32 xl:col-span-1 overflow-hidden rounded-card bg-[linear-gradient(120deg,#FFF7E2_0%,#FFE9B8_100%)] py-4 pr-4 pl-[18px]">
             <Illustration name="gift" className="animate-float absolute top-1.5 right-[-6px] w-[150px]" />
             <div className="relative max-w-[190px]">
               <div className="text-[17px] leading-[1.2] font-extrabold">Earn points on every delivery</div>
@@ -141,8 +144,9 @@ export function Home() {
           </div>
         )}
 
-        <HomeAppCard app="customer" className="rise-5" />
+        <HomeAppCard app="customer" className="rise-5 xl:col-span-1" />
 
+        <div className="flex flex-col gap-3.5 xl:col-span-2">
         <SectionHeader className="mt-0.5" title="Recent orders" action={<TextLink to="/orders" className="text-sub">View all</TextLink>} />
         {orders.isPending && <LoadingBlock lines={1} label="Loading your orders" />}
         {orders.isError && <ErrorBlock error={orders.error} onRetry={() => orders.refetch()} />}
@@ -156,6 +160,7 @@ export function Home() {
               action={<ButtonLink to="/order" variant="alt">Order water</ButtonLink>}
             />
           ))}
+        </div>
       </ScrollArea>
       <CustomerTabs current="/home" />
     </MobileShell>
@@ -189,7 +194,7 @@ function VehicleCard({
       onClick={onClick}
       className={`relative box-border flex min-h-[214px] cursor-pointer flex-col overflow-hidden rounded-card border-0 px-3 pt-2.5 pb-3.5 text-left text-ink transition-transform duration-150 hover:-translate-y-0.5 ${gradient}`}
     >
-      <Illustration name={illustration} alt={alt} className={`animate-float h-auto w-full ${imageClass}`} />
+      <Illustration name={illustration} alt={alt} className={`animate-float h-auto w-full xl:max-h-[230px] xl:object-contain ${imageClass}`} />
       <span className="mt-auto text-[18px] leading-[1.15] font-extrabold">{title}</span>
       <span className={`mt-1 text-chip font-semibold ${subColor}`}>{sub}</span>
       <span className="absolute top-2.5 right-2.5 flex size-8 items-center justify-center rounded-full bg-white shadow-[0_4px_10px_rgba(10,37,64,0.12)]">

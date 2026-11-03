@@ -20,6 +20,9 @@
 - **Fix / workaround:** the first passed again after `development` was merged in on
   2026-11-03. For the second, a longer `findByRole` timeout in that test is the fix,
   left for its own change. Rerun it alone before treating it as a real failure.
+  It failed again in a full `npm test` run on 2026-11-03 while working on #341
+  (1 failed, 1517 passed of 1518, no file of #341 involved) and passed alone, in a
+  run with the layout tests.
 - **Status:** workaround
-- **Refs:** #332, #330, `frontend/src/features/marketing/sizeTiles.test.tsx`,
+- **Refs:** #332, #330, #341, `frontend/src/features/marketing/sizeTiles.test.tsx`,
   `frontend/src/features/partner/pages/PartnerAccount.test.tsx`
