@@ -71,7 +71,7 @@ def test_any_role_changes_its_password(client: TestClient, fake: Fake, role: Use
     assert response.content == b""
     assert fake.checked == ["sample-current-password"]
     (call,) = fake.changed
-    assert call["new_password"] == "sample-new-password"
+    assert call["new_password"] == REQUEST["new_password"]
     assert call["auth"].user.role is role
 
 
@@ -111,14 +111,49 @@ def test_a_right_password_does_not_use_up_the_limit(client: TestClient, fake: Fa
 
 
 @pytest.mark.parametrize(
+    ("new_password", "message"),
+    [
+        ("Aa1!aaa", "Your password needs at least 8 characters."),
+        ("A1!" + "a" * 126, "Use 128 characters or fewer."),
+        ("password1!", "Your password needs an uppercase letter."),
+        ("Password!!", "Your password needs a number."),
+        ("Password11", "Your password needs a symbol."),
+    ],
+)
+def test_a_weak_new_password_is_refused(
+    client: TestClient, fake: Fake, new_password: str, message: str
+) -> None:
+    response = post(client, {**REQUEST, "new_password": new_password})
+    assert (response.status_code, error_code(response)) == (422, "validation_error")
+    assert response.json()["error"]["details"] == [
+        {"loc": ["body", "new_password"], "msg": message, "type": "value_error"}
+    ]
+    assert new_password not in response.text
+    assert (fake.checked, fake.changed) == ([], [])
+
+
+@pytest.mark.parametrize("new_password", ["Aa1!aaaa", "A1!" + "a" * 125])
+def test_the_boundary_lengths_are_accepted(
+    client: TestClient, fake: Fake, new_password: str
+) -> None:
+    assert post(client, {**REQUEST, "new_password": new_password}).status_code == 204
+    assert fake.changed[0]["new_password"] == new_password
+
+
+def test_the_current_password_need_not_meet_the_rule(client: TestClient, fake: Fake) -> None:
+    assert post(client, {**REQUEST, "current_password": "alllowercase"}).status_code == 204
+    assert fake.checked == ["alllowercase"]
+
+
+@pytest.mark.parametrize(
     ("body", "field"),
     [
         ({**REQUEST, "new_password": "x" * 7}, "new_password"),
         ({**REQUEST, "new_password": "x" * 129}, "new_password"),
         ({**REQUEST, "current_password": ""}, "current_password"),
         ({"current_password": "sample-current-password"}, "new_password"),
-        ({"new_password": "sample-new-password"}, "current_password"),
-        ({**REQUEST, "new_password_again": "sample-new-password"}, "new_password_again"),
+        ({"new_password": REQUEST["new_password"]}, "current_password"),
+        ({**REQUEST, "new_password_again": REQUEST["new_password"]}, "new_password_again"),
     ],
 )
 def test_invalid_bodies_are_422_on_the_field(

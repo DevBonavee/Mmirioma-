@@ -75,6 +75,8 @@ None. The text ships with the frontend.
   requests, order feedback and deletion requests. It is 2.0, not 1.2,
   because what is collected changed (the procedure's version rule;
   privacy contact, 2026-10-27, #104).
+- Version 7.0 (3 November 2026, #332) adds the record of the acceptance at sign-up:
+  the time, and which version of the Terms and the notice was accepted.
 - Version 6.0 (3 November 2026, #340) adds the optional map location of a
   delivery address: collected only when the customer chooses "Use my location" or
   places a pin (section 2), the app asks for the phone's location only on that choice

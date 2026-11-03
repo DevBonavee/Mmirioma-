@@ -100,7 +100,12 @@ def register(http: TestClient, phones: list[str]) -> tuple[str, dict[str, str]]:
     phones.append(e164(local))
     response = http.post(
         "/api/v1/auth/register",
-        json={"name": "Sample Customer", "phone": local, "password": PASSWORD},
+        json={
+            "name": "Sample Customer",
+            "phone": local,
+            "password": PASSWORD,
+            "accepted_terms": True,
+        },
     )
     assert response.status_code == 201, response.text
     return e164(local), {CSRF_HEADER_NAME: response.json()["csrf_token"]}

@@ -27,6 +27,7 @@ import { ISSUE_LABEL } from '../domain/partner'
 import type { Session } from '../lib/api/auth'
 import { litresFromGallons } from '../domain/quantity'
 import { tankCapacityError } from '../domain/tankCapacity'
+import { passwordProblem } from '../lib/format/password'
 import { normalizeNigerianPhone } from '../lib/format/phone'
 import { requireUserId, startSession } from './authMock'
 import { mutate, read } from './db'
@@ -35,7 +36,7 @@ import { eligible } from './eligibility'
 import { applyAccepted, applyCollected, completeDelivery, findCustomerOrder } from './orderSync'
 import type { MockState, PartnerData, StoredJob } from './seed'
 import { jobCash } from './partnerCashMock'
-import { clone, delay, mockError, newDeliveryCode, newId } from './store'
+import { acceptedTermsDetail, clone, delay, mockError, newDeliveryCode, newId } from './store'
 
 const CODE_TRIES = 3
 const RESEND_SECONDS = 120
@@ -204,7 +205,10 @@ export async function partnerSignup(input: PartnerSignupInput): Promise<Session>
   const phone = normalizeNigerianPhone(input.phone)
   const details: { loc: string[]; msg: string; type: string }[] = []
   if (!phone) details.push({ loc: ['body', 'phone'], msg: 'Enter a Nigerian mobile number', type: 'value_error' })
-  if (input.password.length < 8) details.push({ loc: ['body', 'password'], msg: 'Use 8 to 128 characters', type: 'value_error' })
+  const passwordMessage = passwordProblem(input.password)
+  if (passwordMessage) details.push({ loc: ['body', 'password'], msg: passwordMessage, type: 'value_error' })
+  const termsDetail = acceptedTermsDetail(input.accepted_terms)
+  if (termsDetail) details.push(termsDetail)
   if (input.plate.trim().length < 4) details.push({ loc: ['body', 'plate'], msg: 'Enter the plate number', type: 'value_error' })
   if (input.vehicle_type === 'tanker') {
     const msg = tankCapacityError(input.tank_gallons)

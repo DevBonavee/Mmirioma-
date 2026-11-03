@@ -17,8 +17,10 @@ import type { SignupArea } from '../../../domain/partner'
 import { parseGallons, tankCapacityError } from '../../../domain/tankCapacity'
 import { ApiError } from '../../../lib/api/client'
 import { errorMessage } from '../../../lib/api/errorMessage'
-import { applyServerFieldErrors, newPasswordField, phoneField } from '../../../lib/forms'
+import { passwordProblem } from '../../../lib/format/password'
+import { applyServerFieldErrors, passwordsMatch, phoneField, signUpSecurityFields } from '../../../lib/forms'
 import { HOME_PATH } from '../../auth/authPaths'
+import { SignUpSecurityFields } from '../../auth/SignUpSecurityFields'
 import { SESSION_KEY, useLogout, useSession } from '../../auth/useSession'
 import { formatPhone } from '../../../lib/format/phone'
 import { cx } from '../../../lib/cx'
@@ -29,7 +31,7 @@ const schema = z
   .object({
     name: z.string().trim().min(1, 'Enter your full name.').max(100, 'Use 100 characters or fewer.'),
     phone: phoneField,
-    password: newPasswordField,
+    ...signUpSecurityFields,
     vehicle_type: z.enum(['keke', 'tanker']),
     plate: z.string().trim().min(4, 'Enter the plate number, e.g. ENU 482 KK.').max(20, 'Use 20 characters or fewer.'),
     /** Typed capacity in gallons, tankers only; stored as litres × 4 by the server (FR-013, FR-021). */
@@ -42,6 +44,7 @@ const schema = z
     const message = tankCapacityError(parseGallons(v.tank_gallons))
     if (message) ctx.addIssue({ code: 'custom', path: ['tank_gallons'], message })
   })
+  .refine(passwordsMatch.check, passwordsMatch.options)
 type Values = z.infer<typeof schema>
 
 /** Server field names that have an error slot on this form. `vehicle_type` has none, so its message goes to the top notice. */
@@ -49,6 +52,7 @@ const SERVER_FIELDS = {
   name: 'name',
   phone: 'phone',
   password: 'password',
+  accepted_terms: 'accepted_terms',
   plate: 'plate',
   tank_gallons: 'tank_gallons',
   service_zone_id: 'service_zone_id',
@@ -126,21 +130,37 @@ export function PartnerSignup() {
     handleSubmit,
     control,
     setError,
+    setValue,
+    trigger,
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { vehicle_type: 'keke', tank_gallons: '', service_zone_id: '' },
+    defaultValues: { vehicle_type: 'keke', tank_gallons: '', service_zone_id: '', password: '', confirm_password: '', accepted_terms: false },
   })
   const vehicle = useWatch({ control, name: 'vehicle_type' })
+  const password = useWatch({ control, name: 'password' })
   const areas = useQuery({ queryKey: ['partner', 'signup-areas'], queryFn: listSignupAreas, staleTime: 60_000 })
   const support = useSupportContact()
   const noAreas = areas.isSuccess && areas.data.length === 0
 
+  // The confirmation stays on the screen; only the person's own tick is sent.
   const onSubmit = handleSubmit((v) =>
     signup.mutate(
-      { ...v, tank_gallons: v.vehicle_type === 'tanker' ? parseGallons(v.tank_gallons) : null },
+      {
+        name: v.name,
+        phone: v.phone,
+        password: v.password,
+        accepted_terms: v.accepted_terms,
+        vehicle_type: v.vehicle_type,
+        plate: v.plate,
+        service_zone_id: v.service_zone_id,
+        tank_gallons: v.vehicle_type === 'tanker' ? parseGallons(v.tank_gallons) : null,
+      },
       {
         onError: (e) => {
+          // NFR-012: the other fields and the tick stay; the passwords do not.
+          setValue('password', '')
+          setValue('confirm_password', '')
           if (e instanceof ApiError && e.code === 'phone_already_registered') setError('phone', { message: 'This number already has an account. Log in instead.' })
           else applyServerFieldErrors(e, setError, SERVER_FIELDS)
         },
@@ -203,7 +223,11 @@ export function PartnerSignup() {
             placeholder="0803 000 0000"
             hint="Customers and admin call you on this number."
             error={errors.phone?.message}
-            {...register('phone')}
+            {...register('phone', {
+              onBlur: (event) => {
+                if (event.target.value) void trigger('phone')
+              },
+            })}
           />
           <TextField className="rise-4" label="Plate number" placeholder={vehicle === 'keke' ? 'ENU 482 KK' : 'ENU 115 XA'} error={errors.plate?.message} {...register('plate')} />
           {noAreas ? (
@@ -225,16 +249,18 @@ export function PartnerSignup() {
               {...register('service_zone_id')}
             />
           )}
-          <TextField
-            className="rise-4"
-            label="Password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="At least 8 characters"
-            error={errors.password?.message}
-            {...register('password')}
+          <SignUpSecurityFields
+            password={password}
+            passwordField={register('password')}
+            confirmField={register('confirm_password', {
+              onBlur: (event) => {
+                if (event.target.value) void trigger('confirm_password')
+              },
+            })}
+            termsField={register('accepted_terms')}
+            errors={{ password: errors.password?.message, confirm: errors.confirm_password?.message, terms: errors.accepted_terms?.message }}
           />
-          <Button type="submit" className="rise-5" loading={signup.isPending} disabled={!areas.isSuccess || noAreas}>
+          <Button type="submit" className="rise-5" loading={signup.isPending} disabled={!areas.isSuccess || noAreas || passwordProblem(password) !== null}>
             Create account
           </Button>
         </form>

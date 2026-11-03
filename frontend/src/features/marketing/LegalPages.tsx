@@ -280,6 +280,10 @@ const PRIVACY: Section[] = [
               'To create and protect your account and contact you about your orders. Your password is stored only in a scrambled (hashed) form.',
             ],
             [
+              'When you sign up: the time you confirmed you are 18 or older and accepted our Terms and this notice, and which version you accepted',
+              'To keep a record of your agreement.',
+            ],
+            [
               'Delivery details for each order: contact name and phone number, delivery address, landmark, delivery instructions, preferred date and quantity',
               'To check that we can serve the area, agree the price and time with you, and deliver.',
             ],

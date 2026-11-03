@@ -450,7 +450,7 @@ def test_sign_up_creates_a_driver_session(api: TestClient, fake: FakePartners) -
             {
                 "name": "Sample Driver",
                 "phone": "+2348000000302",
-                "password": "sample-password",
+                "password": "Sample-Passw0rd",
                 "delivery_type": DeliveryType.TANKER,
                 "plate": "ENU 456 CD",
                 "declared_capacity_gallons": 4000,
@@ -514,6 +514,58 @@ def test_sign_up_shares_the_registration_limit(api: TestClient) -> None:
         assert register(api).status_code == 201
     response = register(api)
     assert (response.status_code, error_code(response)) == (429, "too_many_attempts")
+
+
+@pytest.mark.parametrize(
+    ("password", "message"),
+    [
+        ("Aa1!aaa", "Your password needs at least 8 characters."),
+        ("A1!" + "a" * 126, "Use 128 characters or fewer."),
+        ("password1!", "Your password needs an uppercase letter."),
+        ("Password!!", "Your password needs a number."),
+        ("Password11", "Your password needs a symbol."),
+    ],
+)
+def test_sign_up_refuses_a_weak_password(
+    api: TestClient, fake: FakePartners, password: str, message: str
+) -> None:
+    response = register(api, password=password)
+    assert (response.status_code, error_code(response)) == (422, "validation_error")
+    assert response.json()["error"]["details"] == [
+        {"loc": ["body", "password"], "msg": message, "type": "value_error"}
+    ]
+    assert password not in response.text
+    assert fake.calls == []
+
+
+@pytest.mark.parametrize("password", ["Aa1!aaaa", "A1!" + "a" * 125])
+def test_sign_up_accepts_the_boundary_lengths(
+    api: TestClient, fake: FakePartners, password: str
+) -> None:
+    assert register(api, password=password).status_code == 201
+
+
+@pytest.mark.parametrize("value", [False, "true", 1, None])
+def test_sign_up_refuses_anything_but_true(api: TestClient, fake: FakePartners, value: Any) -> None:
+    response = register(api, accepted_terms=value)
+    assert (response.status_code, error_code(response)) == (422, "validation_error")
+    assert response.json()["error"]["details"] == [
+        {
+            "loc": ["body", "accepted_terms"],
+            "msg": (
+                "Confirm you are 18 or older and accept the Terms of Service and Privacy Notice."
+            ),
+            "type": "value_error",
+        }
+    ]
+    assert fake.calls == []
+
+
+def test_sign_up_refuses_a_missing_acceptance(api: TestClient, fake: FakePartners) -> None:
+    response = register(api, accepted_terms=...)
+    assert (response.status_code, error_code(response)) == (422, "validation_error")
+    assert error_locs(response) == [["body", "accepted_terms"]]
+    assert fake.calls == []
 
 
 def test_the_register_example_is_a_valid_request() -> None:

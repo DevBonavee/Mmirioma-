@@ -280,6 +280,13 @@ def test_anonymize_dry_run_saves_nothing_and_apply_removes_the_details(created: 
         await add_delivery(sessions, s, driver, delivered, at=OLD)
         await add_codes_and_session(sessions, s.customer, expired_at=datetime.now(UTC))
         original_phone = s.customer.phone
+        async with sessions() as session:
+            await session.execute(
+                update(User)
+                .where(User.id == s.customer.id)
+                .values(terms_accepted_at=datetime.now(UTC), terms_version="2026-11-02")
+            )
+            await session.commit()
 
         dry = await anonymize(sessions, s, apply=False)
         assert (dry.orders_anonymized, dry.gps_points_cleared, dry.applied) == (2, 2, False)
@@ -301,6 +308,7 @@ def test_anonymize_dry_run_saves_nothing_and_apply_removes_the_details(created: 
             assert user.name == "Deleted customer"
             assert user.phone.startswith("+0") and len(user.phone) == 16
             assert (user.is_active, user.phone_verified_at) == (False, None)
+            assert (user.terms_accepted_at, user.terms_version) == (None, None)
             for table in (UserSession, PhoneVerification):
                 left = await session.scalars(select(table).where(table.user_id == user.id))
                 assert list(left) == []

@@ -30,6 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import APIError
 from app.modules.audit import service as audit_service
 from app.modules.auth import security
+from app.modules.auth import service as auth_service
 from app.modules.auth.models import User, UserRole
 from app.modules.dispatch.models import (
     ApprovalStatus,
@@ -120,6 +121,8 @@ async def register_partner(
         raise _zone_error()
     password_hash = await asyncio.to_thread(security.hash_password, password)
     user = User(name=name, phone=phone, password_hash=password_hash, role=UserRole.DRIVER)
+    # Partners only come through sign-up, whose schema requires the acceptance.
+    auth_service.record_terms_acceptance(user)
     session.add(user)
     try:
         # The unique phone constraint decides, so two concurrent sign-ups

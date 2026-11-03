@@ -172,7 +172,12 @@ def test_register_endpoint_returns_429_after_twenty_attempts(
         raise APIError(HTTPStatus.CONFLICT, "phone_already_registered", "Taken")
 
     monkeypatch.setattr(service, "create_user", conflicting_create_user)
-    body = {"name": "Sample", "phone": "08000000001", "password": "long enough"}
+    body = {
+        "name": "Sample",
+        "phone": "08000000001",
+        "password": "Long-enough-1",
+        "accepted_terms": True,
+    }
 
     for _ in range(20):
         assert client.post("/api/v1/auth/register", json=body).status_code == 409

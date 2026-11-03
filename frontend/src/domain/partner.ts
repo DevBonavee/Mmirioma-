@@ -291,6 +291,8 @@ export interface PartnerSignupInput {
   name: string
   phone: string
   password: string
+  /** The person ticked the 18+ and Terms box. The server requires `true`. */
+  accepted_terms: boolean
   vehicle_type: VehicleType
   plate: string
   /** Tanker drivers only. */

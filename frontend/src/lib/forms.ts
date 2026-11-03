@@ -4,6 +4,7 @@
 import type { FieldValues, Path, UseFormSetError } from 'react-hook-form'
 import { z } from 'zod'
 import { ApiError } from './api/client'
+import { passwordProblem } from './format/password'
 import { normalizeNigerianPhone } from './format/phone'
 
 /** Message the auth design uses for a bad phone number (docs/api/auth.md). */
@@ -16,11 +17,28 @@ export const phoneField = z
   .min(1, 'Enter your phone number.')
   .refine((v) => normalizeNigerianPhone(v) !== null, PHONE_MESSAGE)
 
-/** New password rule from the auth contract: 8 to 128 characters, no composition rules. */
-export const newPasswordField = z
-  .string()
-  .min(8, 'Use at least 8 characters.')
-  .max(128, 'Use 128 characters or fewer.')
+/** New password rule from the auth contract (#332): see {@link passwordProblem}. */
+export const newPasswordField = z.string().superRefine((value, ctx) => {
+  const message = passwordProblem(value)
+  if (message) ctx.addIssue({ code: 'custom', message })
+})
+
+/** The sign-up fields shared by the customer and partner forms (#336). */
+export const signUpSecurityFields = {
+  password: newPasswordField,
+  confirm_password: z.string(),
+  accepted_terms: z.boolean().refine((ticked) => ticked, 'Tick the box to confirm you are 18 or older and agree.'),
+}
+
+/**
+ * A refinement for a schema with {@link signUpSecurityFields}. `when` makes it run
+ * even if another field is wrong, so a mismatch shows with the other errors, and on
+ * leaving the field while the rest of the form is still empty.
+ */
+export const passwordsMatch = {
+  check: (v: { password: string; confirm_password: string }) => v.password === v.confirm_password,
+  options: { path: ['confirm_password'], message: 'The passwords do not match.', when: () => true },
+}
 
 /** Something@something.something with no spaces: the email check shared by forms and mocks. */
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

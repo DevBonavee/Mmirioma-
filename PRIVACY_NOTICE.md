@@ -25,6 +25,7 @@ MmiriOma is a water ordering and delivery service for households and businesses,
 | Information | Why it is needed |
 |---|---|
 | Your name, your mobile number (verified by an SMS code) and your password | Create and protect your account; contact you about your orders. Your password is stored only in a scrambled (hashed) form |
+| When you sign up: the time you confirmed you are 18 or older and accepted our Terms and this notice, and which version you accepted | Keep a record of your agreement |
 | Delivery details for each order: contact name and phone number, delivery address, landmark, delivery instructions, preferred date and quantity | Check that we can serve the area, agree the price and time with you, and deliver |
 | Saved addresses: a name you give each one (for example "Home"), the address, landmark and the delivery area you choose | Let you reuse an address when you order; the area tells us whether we can deliver there |
 | A map location (latitude and longitude) of your delivery address, only if you choose to share your phone's location or place a pin on the map. It is saved with the address or order you add it to | Help the rider find your gate. When we price deliveries by road distance, it will also be used to work out the distance |
