@@ -7,9 +7,8 @@ Issue: [#335](https://github.com/mmiri-oma/mmirioma/issues/335) ·
 Requirements: NFR-020, NFR-021 · Contract: none (no endpoint changes) ·
 Visual system: [design-system.md](design-system.md)
 Designer: @Bonvee120 + Claude Code (text design; no visual mockup) · Reviewed by:
-pending (one reviewer who is not the author) · Status: **proposed**. G2
-approval is not given yet. The reviewer sets `Status: approved` and writes their
-name and the date here.
+@Cloudcrackamara (not the author) on 2026-11-03 · Status: **approved** (G2), with
+the decisions under [Review decisions](#review-decisions).
 
 The three follow-up issues build from this document: #341 (customer app),
 #342 (rider and driver app) and #343 (admin). It decides how every screen
@@ -197,7 +196,7 @@ Their one change is the scrolling.
 
 ## Open questions
 
-For the reviewer. Each has a recommendation.
+Answered in [Review decisions](#review-decisions). Each had a recommendation.
 
 1. **Customer header navigation at 1280 px.** Replace the bottom tab bar with a
    header (recommended: a bottom bar on a 1280 px screen is the strongest sign
@@ -240,3 +239,47 @@ None of these touches a colour, a font or a spacing value.
   the page at 768 px today.
 
 Whoever builds #341 first changes `MobileShell`; #342 starts from that.
+
+## Review decisions
+
+By @Cloudcrackamara (not the author), 2026-11-03. The audit's claims were
+checked against the code (`AdminShell.tsx` shows the sidebar from `lg`;
+`DataTable` leaves its scroll box to the caller; `theme.css` defines no
+`--breakpoint-*` tokens; the design system says 1200 px and 48 px touch
+targets). They hold.
+
+**The three decisions to confirm are confirmed:** the customer app gets real
+desktop layouts; the rider and driver app stays a centred phone column; admin is
+desktop-first with a tablet layout.
+
+**The open questions:**
+
+1. **Customer header navigation at 1280 px: yes.** The header with links
+   replaces the bottom tab bar from 1280 px. Phone and tablet keep the tab bar.
+2. **Admin content cap: 1440 px.** `design-system.md` changes from 1200 to 1440 in
+   the build PR of #343 (it is wrong today: nothing is capped).
+3. **Partner window scroll: yes, as written, from 768 px up only.** Phones keep the
+   inner scroll, so the installed rider and driver app does not change. The
+   condition for #342: the phone layout is identical before and after (listed in
+   the PR), and the change is small enough to revert alone.
+4. **Customer tablet width: 720 px**, built as one value (`--container-customer`)
+   and looked at on a real tablet before #341 is declared done. Changing it is a
+   one-line follow-up.
+5. **Tap targets: raise them.** The design system sets a 48 x 48 px minimum for
+   every interactive control (`--spacing-touch`), and "Not now", "View all" and
+   the 38 px filter chips break it today. They get a 48 px hit area (padding or
+   minimum height; the text and look can stay the same), in #341 for the customer
+   screens and #342 for the rider and driver chips. The phone gets a bigger hit
+   area but no visible layout change. This overrides "left alone".
+
+**Rules for all three build issues:**
+
+- **Order.** #341 changes `MobileShell` first (the width becomes a setting per
+  app). #342 starts from that. #343 is independent and starts with `/admin/cash`.
+- **No new tools.** Layout is checked by eye at 360, 768, 1280 and 1920 px.
+  Each PR lists the screens it looked at and any horizontal scroll found, and
+  fixes it. Screenshots are not committed (see the log entry on Playwright). Vitest
+  covers logic only, such as the `DataTable` scroll box.
+- **A phone must not change.** Each PR says what it checked on a phone at 360 px.
+- **The design-system edits** listed above go in with the build PR that needs
+  them, not a separate one.
