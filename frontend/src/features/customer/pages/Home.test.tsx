@@ -38,3 +38,16 @@ describe('Home (mock mode)', () => {
     expect(screen.queryByText(/Welcome back/)).not.toBeInTheDocument()
   })
 })
+
+describe('the delivery address row (#345)', () => {
+  it('offers "Set your delivery address" to a customer with no address, and asks the phone for nothing', async () => {
+    const getCurrentPosition = vi.fn()
+    Object.defineProperty(navigator, 'geolocation', { configurable: true, value: { getCurrentPosition } })
+    renderHome()
+    const row = await screen.findByRole('link', { name: /Set your delivery address/ }, { timeout: 10_000 })
+    expect(row).toHaveAttribute('href', '/addresses/new')
+    expect(screen.queryByText('Add your delivery address')).not.toBeInTheDocument()
+    expect(getCurrentPosition).not.toHaveBeenCalled()
+    Reflect.deleteProperty(navigator, 'geolocation')
+  })
+})

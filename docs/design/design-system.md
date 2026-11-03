@@ -624,6 +624,16 @@ Right: user icon and name (600), then a secondary "Sign out" button. Below
 Centred logo (240 px, up to 80% wide) and a 28 px spinner in `primary`, gap
 20, with a hidden "Checking your session" label and `role="status"`.
 
+### Map frame (address pin, #345)
+
+The existing `MapFrame` with a live map: the pin is fixed in the centre and the
+customer moves the map under it. 220 px high, with 48 px zoom buttons at the top
+left and the tile provider's attribution kept visible. States: loading ("Loading
+map…"), loaded, and failed ("The map isn't loading. Your typed address is enough;
+we'll use your area's delivery rate." with "Try again"). A saved pin on Delivery
+details uses the same frame read-only: it cannot be moved and has no zoom
+buttons. Built in `features/customer/components/PinMap.tsx`.
+
 ## Formatting rules
 
 Times are Africa/Lagos (West Africa Time, UTC+1), **12-hour clock with am/pm**.

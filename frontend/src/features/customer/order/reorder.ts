@@ -20,9 +20,9 @@ export function draftFromOrder(order: CustomerOrder, addresses: SavedAddress[]):
     instructions: order.instructions ?? '',
     address_id: saved?.id ?? null,
     new_address: saved
-      ? { address: '', landmark: '', label: '', save: 'another', zone: null }
-      : // The order's area is not kept on the customer side: it is picked again on Delivery details.
-        { address: order.address, landmark: order.landmark ?? '', label: order.address_label ?? '', save: 'once', zone: null },
+      ? { address: '', landmark: '', label: '', save: 'another', zone: null, location: null }
+      : // The order's area and pin are not kept on the customer side: the area is picked again on Delivery details.
+        { address: order.address, landmark: order.landmark ?? '', label: order.address_label ?? '', save: 'once', zone: null, location: null },
   }
   if (choice?.delivery_type === 'keke') {
     // An older order may be below today's minimum (12 × 25 L): reorder the smallest size that is offered.

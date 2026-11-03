@@ -13,6 +13,8 @@ import { retryAfterSeconds } from '../../../lib/forms'
 export interface AreaOption {
   id: string
   name: string
+  /** Where the zone is (`GET /service-zones`, #346): the map's start for a pin (#345). */
+  centre?: { latitude: number; longitude: number }
 }
 
 /** The area chosen for a new address: one from the list, "My area is not listed", or none yet. */

@@ -162,6 +162,12 @@ export interface OrderCreate {
   contact_phone: string
   /** 5–500 characters after trimming. */
   delivery_address: string
+  /**
+   * The order's own copy of the address pin (docs/api/delivery-location.md,
+   * #340); absent when the address has none. The quote is not sent a pin, so
+   * it never constrains this one.
+   */
+  delivery_location?: { latitude: number; longitude: number; source: 'device_location' | 'map_pin' }
   /** Up to 200 characters. */
   landmark?: string
   /** Up to 500 characters. */

@@ -173,6 +173,7 @@ export function orderCreateFromInput(input: CreateOrderInput): OrderCreate {
   }
   if (input.quote_id) body.quote_id = input.quote_id
   if (input.service_zone_id) body.service_zone_id = input.service_zone_id
+  if (input.delivery_location) body.delivery_location = input.delivery_location
   if (input.landmark) body.landmark = input.landmark
   if (input.instructions) body.delivery_instructions = input.instructions
   return body

@@ -31,6 +31,25 @@ access, same retention, same deletion (maps.md section 8).
 5. `anonymize-customer` and the monthly retention review clear order points;
    saved-address points go when the address is deleted.
 
+The customer screen (#345, design `docs/design/customer-device-location.md`)
+sits on the sending side of steps 1 and 3:
+
+1. On New address, Edit address and Delivery details (new address) the customer
+   sees a location card. The phone's location is asked for only when they tap
+   "Use my location"; "Place the pin myself" opens the map at the chosen area's
+   centre (`GET /service-zones`, `centre`), or at all the listed centres before an
+   area is chosen.
+2. A phone fix is sent as `device_location`. Once the customer moves the map under
+   the fixed pin it is `map_pin`. "Place the pin myself" saves nothing until the
+   map is moved, so a zone centre is never stored as a gate.
+3. The pin goes with the address (`POST` or `PATCH /me/addresses`; on a `PATCH`,
+   `null` removes it) and, at checkout, with the order as `delivery_location`.
+   The order gets the saved address's pin, or the one chosen for a new address
+   even when that address is not saved. Quotes are not sent a pin.
+4. A 422 on `location` shows "We can't use that pin..."; the fields and the pin
+   stay. A pin is never checked on the phone: whether MmiriOma delivers there is
+   still the area the customer picks.
+
 ## 3. Important files and their responsibilities
 
 | File | Responsibility |
@@ -42,6 +61,11 @@ access, same retention, same deletion (maps.md section 8).
 | `backend/app/modules/orders/` | `models.py`, `schemas.py` (`OrderCreate`, customer `OrderRead`), `service.py` (own copy, idempotency), `retention.py` (clear, count) |
 | `backend/app/modules/deliveries/schemas.py` | `DriverJobDetail.delivery_location`, only while accepted |
 | `backend/app/modules/privacy/` | Audit counts and tool output (`order_locations_cleared`) |
+| `frontend/src/features/customer/components/LocationCard.tsx` | The card: explain, finding, found, denied, unavailable, not supported, offline, and the pin map (#345) |
+| `frontend/src/features/customer/components/PinMap.tsx` | The map frame with a fixed centre pin; loads MapLibre only when shown; "isn't loading" note and "Try again" |
+| `frontend/src/features/customer/components/pinSupport.ts` | Where the map starts, the refused-pin and area-gone wording and checks |
+| `frontend/src/lib/devicePosition.ts` | The one call to the browser's location, with a 15 s wait; returns denied, unavailable or unsupported instead of throwing |
+| `frontend/src/features/customer/pages/AddressForm.tsx`, `order/DeliveryDetails.tsx`, `order/SaveAddress.tsx`, `order/Review.tsx` | Where the pin is set, saved with the address, and copied to the order |
 | `backend/tests/test_delivery_location.py` | The object, bounds and setting, no database |
 | `backend/tests/test_delivery_location_integration.py` | Storage, copy, driver view and privacy steps against PostGIS |
 
@@ -134,5 +158,12 @@ alembic downgrade -1 && alembic upgrade head && alembic check
 - Quotes do not use the point yet. Road-distance pricing needs OSRM, which is
   gated by a memory measurement (maps.md R1); until then every quote uses zone
   rates.
-- Nothing in the app sends a point until the #345 screen exists.
+- The customer app sends a point from the #345 screen. It must not go live until
+  a person has read OpenFreeMap's privacy policy and confirmed the wording of the
+  permission text against maps.md section 8 (condition on #345).
+- The pin on Delivery details for a saved address is shown read-only; it is
+  changed from Saved addresses. A customer who reorders an unsaved address gets no
+  pin, because the customer's order view does not return the order's copy.
+- Tests cover the screens with a fake map library (jsdom has no WebGL). The real
+  OpenFreeMap tiles and a real phone's permission prompt were not tested.
 - The admin screens do not show the point.

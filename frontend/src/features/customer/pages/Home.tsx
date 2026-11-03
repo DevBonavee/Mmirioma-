@@ -72,7 +72,7 @@ export function Home() {
               </IconBadge>
               <span className="flex flex-1 flex-col leading-[1.3]">
                 <span className="text-chip text-mute">Delivering to</span>
-                <span className="text-[14.5px] font-bold">Add your delivery address</span>
+                <span className="text-[14.5px] font-bold">Set your delivery address</span>
               </span>
               <ChevronRightIcon size={18} strokeWidth={2.2} color="#56677D" roundJoin={false} />
             </CardLink>

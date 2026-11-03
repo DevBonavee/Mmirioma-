@@ -45,8 +45,34 @@ describe('addressFromRead', () => {
       landmark: 'Opposite the blue gate',
       is_default: true,
       zone: { id: home.zone.id, name: 'Independence Layout', is_active: true },
+      // The agreed example carries a pin (docs/api/delivery-location.md).
+      location: { latitude: 6.452713, longitude: 7.510348, source: 'map_pin' },
     })
     expect(addressFromRead({ ...home, zone: { ...home.zone, is_active: false } }).zone?.is_active).toBe(false)
+  })
+
+  it('keeps the pin and how it was set, and reads a missing one as none (#340, #345)', () => {
+    const [home] = ADDRESSES.items
+    const pin = { latitude: 6.452713, longitude: 7.510348, source: 'map_pin' as const }
+    expect(addressFromRead({ ...home, location: pin }).location).toEqual(pin)
+    expect(addressFromRead({ ...home, location: null }).location).toBeNull()
+    const fromOlderServer: Partial<AddressRead> = { ...home }
+    delete fromOlderServer.location
+    expect(addressFromRead(fromOlderServer as AddressRead).location).toBeNull()
+  })
+})
+
+describe('addressBodyFromInput and the pin', () => {
+  const input = { label: 'Home', address: '12 Sample Close, Enugu', landmark: null, zone_id: 'z1', make_default: false }
+
+  it('sends no location when the form set none, so a PATCH leaves a saved pin alone', () => {
+    expect(addressBodyFromInput(input)).not.toHaveProperty('location')
+  })
+
+  it('sends the pin with its source, and null to remove one', () => {
+    const pin = { latitude: 6.45, longitude: 7.51, source: 'device_location' as const }
+    expect(addressBodyFromInput({ ...input, location: pin }).location).toEqual(pin)
+    expect(addressBodyFromInput({ ...input, location: null })).toHaveProperty('location', null)
   })
 })
 
