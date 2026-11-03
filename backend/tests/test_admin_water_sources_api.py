@@ -32,7 +32,7 @@ from app.modules.sources.models import (
     WaterSourceCategory,
     WaterSourceKind,
 )
-from app.modules.sources.service import SourceWithActivations
+from app.modules.sources.service import UNSET, SourceLocation, SourceWithActivations
 from app.shared.lagos_time import lagos_today
 from tests import test_customer_account_api as account_api
 from tests.test_customer_account_api import sign_in
@@ -67,7 +67,12 @@ ENDPOINTS: list[tuple[str, str, dict[str, Any] | None]] = [
 ]
 
 
-def view(*, approved_until: date, status: ActivationStatus = ActivationStatus.ACTIVATED) -> Any:
+def view(
+    *,
+    approved_until: date,
+    status: ActivationStatus = ActivationStatus.ACTIVATED,
+    location: SourceLocation | None = None,
+) -> Any:
     """A source with one activation for Utility Water, as the service returns it."""
     source = WaterSource(
         id=SOURCE_ID,
@@ -86,7 +91,7 @@ def view(*, approved_until: date, status: ActivationStatus = ActivationStatus.AC
         cost_per_litre_minor_units=150,
         status_reason=None if status is ActivationStatus.ACTIVATED else "Pump repair.",
     )
-    return SourceWithActivations(source, [(activation, UTILITY)])
+    return SourceWithActivations(source, [(activation, UTILITY)], location)
 
 
 class FakeAdmin:
@@ -223,9 +228,56 @@ def test_adding_a_source_answers_201_with_the_source(
                 "approximate_location": "Off Ogui Road",
                 "kind": None,
                 "is_simulated": False,
+                "location": None,
             },
         )
     ]
+
+
+def test_a_source_is_added_with_its_pickup_point_and_read_back_with_it(
+    api: TestClient, admin_fake: FakeAdmin
+) -> None:
+    admin_fake.current = view(
+        approved_until=lagos_today() + timedelta(days=19),
+        location=SourceLocation(latitude=6.4361, longitude=7.5134),
+    )
+    response = api.post(
+        BASE,
+        json={
+            "name": "Sample Borehole A",
+            "approximate_location": "Off Ogui Road",
+            "location": {"latitude": 6.436123456, "longitude": 7.5134},
+        },
+        headers=sign_in(api, UserRole.ADMIN),
+    )
+    assert response.status_code == 201
+    assert response.json()["location"] == {"latitude": 6.4361, "longitude": 7.5134}
+    # Kept to 6 places, as a delivery point.
+    assert admin_fake.calls[0][1]["location"] == SourceLocation(6.436123, 7.5134)
+
+
+def test_a_source_with_no_pickup_point_reads_back_null(
+    api: TestClient, admin_fake: FakeAdmin
+) -> None:
+    [source] = api.get(BASE, headers=sign_in(api, UserRole.ADMIN)).json()["items"]
+    assert source["location"] is None
+
+
+def test_a_patch_sets_clears_or_leaves_the_pickup_point(
+    api: TestClient, admin_fake: FakeAdmin
+) -> None:
+    headers = sign_in(api, UserRole.ADMIN)
+    api.patch(f"{BASE}/{SOURCE_ID}", json={"name": "New"}, headers=headers)
+    api.patch(
+        f"{BASE}/{SOURCE_ID}",
+        json={"location": {"latitude": 6.4, "longitude": 7.5}},
+        headers=headers,
+    )
+    api.patch(f"{BASE}/{SOURCE_ID}", json={"location": None}, headers=headers)
+    kept, set_to, cleared = (kwargs["location"] for _, kwargs in admin_fake.calls)
+    assert kept is UNSET
+    assert set_to == SourceLocation(6.4, 7.5)
+    assert cleared is None
 
 
 def test_an_unknown_source_is_a_404_with_the_contract_code(
@@ -254,6 +306,27 @@ def test_an_unknown_source_is_a_404_with_the_contract_code(
         ("PATCH", f"{BASE}/{SOURCE_ID}", {}),
         ("PATCH", f"{BASE}/{SOURCE_ID}", {"kind": None}),
         ("PATCH", f"{BASE}/{SOURCE_ID}", {"name": None}),
+        # A pickup point outside the delivery bounds, out of range, or half given.
+        (
+            "POST",
+            BASE,
+            {
+                "name": "A",
+                "approximate_location": "B",
+                "location": {"latitude": 51.5, "longitude": -0.1},
+            },
+        ),
+        (
+            "POST",
+            BASE,
+            {
+                "name": "A",
+                "approximate_location": "B",
+                "location": {"latitude": 91, "longitude": 7.5},
+            },
+        ),
+        ("POST", BASE, {"name": "A", "approximate_location": "B", "location": {"latitude": 6.4}}),
+        ("PATCH", f"{BASE}/{SOURCE_ID}", {"location": {"latitude": 0, "longitude": 0}}),
         (
             "PUT",
             f"{BASE}/{SOURCE_ID}/activations/{CATEGORY_ID}",

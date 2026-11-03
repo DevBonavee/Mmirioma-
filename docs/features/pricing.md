@@ -55,6 +55,11 @@ reliable price exists (SRS §6). Customers see the total only.
 | --- | --- |
 | `backend/app/modules/pricing/models.py` | `PriceListVersion`, `PriceRule`, `MarginType` |
 | `backend/app/modules/pricing/price_lists.py` | Save (checks, changes, audit), read, `match_price_rule` |
+| `backend/app/modules/pricing/osrm.py` | The OSRM adapter: one `table` request per quote, the longest road distance to the eligible sources, every way it can fail (#385) |
+| `backend/app/modules/pricing/quotes.py` | `road_delivery_cost` (base + distance charge + extra trips, `Decimal`, half-up to kobo) and the choice between road distance and the zone fee (#385) |
+| `backend/app/modules/pricing/retention.py` | Clears the map pin kept on a quote: customer anonymized, order anonymized, unplaced quote 90 days after its price expired (#385) |
+| `backend/alembic/versions/20261103_0027_add_road_distance_pricing.py` | A source's `location`; the quote's basis, distance, source, fallback reason, rates and pin |
+| `backend/tests/test_road_distance.py`, `test_road_distance_integration.py`, `test_quote_location_privacy_integration.py` | The formula, the adapter, the quote flow against a fake OSRM, the privacy rules, and the no-straight-line test |
 | `backend/app/modules/pricing/schemas.py` | `PriceListCreate` (validation), `PriceListRead`, `PriceListPage` |
 | `backend/app/modules/pricing/router.py` | The three endpoints; thin |
 | `backend/alembic/versions/20261026_0015_add_price_lists.py` | The two tables |
@@ -297,3 +302,43 @@ TEST_DATABASE_URL=... pytest tests/test_price_lists_integration.py
 - The distance rate is unused until OSRM exists (SRS §12.1).
 - Versions take effect when saved; scheduling a future version is not
   supported.
+
+## Road-distance pricing (#385)
+
+Contract: [order-details-and-price.md](../api/order-details-and-price.md#amendment-385-road-distance-pricing)
+(agreed 2026-11-03). FR-022: the delivery cost is the base fee + a distance charge
+from OSRM's **road** distance + (trips - 1) times the additional-trip charge,
+never a straight-line distance.
+
+- **When it applies.** The request has a `delivery_location`, the zone is active,
+  `OSRM_BASE_URL` is set and OSRM answers within `OSRM_TIMEOUT_SECONDS`, **every**
+  eligible source has a `location`, and a price rule matches. Otherwise the quote
+  is priced exactly as before: the zone's fee for the category, or a manual quote
+  (`delivery_cost_unavailable`) when the zone has none (T-18).
+- **Which source.** The quote does not know which eligible source staff will pick,
+  so it uses the **longest** road distance to any of them, as the water price uses
+  the dearest source. One `table` request to OSRM covers all of them.
+- **The money.** The distance is one way and charged once; the rate per km
+  therefore has to cover the return leg (the price-list guide says so). The charge
+  is `Decimal` metres x rate / 1000, rounded half-up to kobo; the total is then
+  rounded up to whole naira as before.
+- **What the quote keeps (FR-024).** `delivery_basis`, `road_distance_metres`,
+  `distance_source_id`, `distance_fallback_reason` (`no_source_location`,
+  `osrm_unavailable`, `no_route`, `timeout`), the three rates applied, and the pin.
+  Customers still see the total only. A stored quote never changes.
+- **Privacy.** The pin is personal data. `anonymize-customer` clears it on the
+  customer's quotes, the monthly review clears it when the order is anonymized or
+  90 days after an unplaced quote's price expired. The price, the distance and the
+  rates stay.
+- **Switched off by default.** `OSRM_BASE_URL` is empty, so nothing changes for
+  customers until OSRM is deployed and measured (#384).
+- **The quote match.** An order placed with a quote priced for a pin must carry the same pin (6 decimal places; the `source` is not compared), else 422 `quote_mismatch` on `delivery_location`. A quote with no pin does not constrain the order.
+- **Setting the rates (for whoever fills the price list).** The distance is one way and charged once, so the per-km rate has to cover the return leg too; the additional-trip charge pays only for extra trips. Until a source has a pickup point and OSRM is on, the zone's fee is what customers are charged.
+- **Limits.** OSRM answers "Ok" for any point on Earth, snapping it to the
+  nearest road in whatever data it holds. The adapter reads the snap distances and
+  carries the largest to the caller, but no threshold is applied and nothing is
+  stored: that needs a contract change, and road-distance pricing must not be
+  switched on before it.
+  Nothing is cached. The admin Water sources screen has no latitude and longitude
+  fields yet (a follow-up with its own design); the API and `add-source
+  --latitude --longitude` set them.

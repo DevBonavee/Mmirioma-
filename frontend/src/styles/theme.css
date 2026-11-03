@@ -127,6 +127,7 @@
   --container-customer: 720px;     /* customer column from 768 px (docs/design/responsive.md) */
   --container-customer-wide: 1120px; /* customer area from 1280 px */
   --container-card: 480px;         /* signed-out customer card from 768 px */
+  --container-admin-content: 1440px; /* admin page content cap (responsive.md) */
 
   /* ---------- Motion (keyframes in motion.css) ---------- */
   --ease-rise: cubic-bezier(0.2, 0.8, 0.2, 1);

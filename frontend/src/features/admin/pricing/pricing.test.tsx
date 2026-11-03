@@ -41,7 +41,8 @@ describe('Pricing screen', () => {
     const save = screen.getByRole('button', { name: 'Save as version 3' })
     expect(save).toBeDisabled()
 
-    await user.click(screen.getByRole('button', { name: 'Edit rule 1' }))
+    // DataTable renders the table and the phone cards; CSS shows one, so jsdom finds both. The first is the table's.
+    await user.click(screen.getAllByRole('button', { name: 'Edit rule 1' })[0])
     const sheet = await screen.findByRole('dialog', { name: 'Edit rule 1' })
     const handling = within(sheet).getByLabelText('Handling per order (₦)')
     await user.clear(handling)
@@ -86,7 +87,7 @@ describe('Pricing screen', () => {
   it('says prices changed meanwhile, and loads the newer version', async () => {
     const user = userEvent.setup()
     renderPricing()
-    await user.click(await screen.findByRole('button', { name: 'Remove rule 2' }, { timeout: WAIT }))
+    await user.click((await screen.findAllByRole('button', { name: 'Remove rule 2' }, { timeout: WAIT }))[0])
     // Someone else saves version 3 while this page is open.
     const latest = await getCurrentPriceList()
     await createPriceList({ base_version: latest.version, reason: 'Elsewhere', rules: draftRules(latest).map((r) => ({ ...r, handling_minor_units: r.handling_minor_units + 10_000 })) })

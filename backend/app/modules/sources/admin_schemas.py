@@ -9,8 +9,18 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
+from pydantic_core import PydanticCustomError
 
+from app.core.config import get_settings
 from app.modules.sources.eligibility import EligibilityReason, eligibility_reasons
 from app.modules.sources.models import (
     APPROXIMATE_LOCATION_MAX_LENGTH,
@@ -24,6 +34,7 @@ from app.modules.sources.models import (
 )
 from app.modules.sources.service import SourceWithActivations
 from app.shared.lagos_time import lagos_today
+from app.shared.location import DECIMAL_PLACES, OUT_OF_BOUNDS_MESSAGE
 
 #: How many days before ``approved_until`` an activation starts to warn
 #: (decision 4 on #309; fixed in docs/design/admin-water-sources.md).
@@ -51,6 +62,35 @@ Reason = Annotated[
 ]
 
 
+class SourceLocationBody(BaseModel):
+    """A source's pickup point (``location`` in the #385 amendment): WGS 84 degrees.
+
+    Refused outside ``DELIVERY_LOCATION_BOUNDS``, like a delivery point, on the
+    whole ``location`` field.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    latitude: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    longitude: float = Field(ge=-180, le=180, allow_inf_nan=False)
+
+    @field_validator("latitude", "longitude")
+    @classmethod
+    def _round(cls, value: float) -> float:
+        return round(value, DECIMAL_PLACES)
+
+
+def _inside_bounds(location: SourceLocationBody | None) -> SourceLocationBody | None:
+    if location is None:
+        return None
+    if not get_settings().delivery_bounds.contains(location.latitude, location.longitude):
+        raise PydanticCustomError("value_error", OUT_OF_BOUNDS_MESSAGE)
+    return location
+
+
+SourceLocationField = Annotated[SourceLocationBody | None, AfterValidator(_inside_bounds)]
+
+
 class WaterSourceCreate(BaseModel):
     """``POST /admin/water-sources``.
 
@@ -61,26 +101,29 @@ class WaterSourceCreate(BaseModel):
     name: SourceName
     approximate_location: Location
     kind: WaterSourceKind | None = None
+    location: SourceLocationField = None
     is_simulated: bool = False
 
 
 class WaterSourceUpdate(BaseModel):
     """``PATCH /admin/water-sources/{source_id}``: only the fields that change.
 
-    At least one field is required, and none can be sent as ``null``: a name
-    and a location cannot be emptied and a kind cannot be cleared.
+    At least one field is required. A name, a place in words and a kind cannot
+    be sent as ``null``; the pickup ``location`` can, and ``null`` clears it
+    (#385).
     """
 
     name: SourceName | None = None
     approximate_location: Location | None = None
     kind: WaterSourceKind | None = None
+    location: SourceLocationField = None
 
     @model_validator(mode="after")
     def _something_to_change(self) -> Self:
         sent = self.model_fields_set
         if not sent:
-            raise ValueError("Send at least one of name, approximate_location and kind")
-        for field in sent:
+            raise ValueError("Send at least one of name, approximate_location, kind and location")
+        for field in sent - {"location"}:
             if getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be null")
         return self
@@ -158,6 +201,7 @@ class WaterSourceRead(BaseModel):
     name: str
     approximate_location: str
     kind: WaterSourceKind | None
+    location: SourceLocationBody | None
     is_simulated: bool
     created_at: datetime
     activations: list[ActivationRead]
@@ -221,6 +265,11 @@ def source_read(view: SourceWithActivations, *, today: date) -> WaterSourceRead:
         name=source.name,
         approximate_location=source.approximate_location,
         kind=source.kind,
+        location=(
+            SourceLocationBody(latitude=view.location.latitude, longitude=view.location.longitude)
+            if view.location is not None
+            else None
+        ),
         is_simulated=source.is_simulated,
         created_at=source.created_at,
         activations=[

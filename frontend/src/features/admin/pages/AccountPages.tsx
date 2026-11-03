@@ -95,7 +95,7 @@ export function Settings() {
         </Panel>
       )}
       <Panel title="Audit log" className="rise-3">
-        <div id="audit" className="overflow-x-auto">
+        <div id="audit">
           {audit.isPending && <LoadingBlock lines={3} label="Loading the audit log" />}
           {audit.isError && <ErrorBlock error={audit.error} onRetry={() => audit.refetch()} />}
           {audit.data && (
@@ -282,21 +282,19 @@ export function LiveMapPage() {
         {map.data ? <AdminMap data={map.data} height={520} fullMapLink={false} /> : map.isError ? <ErrorBlock error={map.error} onRetry={() => map.refetch()} /> : <LoadingBlock label="Loading the map" />}
       </Card>
       <Panel title="In progress" className="rise-3">
-        <div className="overflow-x-auto">
-          <DataTable
-            caption="Deliveries in progress"
-            rows={active.data?.orders ?? []}
-            rowKey={(o) => o.reference}
-            empty="Nothing in progress."
-            columns={[
-              { header: 'Order', cell: (o) => <Link to={`/admin/orders?ref=${o.reference}`} className="font-extrabold text-primary-dark no-underline hover:underline">{o.reference}</Link> },
-              { header: 'Rider', cell: (o) => (o.partner ? (o.partner.code ? `${o.partner.name} · ${o.partner.code}` : o.partner.name) : 'None') },
-              { header: 'From', cell: (o) => o.station_name },
-              { header: 'To', cell: (o) => o.area },
-              { header: 'Status', cell: (o) => <StatusChip status={o.status} /> },
-            ]}
-          />
-        </div>
+        <DataTable
+          caption="Deliveries in progress"
+          rows={active.data?.orders ?? []}
+          rowKey={(o) => o.reference}
+          empty="Nothing in progress."
+          columns={[
+            { header: 'Order', cell: (o) => <Link to={`/admin/orders?ref=${o.reference}`} className="font-extrabold text-primary-dark no-underline hover:underline">{o.reference}</Link> },
+            { header: 'Rider', cell: (o) => (o.partner ? (o.partner.code ? `${o.partner.name} · ${o.partner.code}` : o.partner.name) : 'None') },
+            { header: 'From', cell: (o) => o.station_name },
+            { header: 'To', cell: (o) => o.area },
+            { header: 'Status', cell: (o) => <StatusChip status={o.status} /> },
+          ]}
+        />
       </Panel>
     </AdminFrame>
   )

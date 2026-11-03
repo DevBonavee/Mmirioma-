@@ -234,11 +234,11 @@ function Rows({ rows }: { rows: [ReactNode, ReactNode][] }) {
 }
 
 /*
- * The Privacy page mirrors PRIVACY_NOTICE.md (version 7.0) section by
+ * The Privacy page mirrors PRIVACY_NOTICE.md (version 8.0) section by
  * section, with the same facts (#93). Change both together; the notice is the
  * source.
  */
-const PRIVACY_VERSION = 'Version 7.0, last updated 3 November 2026.'
+const PRIVACY_VERSION = 'Version 8.0, last updated 3 November 2026.'
 
 const PRIVACY: Section[] = [
   {
@@ -314,6 +314,10 @@ const PRIVACY: Section[] = [
             ['Cash payment records: amount due, amount collected, who collected and received it, and when', 'To account for cash paid on delivery.'],
             ['Bank account details, only if we pay you a refund by bank transfer', 'To make that refund.'],
             ['What you tell us when you call or message our support line', 'To answer your questions and handle complaints.'],
+            [
+              'The price we calculate when you ask for one, and, if you shared a map location, that location',
+              'To show you a price you can order at, check that your order matches it, and work out the delivery cost from the road distance. The price is kept with your order; the map location is kept only as long as section 8 says.',
+            ],
             [
               'Messages you send through the contact form on our website, whether or not you have an account: your name, your phone number, the type of question if you choose one, and your message',
               'To answer you by phone, and handle your question or complaint. We do not link the message to an account, and we do not ask for your email address.',
@@ -488,6 +492,10 @@ const PRIVACY: Section[] = [
             [
               'Messages you send through the website contact form: 3 years after our staff resolve them',
               'Deleted. We keep no account for you, so to have a message deleted sooner, call or email us (section 9).',
+            ],
+            [
+              'The map location kept with a price we calculated for you',
+              'Removed when the order made with that price is anonymized, or 90 days after an unused price stopped being valid, or when your account is closed. The location is removed; the price, the distance and the rates stay, because they identify no one without it.',
             ],
             [
               'Account deletion requests: 3 years after we complete or refuse your request',

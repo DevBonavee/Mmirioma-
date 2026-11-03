@@ -114,13 +114,22 @@ export function editablePrices(p: SamplePriceTable): SamplePriceTableInput {
 /** Id of the detail panel beside a list (orders, riders, customers, stations, support). */
 export const DETAIL_PANEL_ID = 'admin-detail'
 
+/** Sent on `window` by {@link revealDetail}; a `SplitLayout` showing its panel as a side sheet opens it. */
+export const REVEAL_DETAIL_EVENT = 'admin:reveal-detail'
+
 /**
- * On phones and tablets the detail panel sits below the list, so after
- * picking an item, scroll its details into view. On laptops and desktops
- * (1024 px and up) the panel is already beside the list and nothing moves.
+ * Call after the person picks an item in a list that has a detail panel.
+ *
+ * - A `SplitLayout` that is too narrow to put the panel beside the list shows
+ *   it as a side sheet (docs/design/responsive.md), and this opens the sheet.
+ * - The Customers and Support pages stack their panel below the list under
+ *   1024 px, so there this scrolls the details into view. From 1024 px the
+ *   panel is beside the list and nothing moves.
  */
 export function revealDetail(): void {
-  if (typeof window === 'undefined' || !window.matchMedia?.('(max-width: 1023.98px)').matches) return
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new Event(REVEAL_DETAIL_EVENT))
+  if (!window.matchMedia?.('(max-width: 1023.98px)').matches) return
   // After React renders the newly selected item.
   window.setTimeout(() => document.getElementById(DETAIL_PANEL_ID)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
 }

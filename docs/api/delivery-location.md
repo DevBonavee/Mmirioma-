@@ -171,7 +171,7 @@ Each has a recommendation; the reviewer decides.
    endpoints only, so admin order and customer views do not get it.
    Recommendation: keep it so for the pilot; add it to the admin order detail
    later only if dispatchers ask, as a contract change.
-4. **Locations on quotes.** Road-distance pricing (FR-022) needs the point on
+4. **Locations on quotes.** (Built in #385: `POST /quotes` takes `delivery_location` and an order placed with such a quote must carry the same point.) Road-distance pricing (FR-022) needs the point on
    `POST /quotes` and in the quote match. OSRM is not deployed yet (maps.md R1
    is gated by a measurement), so every quote uses zone rates.
    Recommendation: add `delivery_location` to quotes in the issue that builds

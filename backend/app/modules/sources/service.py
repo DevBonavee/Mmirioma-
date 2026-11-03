@@ -25,7 +25,8 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
-from sqlalchemy import select
+from geoalchemy2 import Geometry, WKTElement
+from sqlalchemy import cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.audit import service as audit_service
@@ -44,11 +45,66 @@ AUDIT_TARGET_TYPE = "water_source"
 
 
 @dataclass(frozen=True)
+class SourceLocation:
+    """A source's pickup point, WGS 84 decimal degrees (#385)."""
+
+    latitude: float
+    longitude: float
+
+
+class _Unset:
+    """Marks a value that was not sent, so ``None`` can mean "clear it"."""
+
+
+UNSET = _Unset()
+
+
+@dataclass(frozen=True)
 class SourceWithActivations:
-    """A source and its activations, each with its category."""
+    """A source and its activations, each with its category.
+
+    ``location`` is the pickup point, or None when an administrator has not set one.
+    """
 
     source: WaterSource
     activations: list[tuple[WaterSourceCategory, WaterCategory]]
+    location: SourceLocation | None = None
+
+
+@dataclass(frozen=True)
+class EligibleSource:
+    """A source eligible for a category today, as a quote sees it (#385).
+
+    Attributes:
+        source_id: The source.
+        cost_per_litre_minor_units: Its activation's cost, in kobo (never sent to a client).
+        location: Its pickup point, or None; a quote that could use a source
+            without one is priced with the zone's fee.
+    """
+
+    source_id: uuid.UUID
+    cost_per_litre_minor_units: int
+    location: SourceLocation | None
+
+
+def _point(location: SourceLocation) -> WKTElement:
+    return WKTElement(f"POINT({location.longitude!r} {location.latitude!r})", srid=4326)
+
+
+async def _locations(
+    session: AsyncSession, source_ids: Iterable[uuid.UUID]
+) -> dict[uuid.UUID, SourceLocation]:
+    """Read the pickup points of these sources; a source with none is absent."""
+    point = cast(WaterSource.location, Geometry)
+    rows = await session.execute(
+        select(WaterSource.id, func.ST_Y(point), func.ST_X(point)).where(
+            WaterSource.id.in_(list(source_ids)), WaterSource.location.is_not(None)
+        )
+    )
+    return {
+        source_id: SourceLocation(latitude=float(latitude), longitude=float(longitude))
+        for source_id, latitude, longitude in rows
+    }
 
 
 async def get_acting_admin(session: AsyncSession, *, phone: str) -> User:
@@ -78,6 +134,7 @@ async def add_source(
     approximate_location: str,
     is_simulated: bool = False,
     kind: WaterSourceKind | None = None,
+    location: SourceLocation | None = None,
 ) -> WaterSource:
     """Add a water source (FR-011). Commits.
 
@@ -88,12 +145,17 @@ async def add_source(
         approximate_location: Pickup location in words.
         is_simulated: True for demo data (BR-09).
         kind: Ninth Mile or borehole (#21), or None to set it later.
+        location: The pickup point (#385), or None to set it later.
 
     Returns:
         The new source, with no activations: it serves no category yet.
     """
     source = WaterSource(
-        name=name, approximate_location=approximate_location, is_simulated=is_simulated, kind=kind
+        name=name,
+        approximate_location=approximate_location,
+        is_simulated=is_simulated,
+        kind=kind,
+        location=_point(location) if location is not None else None,
     )
     session.add(source)
     await session.flush()
@@ -139,6 +201,25 @@ async def eligible_costs_per_litre(
 ) -> list[int]:
     """Return the cost per litre of every source eligible for a category today.
 
+    The costs of :func:`eligible_sources`; see it for the rules.
+    """
+    return [
+        eligible.cost_per_litre_minor_units
+        for eligible in await eligible_sources(
+            session, water_category_id=water_category_id, kind=kind, today=today
+        )
+    ]
+
+
+async def eligible_sources(
+    session: AsyncSession,
+    *,
+    water_category_id: uuid.UUID,
+    kind: WaterSourceKind | None,
+    today: date,
+) -> list[EligibleSource]:
+    """Return every source eligible for a category today, with its cost and pickup point.
+
     Eligibility is the shared FR-012 check (:func:`eligibility.eligibility_reasons`:
     activated, approval current on ``today`` in Lagos). The costs are for the
     server's quote only and are never sent to a client (FR-011).
@@ -151,7 +232,7 @@ async def eligible_costs_per_litre(
         today: Today's date in Africa/Lagos.
 
     Returns:
-        Kobo per litre, one per eligible source; empty when none is eligible.
+        One per eligible source; empty when none is eligible.
     """
     query = (
         select(WaterSourceCategory)
@@ -160,10 +241,19 @@ async def eligible_costs_per_litre(
     )
     if kind is not None:
         query = query.where(WaterSource.kind == kind)
-    return [
-        activation.cost_per_litre_minor_units
+    eligible = [
+        activation
         for activation in await session.scalars(query)
         if not eligibility_reasons(activation, today=today)
+    ]
+    locations = await _locations(session, [activation.source_id for activation in eligible])
+    return [
+        EligibleSource(
+            source_id=activation.source_id,
+            cost_per_litre_minor_units=activation.cost_per_litre_minor_units,
+            location=locations.get(activation.source_id),
+        )
+        for activation in eligible
     ]
 
 
@@ -191,6 +281,7 @@ async def update_source(
     name: str | None = None,
     approximate_location: str | None = None,
     kind: WaterSourceKind | None = None,
+    location: SourceLocation | None | _Unset = UNSET,
 ) -> WaterSource:
     """Edit a source's name, location and kind (#309, decision 3). Commits.
 
@@ -206,6 +297,8 @@ async def update_source(
         name: New name, or None to keep it.
         approximate_location: New pickup location in words, or None to keep it.
         kind: New kind, or None to keep it. A kind cannot be cleared here.
+        location: The new pickup point, None to clear it, or :data:`UNSET` to
+            keep it (#385). The audit row names ``location`` and never the point.
 
     Returns:
         The source.
@@ -226,6 +319,11 @@ async def update_source(
     if kind is not None and kind != source.kind:
         source.kind = kind
         changed.append("kind")
+    if not isinstance(location, _Unset):
+        current = (await _locations(session, [source_id])).get(source_id)
+        if location != current:
+            source.location = _point(location) if location is not None else None
+            changed.append("location")
     if changed:
         _audit(session, actor=actor, action="water_source_updated", source=source, fields=changed)
     await session.commit()
@@ -264,7 +362,11 @@ async def list_sources(
     by_source: dict[uuid.UUID, list[tuple[WaterSourceCategory, WaterCategory]]] = {}
     for activation, category in rows:
         by_source.setdefault(activation.source_id, []).append((activation, category))
-    return [SourceWithActivations(source, by_source.get(source.id, [])) for source in sources]
+    locations = await _locations(session, [source.id for source in sources])
+    return [
+        SourceWithActivations(source, by_source.get(source.id, []), locations.get(source.id))
+        for source in sources
+    ]
 
 
 async def activate(

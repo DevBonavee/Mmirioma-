@@ -244,7 +244,9 @@ top bar title 700 18/26; dialog title 700 22/30; quantity tile main 700 18/26.
 | `--spacing-touch` | 48 (minimum touch target) |
 | `--spacing-touch-lg` | 56 (driver app primary button and fields; added with the auth design) |
 
-Page gutter on the canvas: 16 px; content max width 1200 px.
+Page gutter on the canvas: 16 px. Admin content is capped at 1440 px
+(`--container-admin-content`; the cap was written as 1200 px before the admin
+tables were measured, see [responsive.md](responsive.md)).
 
 ### Radius
 
@@ -271,21 +273,24 @@ elements but had no token for it (see [Decisions](#decisions)).
 
 ## Breakpoints
 
-Three widths, from [responsive.md](responsive.md). In code they are Tailwind's
-default `md` (768 px) and `xl` (1280 px) variants; the app defines no
-`--breakpoint-*` tokens.
+Three widths, which in code are Tailwind's defaults: `md` (768 px) and `xl`
+(1280 px). The app defines no `--breakpoint-*` tokens. The rules for each app
+are in [responsive.md](responsive.md).
 
-| Name | Width | Tailwind | Behaviour |
-| --- | --- | --- | --- |
-| phone | under 768 px | (none) | One column, full-width buttons, bottom navigation. |
-| tablet | 768 to 1279 px | `md:` | One or two columns, no sidebar. The customer app is a 720 px column. |
-| desktop | 1280 px and up | `xl:` | Customer: header navigation instead of the tab bar, content up to 1120 px, two panes for Orders and Addresses. Admin: sidebar navigation for dispatchers (still to move from 1024 px, #343). |
+| Name | Width | Behaviour |
+| --- | --- | --- |
+| phone | under 768 px | One column, full-width buttons, bottom navigation. Admin tables show as stacked cards. |
+| tablet | 768 to 1279 px | One or two columns, no sidebar. The customer app is a 720 px column. Admin tables scroll inside their own box; an admin detail panel is a side sheet. |
+| desktop | 1280 px and up | Customer: header navigation instead of the tab bar, content up to 1120 px, two panes for Orders and Addresses. Admin: sidebar navigation for dispatchers, content up to 1440 px wide, centred beside the sidebar. |
 
 The column widths of the phone-style apps are tokens: `--container-phone`
 (430 px, the rider and driver app and every phone), `--container-customer`
 (720 px, the customer tablet), `--container-customer-wide` (1120 px, the customer
 desktop) and `--container-card` (480 px, the signed-out customer screens).
-Admin content is still "up to 1200 px" until #343 moves it to 1440 px.
+
+An admin table never widens the page: `DataTable` owns its horizontal scroll
+box. A detail panel sits beside a table only where the page content is at
+least 1400 px wide; otherwise it opens as a side sheet.
 
 ## Components
 
@@ -668,7 +673,8 @@ From the prompt rules and the canvas (NFR-020, NFR-021):
 
 The canvas's final token table, as its `@theme` block (to paste after
 `@import "tailwindcss";`). Per the canvas, `--color-primary-600` gives
-`bg-primary-600`, `--radius-md` gives `rounded-md`, and `--spacing` is the 4 px base. This goes into
+`bg-primary-600`, `--radius-md` gives `rounded-md`, and `--spacing` is the 4 px
+base. This goes into
 `frontend/src/index.css` in the first frontend PR that uses it (prompt 00),
 not before.
 
@@ -795,7 +801,7 @@ not before.
   --shadow-md: 0 4px 12px -2px rgb(21 29 35 / 0.10), 0 2px 4px -2px rgb(21 29 35 / 0.06);
   --shadow-lg: 0 16px 32px -8px rgb(21 29 35 / 0.20), 0 4px 8px -4px rgb(21 29 35 / 0.10);
 
-  /* Breakpoints: none. The app uses Tailwind's md (768 px) and xl (1280 px); see Breakpoints. */
+  /* Breakpoints: none defined; the app uses Tailwind's md (768) and xl (1280) */
 }
 ```
 
@@ -858,10 +864,9 @@ Made by the technical lead on 2026-10-14, after the canvas was approved:
 1. **Staff status labels.** Staff views (prompt 02) need badges for
    "Assigned - awaiting driver", "Driver accepted" and "Disputed". The admin
    design should add them to this system.
-2. **Staff navigation below desktop.** The sidebar note says it "moves to the
-   bottom navigation" below 1280 px; the staff top bar note says it becomes a
-   Menu button below 768 px, which matches prompt 02. The admin design should
-   settle one rule.
+2. **Staff navigation below desktop.** Settled by [responsive.md](responsive.md)
+   (#343): the sidebar shows from 1280 px; below that a Menu button in the top
+   bar opens it as a drawer.
 3. **Touch target size in PR #15.** `docs/design/ui-system.md` in PR #15 uses
    44 px; this approved system uses 48 px.
 
