@@ -59,6 +59,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.pricing.osrm import FallbackReason
 from app.modules.sources.models import CATEGORY_LABEL_MAX_LENGTH
+from app.shared.location import stored_properties
 
 #: A manual quote is whole naira (FR-022 rounds the payable amount to whole
 #: naira): a multiple of 100 kobo, at least ₦1.00. No upper limit (order
@@ -516,3 +517,6 @@ class Quote(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Geography(geometry_type="POINT", srid=4326, spatial_index=False)
     )
     delivery_location_source: Mapped[str | None] = mapped_column(String(16))
+    delivery_location_latitude: Mapped[float | None]
+    delivery_location_longitude: Mapped[float | None]
+    delivery_location_latitude, delivery_location_longitude = stored_properties(delivery_location)

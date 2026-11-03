@@ -81,6 +81,7 @@ async def _run(args: argparse.Namespace) -> str:
                 [
                     f"Customer {result.customer_id}: account anonymized and deactivated.",
                     f"Orders anonymized: {result.orders_anonymized}",
+                    f"Order map locations cleared: {result.order_locations_cleared}",
                     f"GPS points cleared: {result.gps_points_cleared}",
                     f"Quote map pins cleared: {result.quote_locations_cleared}",
                     f"Saved addresses deleted: {result.addresses_removed}",
@@ -146,6 +147,7 @@ async def _run(args: argparse.Namespace) -> str:
                 f"GPS points cleared: {review.gps_points_cleared}",
                 f"Quote map pins cleared: {review.quote_locations_cleared}",
                 f"Orders anonymized (finished over 3 years ago): {review.orders_anonymized}",
+                f"Order map locations cleared (those orders): {review.order_locations_cleared}",
                 "Support requests deleted (resolved over 3 years ago): "
                 f"{review.support_requests_deleted}",
                 "Deletion requests deleted (completed or refused over 3 years ago): "

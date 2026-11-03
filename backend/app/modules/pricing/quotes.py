@@ -42,7 +42,6 @@ from enum import StrEnum
 from http import HTTPStatus
 
 import httpx2
-from geoalchemy2 import WKTElement
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -61,8 +60,8 @@ from app.modules.pricing.models import (
 )
 from app.modules.sources import service as sources
 from app.modules.sources.models import WaterCategory, WaterSourceKind
-from app.shared.delivery_location import DeliveryLocation
 from app.shared.lagos_time import LAGOS_TZ
+from app.shared.location import DECIMAL_PLACES, Location, to_point
 
 BASIS_POINTS_PER_WHOLE = 10_000
 
@@ -94,6 +93,8 @@ class Choice:
         quantity_litres: The server's conversion (FR-021).
         delivery_address: As sent (trimmed by the request schema).
         service_zone_id: The zone the customer picked, or None.
+        delivery_location: The order's map pin (#340), or None. Compared with the
+            quote's pin only when the quote was priced for one (#385).
     """
 
     delivery_type: str
@@ -105,6 +106,7 @@ class Choice:
     quantity_litres: int
     delivery_address: str
     service_zone_id: uuid.UUID | None
+    delivery_location: Location | None = None
 
 
 @dataclass(frozen=True)
@@ -240,7 +242,7 @@ class RoadDelivery:
 
 async def _road_delivery(
     eligible: list[sources.EligibleSource],
-    location: DeliveryLocation,
+    location: Location,
     rule: PriceRule,
     trips: int,
     transport: httpx2.AsyncBaseTransport | None,
@@ -306,7 +308,7 @@ async def create_quote(
     *,
     customer_id: uuid.UUID,
     choice: Choice,
-    delivery_location: DeliveryLocation | None = None,
+    delivery_location: Location | None = None,
     now: datetime | None = None,
     osrm_transport: httpx2.AsyncBaseTransport | None = None,
 ) -> QuoteAnswer:
@@ -435,14 +437,7 @@ async def create_quote(
         base_delivery_fee_minor_units=rule.base_delivery_fee_minor_units if road else None,
         distance_rate_minor_units_per_km=rule.distance_rate_minor_units_per_km if road else None,
         additional_trip_minor_units=rule.additional_trip_minor_units if road else None,
-        delivery_location=(
-            WKTElement(
-                f"POINT({delivery_location.longitude!r} {delivery_location.latitude!r})",
-                srid=4326,
-            )
-            if delivery_location is not None
-            else None
-        ),
+        delivery_location=to_point(delivery_location) if delivery_location is not None else None,
         delivery_location_source=(
             delivery_location.source.value if delivery_location is not None else None
         ),
@@ -486,7 +481,28 @@ def _mismatched(quote: Quote, choice: Choice) -> list[str]:
             normalize_address(choice.delivery_address),
         ),
     ]
-    return [".".join(loc) for loc, ours, theirs in pairs if ours != theirs]
+    different = [".".join(loc) for loc, ours, theirs in pairs if ours != theirs]
+    if not _same_pin(quote, choice.delivery_location):
+        different.append("delivery_location")
+    return different
+
+
+def _same_pin(quote: Quote, pin: Location | None) -> bool:
+    """Whether the order's pin is the one the quote was priced for (#385).
+
+    A quote priced for a pin needs the same latitude and longitude at 6 decimal
+    places on the order; the ``source`` is not compared. A quote with no pin (none
+    was sent, or the privacy rules cleared it) does not constrain the order, because
+    the price did not depend on it.
+    """
+    if quote.delivery_location_source is None:
+        return True
+    if pin is None or quote.delivery_location_latitude is None:
+        return False
+    return (
+        round(quote.delivery_location_latitude, DECIMAL_PLACES) == pin.latitude
+        and round(quote.delivery_location_longitude or 0.0, DECIMAL_PLACES) == pin.longitude
+    )
 
 
 async def check_quote_for_order(

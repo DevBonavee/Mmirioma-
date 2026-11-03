@@ -10,7 +10,7 @@ import re
 import secrets
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Literal, NamedTuple
 from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -25,6 +25,25 @@ SYNC_DRIVER = "postgresql+psycopg"
 MIN_SECRET_LENGTH = 32
 # Official MmiriOma customer support number (SRS v0.2 FR-055).
 OFFICIAL_SUPPORT_PHONE = "+2348133774902"
+#: south, west, north, east in degrees: a box around Enugu State, wider than the
+#: city on purpose (docs/api/delivery-location.md, "Delivery bounds").
+DEFAULT_DELIVERY_LOCATION_BOUNDS = "5.9,6.9,7.2,8.0"
+#: Nigeria's own extent, a sanity limit on the setting so a typo cannot widen
+#: the box to the world.
+NIGERIA_SOUTH, NIGERIA_WEST, NIGERIA_NORTH, NIGERIA_EAST = 4.0, 2.6, 14.0, 14.8
+
+
+class DeliveryBounds(NamedTuple):
+    """A box of WGS 84 degrees that a delivery location must fall inside."""
+
+    south: float
+    west: float
+    north: float
+    east: float
+
+    def contains(self, latitude: float, longitude: float) -> bool:
+        """Whether a point is inside the box, edges included."""
+        return self.south <= latitude <= self.north and self.west <= longitude <= self.east
 
 
 class Settings(BaseSettings):
@@ -78,12 +97,6 @@ class Settings(BaseSettings):
             production until the deployment is measured (#384).
         osrm_timeout_seconds: How long to wait for OSRM before the quote falls
             back to the zone fee; a slow server counts as down.
-        delivery_location_bounds: ``south,west,north,east`` degrees. A delivery
-            point outside this box is refused (docs/api/delivery-location.md). The
-            default is the box around Enugu State from its OpenStreetMap boundary
-            (5.92 to 6.93 N, 7.10 to 7.90 E), rounded outwards to 0.1 degree. A
-            sanity check, not the service area: the zone the customer picks decides
-            that.
         frontend_dist_dir: Folder of the built frontend (``npm run build``)
             that the API serves at ``/`` so the app and ``/api`` share one
             origin (docs/deployment/hostinger.md). Unset in
@@ -111,6 +124,7 @@ class Settings(BaseSettings):
     session_cookie_secure: bool | None = None
     session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     support_phone: str = OFFICIAL_SUPPORT_PHONE
+    delivery_location_bounds: str = DEFAULT_DELIVERY_LOCATION_BOUNDS
     support_whatsapp_enabled: bool = False
     pilot_water_category: Literal["potable", "utility"] = "utility"
     quote_validity_minutes: int = Field(default=60, ge=1, le=24 * 60)
@@ -122,7 +136,6 @@ class Settings(BaseSettings):
     sms_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     osrm_base_url: str = ""
     osrm_timeout_seconds: float = Field(default=2.0, gt=0, le=10)
-    delivery_location_bounds: str = "5.9,7.1,7.0,8.0"
     frontend_dist_dir: Path | None = None
 
     @field_validator("database_url")
@@ -153,6 +166,24 @@ class Settings(BaseSettings):
             raise ValueError("SUPPORT_PHONE must be in E.164 form, for example +2348133774902")
         return value
 
+    @field_validator("delivery_location_bounds")
+    @classmethod
+    def _validate_delivery_location_bounds(cls, value: str) -> str:
+        message = (
+            "DELIVERY_LOCATION_BOUNDS must be four numbers, south,west,north,east, "
+            "inside Nigeria with south below north and west below east"
+        )
+        try:
+            south, west, north, east = (float(part) for part in value.split(","))
+        except ValueError:
+            raise ValueError(message) from None
+        if not (
+            NIGERIA_SOUTH <= south < north <= NIGERIA_NORTH
+            and NIGERIA_WEST <= west < east <= NIGERIA_EAST
+        ):
+            raise ValueError(message)
+        return value.strip()
+
     @field_validator("termii_base_url")
     @classmethod
     def _validate_termii_base_url(cls, value: str) -> str:
@@ -171,17 +202,6 @@ class Settings(BaseSettings):
         if parts.scheme not in {"http", "https"} or not parts.netloc:
             raise ValueError("OSRM_BASE_URL must be empty or an absolute http(s) URL")
         return value.rstrip("/")
-
-    @field_validator("delivery_location_bounds")
-    @classmethod
-    def _validate_delivery_location_bounds(cls, value: str) -> str:
-        try:
-            south, west, north, east = (float(part) for part in value.split(","))
-        except ValueError:
-            raise ValueError("DELIVERY_LOCATION_BOUNDS must be south,west,north,east") from None
-        if not (-90 <= south < north <= 90 and -180 <= west < east <= 180):
-            raise ValueError("DELIVERY_LOCATION_BOUNDS must be a box: south < north, west < east")
-        return value
 
     @field_validator("frontend_dist_dir")
     @classmethod
@@ -229,6 +249,14 @@ class Settings(BaseSettings):
         return self
 
     @property
+    def delivery_bounds(self) -> DeliveryBounds:
+        """The validated ``DELIVERY_LOCATION_BOUNDS`` box."""
+        south, west, north, east = (
+            float(part) for part in self.delivery_location_bounds.split(",")
+        )
+        return DeliveryBounds(south, west, north, east)
+
+    @property
     def is_production(self) -> bool:
         """Whether strict production rules apply."""
         return self.app_env == "production"
@@ -239,14 +267,6 @@ class Settings(BaseSettings):
         if self.session_cookie_secure is None:
             return self.is_production
         return self.session_cookie_secure
-
-    @property
-    def delivery_bounds(self) -> tuple[float, float, float, float]:
-        """``(south, west, north, east)`` of ``DELIVERY_LOCATION_BOUNDS``."""
-        south, west, north, east = (
-            float(part) for part in self.delivery_location_bounds.split(",")
-        )
-        return south, west, north, east
 
     @property
     def async_database_url(self) -> URL:

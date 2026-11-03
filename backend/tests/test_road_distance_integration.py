@@ -22,15 +22,17 @@ from sqlalchemy import cast, delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import get_settings
+from app.core.errors import APIError
 from app.modules.audit.models import AuditLog
 from app.modules.dispatch.models import VehicleProfile
+from app.modules.orders import service as orders
 from app.modules.pricing import quotes
 from app.modules.pricing.models import DeliveryBasis, PriceRule, Quote
 from app.modules.pricing.osrm import FallbackReason
 from app.modules.pricing.quotes import ManualReason
 from app.modules.sources import service as sources
 from app.modules.sources.models import WaterSource, WaterSourceKind
-from app.shared.delivery_location import DeliveryLocation, LocationSource
+from app.shared.location import Location, LocationSource
 from tests import test_quotes_integration as part1
 from tests.test_deliveries_integration import Created, Sessions, run
 from tests.test_quotes_integration import (
@@ -39,6 +41,7 @@ from tests.test_quotes_integration import (
     add_source,
     add_zone,
     category,
+    order_for,
     rows,
     tanker,
     world,
@@ -49,7 +52,7 @@ pytestmark = part1.pytestmark
 created = part1.created
 rows = rows  # re-exported fixture, so pytest finds it in this module
 
-PIN = DeliveryLocation(latitude=6.452713, longitude=7.510348, source=LocationSource.MAP_PIN)
+PIN = Location(latitude=6.452713, longitude=7.510348, source=LocationSource.MAP_PIN)
 SOURCE_A = sources.SourceLocation(latitude=6.4361, longitude=7.5134)
 SOURCE_B = sources.SourceLocation(latitude=6.4800, longitude=7.4900)
 
@@ -110,7 +113,7 @@ async def ask(
     w: World,
     fake: FakeOsrm,
     *,
-    location: DeliveryLocation | None = PIN,
+    location: Location | None = PIN,
     zone_id: uuid.UUID | None = None,
 ) -> quotes.QuoteAnswer:
     async with sessions() as session:
@@ -415,6 +418,109 @@ def test_a_stored_quote_never_changes_when_a_source_or_osrm_changes(
         assert after.road_distance_metres == 5_000
         assert again.quote is not None
         assert again.quote.delivery_minor_units == 100_000 + 200_000  # the new quote does
+
+    run(scenario)
+
+
+# --- The quote pin must match the order pin ------------------------------------------
+
+
+async def place(
+    sessions: Sessions, w: World, quote_id: uuid.UUID, location: Location | None
+) -> Any:
+    async with sessions() as session:
+        return await orders.create_order(
+            session,
+            customer_id=w.customer.id,
+            request=order_for(tanker(w.zone_id), quote_id, delivery_location=location),
+        )
+
+
+def test_an_order_with_the_quote_pin_is_placed_and_keeps_its_own_copy(
+    created: Created, rows: Rows, osrm_on: None
+) -> None:
+    async def scenario(sessions: Sessions) -> None:
+        w = await world(sessions, created, rows)
+        await set_location(sessions, w.admin, w.borehole_id, SOURCE_A)
+        fake = FakeOsrm()
+        fake.answer(SOURCE_A, 5_000)
+        answer = await ask(sessions, w, fake)
+        assert answer.quote is not None
+
+        # The same point, set another way: the source is not compared.
+        same = Location(
+            latitude=PIN.latitude, longitude=PIN.longitude, source=LocationSource.DEVICE_LOCATION
+        )
+        order, made = await place(sessions, w, answer.quote.id, same)
+
+        assert made and order.quote_id == answer.quote.id
+        assert (order.delivery_location_latitude, order.delivery_location_longitude) == (
+            PIN.latitude,
+            PIN.longitude,
+        )
+
+    run(scenario)
+
+
+def test_an_order_with_another_pin_or_none_is_a_quote_mismatch_on_delivery_location(
+    created: Created, rows: Rows, osrm_on: None
+) -> None:
+    async def scenario(sessions: Sessions) -> None:
+        w = await world(sessions, created, rows)
+        await set_location(sessions, w.admin, w.borehole_id, SOURCE_A)
+        fake = FakeOsrm()
+        fake.answer(SOURCE_A, 5_000)
+        answer = await ask(sessions, w, fake)
+        assert answer.quote is not None
+        moved = Location(latitude=6.46, longitude=7.52, source=LocationSource.MAP_PIN)
+
+        for location in (moved, None):
+            with pytest.raises(APIError) as refused:
+                await place(sessions, w, answer.quote.id, location)
+            assert (refused.value.status_code, refused.value.code) == (422, "quote_mismatch")
+            assert [d["loc"] for d in refused.value.details or []] == [
+                ["body", "delivery_location"]
+            ]
+
+    run(scenario)
+
+
+def test_a_quote_priced_without_a_pin_lets_the_order_carry_any_pin(
+    created: Created, rows: Rows, osrm_on: None
+) -> None:
+    async def scenario(sessions: Sessions) -> None:
+        w = await world(sessions, created, rows)
+        answer = await ask(sessions, w, FakeOsrm(), location=None)
+        assert answer.quote is not None
+
+        order, made = await place(sessions, w, answer.quote.id, PIN)
+
+        assert made and order.quote_id == answer.quote.id
+
+    run(scenario)
+
+
+def test_a_quote_whose_pin_was_cleared_no_longer_constrains_the_order(
+    created: Created, rows: Rows, osrm_on: None
+) -> None:
+    async def scenario(sessions: Sessions) -> None:
+        w = await world(sessions, created, rows)
+        await set_location(sessions, w.admin, w.borehole_id, SOURCE_A)
+        fake = FakeOsrm()
+        fake.answer(SOURCE_A, 5_000)
+        answer = await ask(sessions, w, fake)
+        assert answer.quote is not None
+        async with sessions() as session:
+            await session.execute(
+                update(Quote)
+                .where(Quote.id == answer.quote.id)
+                .values(delivery_location=None, delivery_location_source=None)
+            )
+            await session.commit()
+
+        _, made = await place(sessions, w, answer.quote.id, None)
+
+        assert made
 
     run(scenario)
 

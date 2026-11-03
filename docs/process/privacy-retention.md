@@ -73,7 +73,7 @@ request made in the app, the app shows the customer an acknowledge-by date
 ### Access
 
 Give the requester what section 2 of the notice lists for their account:
-name and phone, saved addresses, each order's delivery details, status
+name and phone, saved addresses and their map locations, each order's delivery details and map location, status
 history, agreed price and window, delivery record and cash record, their
 feedback, their support requests and their in-app messages. Read it from
 the admin screens or with a read-only database query; never change data to
@@ -226,8 +226,8 @@ in section 8 has passed:
 | --- | --- |
 | Phone verification codes, delivery codes | Tool: blank the scrambled code of every expired code; the rows stay as the record of the verification, phone change (NFR-004) or confirmed delivery (technical lead, 2026-10-23) |
 | Accounts never verified | Tool: customer accounts with no verified phone, created more than 30 days ago and without orders, are deleted with their saved addresses and requests. One that audit rows name as the actor (a password or address change) is anonymized and closed instead, so the audit record stays (technical lead, 2026-10-27, #82). The notice says so since version 2.0: wording accepted by the privacy contact on PR #106 (2026-10-27) |
-| Saved addresses, in-app messages | Nothing monthly: they are removed when the account is closed (Deletion, step 3) |
-| Order and delivery records | Tool: anonymize orders completed more than 3 years ago, as in "Deletion" step 3; their feedback messages are blanked too |
+| Saved addresses (with any map location), in-app messages | Nothing monthly: they are removed when the account is closed (Deletion, step 3) |
+| Order and delivery records | Tool: anonymize orders completed more than 3 years ago, as in "Deletion" step 3; their map locations are cleared and their feedback messages are blanked too (#340) |
 | Feedback on an order | Goes with the order (above) |
 | Driver GPS points | Tool: clear GPS points recorded more than 90 days ago, unless an open complaint or dispute needs them |
 | Cash payment and refund records | Nothing to do until the first records reach 6 years; before then, confirm the accounting period (open item 3) |
@@ -312,7 +312,8 @@ admin account and writes an audit row.
 | Date | Change | By |
 | --- | --- | --- |
 | 2026-11-03 | "Deletion: website contact messages" with `delete-website-messages` (#364): a visitor with no account is found by phone number and their messages are deleted whole, with one audit row each. No change to the notice (section 9 already says to call or email) | @nnamdi-security (+ Claude Code), #364 |
-| 2026-11-03 | Notice 6.0 (#385): the price we calculate, and the map location kept with it, are collected (section 2) and kept as the retention table says (section 8); the tool clears the location (above). Wording for the notice's legal operator to review | @nnamdi-security (technical lead and privacy contact, condition on the #385 contract) + Claude Code, #385 |
+| 2026-11-03 | Notice 6.0 (#340): a map location of the delivery address is collected, only if the customer chooses "Use my location" or places a pin (section 2); section 5 says the app asks for the phone's location only on that choice and never to track; the assigned driver sees the pin (section 7); saved-address locations are kept with the address and an order's location follows the order's 3 years (section 8). `anonymize-customer` and the review clear order locations. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, decision on #340 and `docs/architecture/maps.md`) + Claude Code, #340 |
+| 2026-11-03 | Notice 7.0 (#385): the price we calculate, and the map location kept with it, are collected (section 2) and kept as the retention table says (section 8); the tool clears the location (above). Wording for the notice's legal operator to review | @nnamdi-security (technical lead and privacy contact, condition on the #385 contract) + Claude Code, #385 |
 | 2026-11-03 | Notice 5.0 (#346): section 7 names OpenFreeMap, the map-tile provider of the landing page's service-area map (the visitor's IP address and the map tiles viewed, not any typed address), as agreed in #334 and the #346 review. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, #346 review) + Claude Code, #346 |
 | 2026-11-02 | Notice 4.0 (#339): messages sent through the website contact form are collected (section 2), seen by staff (section 7), kept 3 years after resolution (section 8) and found by phone number on request (section 9); the retention table row above. Wording for the notice's legal operator to review | @nnamdi-security (technical lead, answer on the #339 contract) + Claude Code, #339 |
 | 2026-10-27 | "Deletion: riders and drivers" with `anonymize-partner`, by the rules the privacy contact confirmed on #119; open item 4 closed | @nnamdi-security (+ Claude Code), #119 |

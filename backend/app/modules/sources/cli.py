@@ -44,7 +44,7 @@ from app.modules.sources.models import (
     ActivationStatus,
     WaterSourceKind,
 )
-from app.shared.delivery_location import OUTSIDE_AREA_MESSAGE
+from app.shared.location import OUT_OF_BOUNDS_MESSAGE
 from app.shared.phone import normalize_nigerian_phone
 
 CATEGORY_CODES = ("potable", "utility")
@@ -187,9 +187,8 @@ def _location_from(args: argparse.Namespace) -> service.SourceLocation | None:
         raise SystemExit("Give both --latitude and --longitude, or neither.")
     if args.latitude is None:
         return None
-    south, west, north, east = get_settings().delivery_bounds
-    if not (south <= args.latitude <= north and west <= args.longitude <= east):
-        raise SystemExit(OUTSIDE_AREA_MESSAGE)
+    if not get_settings().delivery_bounds.contains(args.latitude, args.longitude):
+        raise SystemExit(OUT_OF_BOUNDS_MESSAGE)
     return service.SourceLocation(round(args.latitude, 6), round(args.longitude, 6))
 
 

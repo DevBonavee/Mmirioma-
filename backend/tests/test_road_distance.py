@@ -12,6 +12,7 @@ import json
 import re
 from collections.abc import Iterator
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import httpx2
@@ -21,9 +22,9 @@ from pydantic import ValidationError
 from app.core.config import Settings, get_settings
 from app.modules.pricing import osrm
 from app.modules.pricing.osrm import FallbackReason, Point, RoadDistanceUnavailable
-from app.modules.pricing.quotes import road_delivery_cost
+from app.modules.pricing.quotes import _same_pin, road_delivery_cost
 from app.modules.pricing.schemas import QuoteCreate
-from app.shared.delivery_location import OUTSIDE_AREA_MESSAGE
+from app.shared.location import OUT_OF_BOUNDS_MESSAGE, Location, LocationSource
 
 APP = Path(__file__).resolve().parents[1] / "app"
 EXAMPLES = Path(__file__).resolve().parents[2] / "docs/api/examples"
@@ -288,7 +289,7 @@ def test_a_point_outside_the_delivery_bounds_is_refused_on_the_whole_field(
         )
     [error] = raised.value.errors()
     assert error["loc"] == ("delivery_location",)  # never the inner latitude or longitude
-    assert OUTSIDE_AREA_MESSAGE in error["msg"]
+    assert OUT_OF_BOUNDS_MESSAGE in error["msg"]
 
 
 @pytest.mark.parametrize(
@@ -311,6 +312,50 @@ def test_the_bounds_are_a_setting(monkeypatch: pytest.MonkeyPatch) -> None:
         QuoteCreate.model_validate(quote_body(delivery_location=location(latitude=6.4)))
     finally:
         get_settings.cache_clear()
+
+
+# --- The quote pin must match the order pin (#385, built on #340) ---------------------
+
+
+def priced_for(latitude: float | None, longitude: float | None = None) -> Any:
+    """A stored quote, as far as the pin comparison reads it."""
+    return SimpleNamespace(
+        delivery_location_source="map_pin" if latitude is not None else None,
+        delivery_location_latitude=latitude,
+        delivery_location_longitude=longitude,
+    )
+
+
+def pin(
+    latitude: float = 6.452713, longitude: float = 7.510348, source: str = "map_pin"
+) -> Location:
+    return Location(latitude=latitude, longitude=longitude, source=LocationSource(source))
+
+
+def test_a_quote_priced_for_a_pin_matches_the_same_point_whatever_its_source() -> None:
+    quote = priced_for(6.452713, 7.510348)
+    assert _same_pin(quote, pin())
+    assert _same_pin(quote, pin(source="device_location"))  # the source is not compared
+
+
+def test_the_comparison_is_at_six_decimal_places() -> None:
+    # PostGIS hands the point back as a float with noise beyond 6 places.
+    assert _same_pin(priced_for(6.4527130000001, 7.5103479999999), pin())
+    assert not _same_pin(priced_for(6.452714, 7.510348), pin())
+    assert not _same_pin(priced_for(6.452713, 7.510349), pin())
+
+
+def test_a_quote_priced_for_a_pin_refuses_no_pin_or_another_pin() -> None:
+    quote = priced_for(6.452713, 7.510348)
+    assert not _same_pin(quote, None)
+    assert not _same_pin(quote, pin(latitude=6.46))
+    assert not _same_pin(quote, pin(longitude=7.52))
+
+
+def test_a_quote_with_no_pin_does_not_constrain_the_order() -> None:
+    quote = priced_for(None)  # none was sent, or the privacy rules cleared it
+    assert _same_pin(quote, None)
+    assert _same_pin(quote, pin())
 
 
 # --- Settings -----------------------------------------------------------------------

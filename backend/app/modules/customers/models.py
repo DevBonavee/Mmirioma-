@@ -9,8 +9,9 @@ default address.
 
 An order copies the address text when it is placed, so changing or removing
 a saved address never changes an order (FR-024). The SRS lists latitude and
-longitude as optional; they are left out until a screen collects them
-(admin-directory.md, "Data needed").
+longitude as optional; ``location`` and ``location_source`` hold them since
+#340 (docs/api/delivery-location.md). The admin directory does not return or
+accept them in the pilot.
 
 ``support_requests`` and ``deletion_requests``: docs/api/customer-account.md,
 "Support requests" and "Account deletion" (#82, part 4).
@@ -20,6 +21,7 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
+from geoalchemy2 import WKBElement
 from sqlalchemy import (
     CheckConstraint,
     Enum,
@@ -34,6 +36,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin
 from app.modules.orders.models import DELIVERY_ADDRESS_MAX_LENGTH, LANDMARK_MAX_LENGTH
+from app.shared.location import (
+    location_constraints,
+    point_column,
+    source_column,
+    stored_properties,
+)
 
 #: Labels such as "Home" or "Mum's house": trimmed, 1-50 characters, on both
 #: the customer and the admin side (customer-account.md, decision 13).
@@ -55,6 +63,12 @@ class CustomerAddress(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         is_default: The address offered first. At most one per customer,
             enforced by the partial unique index below; the service keeps
             exactly one whenever the customer has any.
+        location: Optional map point (``geography(POINT, 4326)``), personal
+            data like the address. Null when the customer did not set one.
+        location_source: How the point was set (``device_location`` or
+            ``map_pin``); set exactly when ``location`` is.
+        location_latitude: Read-only, the point's latitude, loaded with the row.
+        location_longitude: Read-only, the point's longitude.
     """
 
     __tablename__ = "customer_addresses"
@@ -67,6 +81,7 @@ class CustomerAddress(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             unique=True,
             postgresql_where=text("is_default"),
         ),
+        *location_constraints("location", "location_source", "location"),
     )
 
     customer_id: Mapped[uuid.UUID] = mapped_column(
@@ -79,6 +94,11 @@ class CustomerAddress(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     address: Mapped[str] = mapped_column(String(DELIVERY_ADDRESS_MAX_LENGTH))
     landmark: Mapped[str | None] = mapped_column(String(LANDMARK_MAX_LENGTH))
     is_default: Mapped[bool] = mapped_column(default=False, server_default=false())
+    location: Mapped[WKBElement | None] = point_column()
+    location_source: Mapped[str | None] = source_column()
+    location_latitude: Mapped[float | None]
+    location_longitude: Mapped[float | None]
+    location_latitude, location_longitude = stored_properties(location)
 
 
 #: docs/api/customer-account.md, "Support request object".

@@ -322,6 +322,7 @@ def test_anonymize_dry_run_saves_nothing_and_apply_removes_the_details(created: 
                 "customer_anonymized",
                 {
                     "orders_anonymized": 2,
+                    "order_locations_cleared": 0,
                     "gps_points_cleared": 2,
                     "addresses_removed": 0,
                     "support_messages_removed": 0,
@@ -469,7 +470,7 @@ def test_retention_review_dry_run_then_apply_then_nothing_left(created: Created)
         assert len(await gps_points(sessions, disputed)) == 2
 
         again = await review(apply=True)
-        assert again == service.ReviewResult(0, 0, 0, 0, 0, 0, 0, 0, 0, applied=True)
+        assert again == service.ReviewResult(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, applied=True)
 
     run(scenario)
 

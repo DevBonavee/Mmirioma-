@@ -2,8 +2,8 @@
 
 **Status: agreed** (G3) on 2026-11-03 by @nnamdi-security (technical lead), who
 is not the author, with the decisions under "Reviewer's decisions" at the end.
-Proposed for #340 by @Daveoski (+ Claude Code) on 2026-11-03. Nothing is built
-to it yet. It follows the maps decision (#334,
+Proposed for #340 by @Daveoski (+ Claude Code) on 2026-11-03. Built in #340
+(backend; the screen is #345). It follows the maps decision (#334,
 [maps.md](../architecture/maps.md)) and the technical lead's decisions on the
 issue ([decisions](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment-6589913114)
 and the [handover](https://github.com/mmiri-oma/mmirioma/issues/340#issuecomment-6590449932)
@@ -171,7 +171,7 @@ Each has a recommendation; the reviewer decides.
    endpoints only, so admin order and customer views do not get it.
    Recommendation: keep it so for the pilot; add it to the admin order detail
    later only if dispatchers ask, as a contract change.
-4. **Locations on quotes.** (Built in #385: `POST /quotes` takes `delivery_location`; the order-side match waits for this contract's build.) Road-distance pricing (FR-022) needs the point on
+4. **Locations on quotes.** (Built in #385: `POST /quotes` takes `delivery_location` and an order placed with such a quote must carry the same point.) Road-distance pricing (FR-022) needs the point on
    `POST /quotes` and in the quote match. OSRM is not deployed yet (maps.md R1
    is gated by a measurement), so every quote uses zone rates.
    Recommendation: add `delivery_location` to quotes in the issue that builds

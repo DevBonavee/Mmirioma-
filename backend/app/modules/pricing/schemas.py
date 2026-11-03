@@ -46,7 +46,7 @@ from app.modules.pricing.service import (
     ZoneUpdate,
     ZoneView,
 )
-from app.shared.delivery_location import DeliveryLocationField
+from app.shared.location import Location
 
 ZoneName = Annotated[
     str,
@@ -527,7 +527,7 @@ class QuoteCreate(_Request):
     delivery_address: DeliveryAddress
     service_zone_id: uuid.UUID | None = None
     # The customer's pin (#385), or none. Optional: a quote without it uses the zone's fee.
-    delivery_location: DeliveryLocationField = None
+    delivery_location: Location | None = None
 
     @model_validator(mode="after")
     def _consistent(self) -> Self:

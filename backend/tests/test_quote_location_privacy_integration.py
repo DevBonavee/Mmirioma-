@@ -172,7 +172,7 @@ def test_a_quote_an_order_was_placed_with_keeps_its_pin_until_the_order_is_anony
             order, _ = await orders.create_order(
                 session,
                 customer_id=w.customer.id,
-                request=order_for(choice, answer.quote.id),
+                request=order_for(choice, answer.quote.id, delivery_location=PIN),
             )
         # Long expired, but an order was placed with it: the review leaves the pin.
         async with sessions() as session:

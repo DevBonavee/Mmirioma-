@@ -36,6 +36,7 @@ from app.modules.dispatch.models import DECLINE_NOTE_MAX_LENGTH, DeclineReason
 from app.modules.orders.models import EVENT_NOTE_MAX_LENGTH, OrderStatus
 from app.modules.payments.schemas import DriverJobCashRead
 from app.modules.payments.service import JobCash, with_record_cash
+from app.shared.location import PointRead, read_point
 
 # Optional free text is trimmed; text left blank counts as "not given" and is
 # turned into None by the model validators (_blank_to_none).
@@ -408,6 +409,10 @@ class DriverJobDetail(DriverJobSummary):
     receiver: ReceiverRead | None
     delivery_address: str | None
     landmark: str | None
+    #: The order's map point, only while the job is accepted (FR-032), like
+    #: ``receiver``; no ``source``. Null for an offer, after the job ends, and
+    #: when the order has none (docs/api/delivery-location.md).
+    delivery_location: PointRead | None = None
     delivery_instructions: str | None
     source: SourceRead | None
     pickup: PickupRead | None
@@ -443,6 +448,11 @@ class DriverJobDetail(DriverJobSummary):
             ),
             delivery_address=order.delivery_address,
             landmark=order.landmark,
+            delivery_location=(
+                read_point(order.delivery_location_latitude, order.delivery_location_longitude)
+                if accepted
+                else None
+            ),
             delivery_instructions=order.delivery_instructions,
             source=(
                 SourceRead(

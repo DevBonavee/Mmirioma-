@@ -358,6 +358,8 @@ def test_customer_response_matches_contract(api: TestClient) -> None:
         "water_source",
         "service_zone",
         "quote",
+        # Delivery location contract (#340): the order's own map point, or null.
+        "delivery_location",
         # Customer account contract (#82): the customer's feedback, or null.
         "feedback",
         # Customer pilot changes (#99, built in #165): null until confirmed.
@@ -597,3 +599,67 @@ def test_admin_detail_not_found(api: TestClient, fake_orders: FakeOrders) -> Non
     response = api.get("/api/v1/admin/orders/MO-0000000000", headers=sign_in(api, UserRole.ADMIN))
     assert response.status_code == 404
     assert error_code(response) == "order_not_found"
+
+
+# --- Delivery location (#340, docs/api/delivery-location.md) -------------------
+
+ENUGU_PIN = {"latitude": 6.452713, "longitude": 7.510348, "source": "device_location"}
+
+
+def test_the_location_is_passed_to_the_service_as_the_orders_own_copy(
+    api: TestClient, fake_orders: FakeOrders
+) -> None:
+    response = api.post(
+        "/api/v1/orders",
+        json={**VALID_BODY, "delivery_location": ENUGU_PIN},
+        headers=sign_in(api, UserRole.CUSTOMER),
+    )
+    assert response.status_code == 201
+    request = fake_orders.calls[0][1]["request"]
+    assert request.delivery_location is not None
+    assert request.delivery_location.model_dump(mode="json") == ENUGU_PIN
+
+
+def test_an_order_without_a_location_has_none_and_reads_back_null(
+    api: TestClient, fake_orders: FakeOrders
+) -> None:
+    response = api.post("/api/v1/orders", json=VALID_BODY, headers=sign_in(api, UserRole.CUSTOMER))
+    assert fake_orders.calls[0][1]["request"].delivery_location is None
+    assert response.json()["delivery_location"] is None
+
+
+@pytest.mark.parametrize(
+    "location",
+    [
+        {**ENUGU_PIN, "latitude": 6.4584, "longitude": 3.3792},
+        {**ENUGU_PIN, "source": "typed"},
+        {"latitude": 6.45, "longitude": 7.51},
+    ],
+)
+def test_a_bad_delivery_location_is_a_validation_error_and_places_no_order(
+    api: TestClient, fake_orders: FakeOrders, location: dict[str, Any]
+) -> None:
+    response = api.post(
+        "/api/v1/orders",
+        json={**VALID_BODY, "delivery_location": location},
+        headers=sign_in(api, UserRole.CUSTOMER),
+    )
+    assert response.status_code == 422
+    assert error_code(response) == "validation_error"
+    assert fake_orders.calls == []
+
+
+def test_a_point_outside_the_box_is_reported_on_delivery_location_not_the_inner_field(
+    api: TestClient,
+) -> None:
+    response = api.post(
+        "/api/v1/orders",
+        json={
+            **VALID_BODY,
+            "delivery_location": {**ENUGU_PIN, "latitude": 6.4584, "longitude": 3.3},
+        },
+        headers=sign_in(api, UserRole.CUSTOMER),
+    )
+    (detail,) = response.json()["error"]["details"]
+    assert detail["loc"] == ["body", "delivery_location"]
+    assert detail["msg"].endswith("This location is outside the area we deliver in.")

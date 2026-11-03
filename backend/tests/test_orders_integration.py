@@ -491,9 +491,11 @@ def test_admin_sees_any_order_with_its_customer(
 
     assert response.status_code == 200
     detail = response.json()
-    # Every customer field, except feedback, which customers see and staff
-    # views do not (docs/api/customer-account.md, "Order feedback").
+    # Every customer field, except feedback and the map location, which
+    # customers see and staff views do not (docs/api/customer-account.md,
+    # "Order feedback"; docs/api/delivery-location.md, "Orders").
     assert order.pop("feedback") is None
+    assert order.pop("delivery_location") is None
     assert {key: detail[key] for key in order} == order
     assert "feedback" not in detail
     assert detail["is_simulated"] is False

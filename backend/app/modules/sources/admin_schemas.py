@@ -33,8 +33,8 @@ from app.modules.sources.models import (
     WaterSourceKind,
 )
 from app.modules.sources.service import SourceWithActivations
-from app.shared.delivery_location import COORDINATE_PLACES, OUTSIDE_AREA_MESSAGE
 from app.shared.lagos_time import lagos_today
+from app.shared.location import DECIMAL_PLACES, OUT_OF_BOUNDS_MESSAGE
 
 #: How many days before ``approved_until`` an activation starts to warn
 #: (decision 4 on #309; fixed in docs/design/admin-water-sources.md).
@@ -77,15 +77,14 @@ class SourceLocationBody(BaseModel):
     @field_validator("latitude", "longitude")
     @classmethod
     def _round(cls, value: float) -> float:
-        return round(value, COORDINATE_PLACES)
+        return round(value, DECIMAL_PLACES)
 
 
 def _inside_bounds(location: SourceLocationBody | None) -> SourceLocationBody | None:
     if location is None:
         return None
-    south, west, north, east = get_settings().delivery_bounds
-    if not (south <= location.latitude <= north and west <= location.longitude <= east):
-        raise PydanticCustomError("value_error", OUTSIDE_AREA_MESSAGE)
+    if not get_settings().delivery_bounds.contains(location.latitude, location.longitude):
+        raise PydanticCustomError("value_error", OUT_OF_BOUNDS_MESSAGE)
     return location
 
 

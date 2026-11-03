@@ -332,7 +332,9 @@ never a straight-line distance.
   rates stay.
 - **Switched off by default.** `OSRM_BASE_URL` is empty, so nothing changes for
   customers until OSRM is deployed and measured (#384).
-- **Limits.** The order-side comparison of the pin waits for #340. OSRM snaps a
+- **The quote match.** An order placed with a quote priced for a pin must carry the same pin (6 decimal places; the `source` is not compared), else 422 `quote_mismatch` on `delivery_location`. A quote with no pin does not constrain the order.
+- **Setting the rates (for whoever fills the price list).** The distance is one way and charged once, so the per-km rate has to cover the return leg too; the additional-trip charge pays only for extra trips. Until a source has a pickup point and OSRM is on, the zone's fee is what customers are charged.
+- **Limits.** OSRM snaps a
   point to the nearest road and no snap-distance check is made in this version.
   Nothing is cached. The admin Water sources screen has no latitude and longitude
   fields yet (a follow-up with its own design); the API and `add-source
