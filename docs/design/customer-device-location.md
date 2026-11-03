@@ -10,13 +10,14 @@ Contracts: [customer-account.md](../api/customer-account.md#saved-addresses)
 and [admin-directory.md](../api/admin-directory.md#get-service-zones)
 (agreed); location fields from #340 (proposed in PR #370, not agreed yet)
 Designer: @Daveoski + Claude Code (written design; no visual mockup yet) ·
-Reviewed by: (not yet) · Status: draft
+Reviewed by: @nnamdi-security (2026-11-03) · Status: approved
 
 This is a written design: the flow, every state and the exact wording. The
 visual mockup is made from the prompt and attached before the screen is built.
-It becomes `Status: approved` when one reviewer who is not the author checks it
-against the SRS, the issue and maps.md (G2). Building also waits for #340's
-contract (G3).
+Approved (G2) on 2026-11-03 by @nnamdi-security, who is not the author, after
+checking it against the SRS, the issue and maps.md, with the decisions under
+"Review decisions". Building also waits for #340's contract (G3), now agreed in
+PR #370.
 
 A customer can add an optional map pin to a delivery address, placed from the
 phone's location or by hand, and save it with the address. Typing the address
@@ -179,6 +180,28 @@ decides this on the phone (open question 1).
    which addresses help the rider.
 5. **Edit an existing address's pin.** Recommendation: yes (L5), through the
    same card and map.
+
+## Review decisions
+
+Recommendations by @nnamdi-security, 2026-11-03, approved with the design:
+
+1. **Outside our delivery areas:** the area picker and the quote decide, as
+   today. A pin is never checked on the phone, because a zone without a
+   boundary could not be checked at all.
+2. **Where the map starts:** the centre of the area the customer chose, from
+   `GET /service-zones` (#346); before an area is chosen, the listed areas'
+   centres. No separate configuration value. This replaces the earlier idea of
+   one.
+3. **Refused pin:** `validation_error` (422) on the location field
+   (`loc` `["body", "location"]`, #340's agreed contract), so L3's wording
+   applies.
+4. **"Pin on map" chip:** yes.
+5. **Editing an existing address's pin:** yes, through the same card and map.
+6. **Condition:** the screen does not go live until #340 is built, the privacy
+   notice no longer says the app never asks for location, and a person has
+   confirmed the reading of OpenFreeMap's privacy policy (recorded in
+   [landing-service-areas.md](landing-service-areas.md)). The map shows the tile
+   provider's attribution (L2).
 
 ## Changes to the design system
 
