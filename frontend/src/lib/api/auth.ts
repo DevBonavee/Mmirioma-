@@ -31,10 +31,9 @@ export interface RegisterInput {
   password: string
   /**
    * The person ticked the box: 18 or older, Terms of Service and Privacy Notice. The
-   * server requires `true`. Optional only until #336 adds the box to the forms;
-   * never set it for the person.
+   * server requires `true`. Never set it for the person.
    */
-  accepted_terms?: boolean
+  accepted_terms: boolean
 }
 
 export interface LoginInput {

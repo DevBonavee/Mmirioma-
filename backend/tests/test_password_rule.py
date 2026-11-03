@@ -4,6 +4,7 @@ Database behaviour (the stored time and version, null for other accounts) is in
 test_password_rule_integration.py.
 """
 
+import json
 import re
 from collections.abc import Iterator
 from datetime import date, datetime
@@ -38,56 +39,14 @@ def details(response: Any) -> list[dict[str, Any]]:
 # --- The rule -----------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "password",
-    [
-        pytest.param("Aa1!aaaa", id="exactly 8 characters"),
-        pytest.param("A1!" + "a" * 125, id="exactly 128 characters"),
-        pytest.param("ALLCAPS1!", id="no lowercase needed"),
-        pytest.param("Password1₦", id="naira sign is a symbol"),
-        pytest.param("Pass word 1_", id="spaces allowed, underscore is a symbol"),
-    ],
-)
-def test_strong_passwords_pass(password: str) -> None:
-    assert password_problem(password) is None
+# The frontend's password.test.ts reads the same file for its copy of the rule, so a
+# change to one without the other fails (the #336 design's review decision 3).
+CASES = json.loads((ROOT / "docs/api/examples/password-rule-cases.json").read_text("utf-8"))
 
 
-@pytest.mark.parametrize(
-    ("password", "message"),
-    [
-        pytest.param("Aa1!aaa", "Your password needs at least 8 characters.", id="7 characters"),
-        pytest.param("password1!", "Your password needs an uppercase letter.", id="no uppercase"),
-        pytest.param("Password!!", "Your password needs a number.", id="no number"),
-        pytest.param("Password11", "Your password needs a symbol.", id="no symbol"),
-        pytest.param(
-            "password",
-            "Your password needs an uppercase letter, a number and a symbol.",
-            id="three missing",
-        ),
-        pytest.param(
-            "abc",
-            "Your password needs at least 8 characters, an uppercase letter, a number "
-            "and a symbol.",
-            id="everything missing",
-        ),
-        pytest.param(
-            "password1",
-            "Your password needs an uppercase letter and a symbol.",
-            id="two missing",
-        ),
-        pytest.param("A1!" + "a" * 126, "Use 128 characters or fewer.", id="129 characters"),
-        pytest.param(
-            "Password1 ", "Your password needs a symbol.", id="a space does not count as a symbol"
-        ),
-        pytest.param(
-            "Éclair1!", "Your password needs an uppercase letter.", id="accented is not uppercase"
-        ),
-        pytest.param("Pass١word!", "Your password needs a number.", id="only 0-9 count as numbers"),
-        pytest.param("Passw0rdé", "Your password needs a symbol.", id="a letter is not a symbol"),
-    ],
-)
-def test_weak_passwords_name_everything_missing(password: str, message: str) -> None:
-    assert password_problem(password) == message
+@pytest.mark.parametrize("case", CASES, ids=[case["name"] for case in CASES])
+def test_the_rule_matches_the_shared_cases(case: dict[str, Any]) -> None:
+    assert password_problem(case["password"]) == case["problem"]
 
 
 # --- POST /auth/register ------------------------------------------------------------

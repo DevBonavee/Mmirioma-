@@ -205,6 +205,14 @@ and their `/verify`) are documented in
   acceptance was recorded: accounts from before the rule, the command-line tool
   or the demo seed. Anonymizing an account clears both columns. The values are not
   returned by any endpoint.
+- **Sign-up forms** (#336, [design](../design/sign-up-password-and-terms.md)): the
+  customer and partner forms share `SignUpSecurityFields`: Password, a live checklist
+  (`PasswordChecklist`), Confirm password and the box (`CheckboxRow`). The button is
+  off until the four rules are met; a mismatch or a missing tick is caught on tapping
+  it. After a failed attempt both password fields clear; the rest and the tick stay.
+  The form sends `accepted_terms` only from the person's tick, and never sends the
+  confirmation. `docs/api/examples/password-rule-cases.json` is checked against both
+  the server's and the form's copy of the rule.
 - **Hashing:** scrypt N=2^16, r=8, p=2 (OWASP equivalent-strength setting, about 64 MiB per
   hash), 16-byte random salt. Parameters are stored per hash so they can be
   raised later. Chosen over argon2/bcrypt to avoid a new dependency.

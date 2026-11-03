@@ -154,6 +154,8 @@ agreed**. Every amount is a SAMPLE in integer kobo, not a real price.
 
 ## Change password and public contact (agreed, #8)
 
+`password-rule-cases.json` lists passwords and the refusal each one gets, read by
+both the backend's and the frontend's tests of the rule (#332, #336).
 `change-password-request.json` is the body of `POST /auth/password`, and
 `error-password-incorrect.json` its 403 for a wrong current password
 ([../auth.md](../auth.md#change-password-8)). The passwords are

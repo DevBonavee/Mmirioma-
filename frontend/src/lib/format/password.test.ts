@@ -1,33 +1,41 @@
 import { describe, expect, it } from 'vitest'
+import cases from '../../../../docs/api/examples/password-rule-cases.json'
 import { newPasswordField } from '../forms'
-import { passwordProblem } from './password'
+import { PASSWORD_RULES, isPasswordTooLong, passwordProblem } from './password'
 
-describe('passwordProblem (docs/api/auth.md, #332)', () => {
-  it.each([
-    ['exactly 8 characters', 'Aa1!aaaa'],
-    ['exactly 128 characters', 'A1!' + 'a'.repeat(125)],
-    ['no lowercase', 'ALLCAPS1!'],
-    ['the naira sign as the symbol', 'Password1₦'],
-    ['spaces, with an underscore as the symbol', 'Pass word 1_'],
-  ])('accepts %s', (_name, password) => {
-    expect(passwordProblem(password)).toBeNull()
+describe('passwordProblem matches the server (docs/api/auth.md, #332)', () => {
+  // The backend's test_password_rule.py reads the same file for password_problem.
+  it.each(cases)('$name', ({ password, problem }) => {
+    expect(passwordProblem(password)).toBe(problem)
+  })
+})
+
+describe('PASSWORD_RULES (docs/design/sign-up-password-and-terms.md)', () => {
+  const met = (password: string) => PASSWORD_RULES.filter((rule) => rule.met(password)).map((rule) => rule.id)
+
+  it('lists the four rules in the order the checklist shows them', () => {
+    expect(PASSWORD_RULES.map((rule) => rule.label)).toEqual([
+      'At least 8 characters',
+      'An uppercase letter',
+      'A number',
+      'A symbol, such as ! @ _ or ₦',
+    ])
   })
 
   it.each([
-    ['7 characters', 'Aa1!aaa', 'Your password needs at least 8 characters.'],
-    ['129 characters', 'A1!' + 'a'.repeat(126), 'Use 128 characters or fewer.'],
-    ['no uppercase', 'password1!', 'Your password needs an uppercase letter.'],
-    ['no number', 'Password!!', 'Your password needs a number.'],
-    ['no symbol', 'Password11', 'Your password needs a symbol.'],
-    ['two missing', 'password1', 'Your password needs an uppercase letter and a symbol.'],
-    ['three missing', 'password', 'Your password needs an uppercase letter, a number and a symbol.'],
-    ['everything missing', 'abc', 'Your password needs at least 8 characters, an uppercase letter, a number and a symbol.'],
-    ['a space as the only other character', 'Password1 ', 'Your password needs a symbol.'],
-    ['an accented capital only', 'Éclair1!', 'Your password needs an uppercase letter.'],
-    ['a non-ASCII digit only', 'Pass١word!', 'Your password needs a number.'],
-    ['an accented letter as the only other character', 'Passw0rdé', 'Your password needs a symbol.'],
-  ])('refuses %s, naming everything missing', (_name, password, message) => {
-    expect(passwordProblem(password)).toBe(message)
+    ['nothing', '', []],
+    ['the length alone', 'aaaaaaaa', ['length']],
+    ['just under the length, with the rest', 'Aa1!aaa', ['uppercase', 'number', 'symbol']],
+    ['exactly the length', 'Aa1!aaaa', ['length', 'uppercase', 'number', 'symbol']],
+  ])('marks %s', (_name, password, expected) => {
+    expect(met(password)).toEqual(expected)
+  })
+
+  it('still counts every rule as met over 128 characters, which isPasswordTooLong catches', () => {
+    const long = 'A1!' + 'a'.repeat(126)
+    expect(met(long)).toHaveLength(4)
+    expect(isPasswordTooLong(long)).toBe(true)
+    expect(isPasswordTooLong('A1!' + 'a'.repeat(125))).toBe(false)
   })
 })
 
