@@ -1440,6 +1440,8 @@ export async function getIssuePeople(issueId: string): Promise<{ name: string; r
   if (!issue) throw mockError(404, 'issue_not_found', 'Issue not found')
   const row = issue.reference ? orderRow(s, issue.reference) : null
   const people: { name: string; role: string; phone: string }[] = []
+  // SAMPLE DATA: a website message has one contact, the visitor, with a made-up number.
+  if (issue.source === 'website') return [{ name: issue.reporter_name, role: 'Website visitor', phone: '+2348000000001' }]
   if (row) people.push({ name: row.customer_name, role: 'Customer', phone: row.customer_phone })
   const partner = row?.partner ? s.users.find((u) => u.id === row.partner!.id) : undefined
   if (partner && row?.partner) people.push({ name: partner.name, role: row.partner.vehicle === 'keke' ? 'Rider' : 'Driver', phone: partner.phone })
