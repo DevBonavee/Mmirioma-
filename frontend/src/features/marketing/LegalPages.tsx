@@ -234,11 +234,11 @@ function Rows({ rows }: { rows: [ReactNode, ReactNode][] }) {
 }
 
 /*
- * The Privacy page mirrors PRIVACY_NOTICE.md (version 7.0) section by
+ * The Privacy page mirrors PRIVACY_NOTICE.md (version 8.0) section by
  * section, with the same facts (#93). Change both together; the notice is the
  * source.
  */
-const PRIVACY_VERSION = 'Version 7.0, last updated 3 November 2026.'
+const PRIVACY_VERSION = 'Version 8.0, last updated 3 November 2026.'
 
 const PRIVACY: Section[] = [
   {

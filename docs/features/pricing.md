@@ -58,7 +58,7 @@ reliable price exists (SRS §6). Customers see the total only.
 | `backend/app/modules/pricing/osrm.py` | The OSRM adapter: one `table` request per quote, the longest road distance to the eligible sources, every way it can fail (#385) |
 | `backend/app/modules/pricing/quotes.py` | `road_delivery_cost` (base + distance charge + extra trips, `Decimal`, half-up to kobo) and the choice between road distance and the zone fee (#385) |
 | `backend/app/modules/pricing/retention.py` | Clears the map pin kept on a quote: customer anonymized, order anonymized, unplaced quote 90 days after its price expired (#385) |
-| `backend/alembic/versions/20261103_0026_add_road_distance_pricing.py` | A source's `location`; the quote's basis, distance, source, fallback reason, rates and pin |
+| `backend/alembic/versions/20261103_0027_add_road_distance_pricing.py` | A source's `location`; the quote's basis, distance, source, fallback reason, rates and pin |
 | `backend/tests/test_road_distance.py`, `test_road_distance_integration.py`, `test_quote_location_privacy_integration.py` | The formula, the adapter, the quote flow against a fake OSRM, the privacy rules, and the no-straight-line test |
 | `backend/app/modules/pricing/schemas.py` | `PriceListCreate` (validation), `PriceListRead`, `PriceListPage` |
 | `backend/app/modules/pricing/router.py` | The three endpoints; thin |

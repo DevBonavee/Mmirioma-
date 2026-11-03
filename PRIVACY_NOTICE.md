@@ -3,7 +3,7 @@
 <!-- The website's Privacy page (/privacy, frontend/src/features/marketing/LegalPages.tsx)
 mirrors this notice section by section. Change both together. -->
 
-**Version:** 7.0  
+**Version:** 8.0  
 **Last updated:** 3 November 2026  
 **Service area:** Enugu State, Nigeria
 

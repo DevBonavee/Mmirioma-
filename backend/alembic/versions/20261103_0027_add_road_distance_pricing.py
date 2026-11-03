@@ -20,8 +20,8 @@ docs/api/order-details-and-price.md, "Amendment #385: road-distance pricing"
 
 Columns only; no data is rewritten and the downgrade drops them.
 
-Revision ID: 0026
-Revises: 0025
+Revision ID: 0027
+Revises: 0026
 Create Date: 2026-11-03 18:00:00+00:00
 """
 
@@ -31,8 +31,8 @@ import sqlalchemy as sa
 from alembic import op
 from geoalchemy2 import Geography
 
-revision: str = "0026"
-down_revision: str | Sequence[str] | None = "0025"
+revision: str = "0027"
+down_revision: str | Sequence[str] | None = "0026"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -732,7 +732,7 @@ order; and that no name, phone or address reaches OSRM.
   PR). Road-distance pricing must not be switched on before it is agreed.
 - **A pin cleared by the privacy rules** does not make the quote invalid: the
   shape check covers the price, the distance and the rates, not the pin
-  (migration `0026`).
+  (migration `0027`).
 
 ### Reviewer's decisions
 

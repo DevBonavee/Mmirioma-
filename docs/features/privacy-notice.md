@@ -86,7 +86,7 @@ None. The text ships with the frontend.
   3 years (section 8). It is 6.0 because what is collected changed. The wording says the
   location "will also be used" for road-distance prices: quotes use zone rates until OSRM
   is deployed (maps.md R1).
-- Version 7.0 (3 November 2026, #385) adds the price we calculate and the map
+- Version 8.0 (3 November 2026, #385) adds the price we calculate and the map
   location kept with it (section 2) and how long the location is kept
   (section 8: until the order is anonymized, 90 days after an unused price
   expired, or the account is closed).
