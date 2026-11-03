@@ -88,7 +88,7 @@ describe('partner sign-up areas', () => {
       status: 422,
       details: [{ loc: ['body', 'accepted_terms'], msg: 'Confirm you are 18 or older and accept the Terms of Service and Privacy Notice.', type: 'value_error' }],
     })
-    await expect(partnerSignup({ ...input, accepted_terms: undefined, service_zone_id })).rejects.toMatchObject({
+    await expect(partnerSignup({ ...input, accepted_terms: undefined as unknown as boolean, service_zone_id })).rejects.toMatchObject({
       status: 422,
       details: [{ loc: ['body', 'accepted_terms'], msg: 'Field required', type: 'missing' }],
     })

@@ -2,6 +2,7 @@
 // jsdom provides sessionStorage, which the mock store uses.
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ApiError } from '../lib/api/client'
+import type { RegisterInput } from '../lib/api/auth'
 import { mockGetMe, mockLogin, mockLogout, mockChangePassword, mockRegister } from './authMock'
 import { addAddress, createOrder, demoAdvanceOrder, getOrder, getPoints, listAddresses, removeAddress, submitFeedback } from './customerMock'
 import { resetMockDb } from './db'
@@ -106,7 +107,7 @@ describe('mock auth', () => {
       code: 'validation_error',
       details: [{ loc: ['body', 'accepted_terms'], msg: 'Confirm you are 18 or older and accept the Terms of Service and Privacy Notice.', type: 'value_error' }],
     })
-    await expect(mockRegister(input)).rejects.toMatchObject({
+    await expect(mockRegister(input as RegisterInput)).rejects.toMatchObject({
       status: 422,
       details: [{ loc: ['body', 'accepted_terms'], msg: 'Field required', type: 'missing' }],
     })

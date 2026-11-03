@@ -13,10 +13,13 @@
   1. The test searches `marketing.css` for a string containing `\n`, and this
      checkout has CRLF line endings. Not related to #332, which does not touch that
      test or that file.
-  2. Not proven. The failure is intermittent, which points to timing on a slow run.
-     It was not tried on `development`.
-- **Fix / workaround:** check both on CI. A fix for the first is to match either
-  line ending, in its own change.
-- **Status:** open
+  2. Timing, by reading the test; not proven by reproducing it on `development`. The
+     profile comes from a test fixture at once, but the link waits for the session
+     query, which goes through the mock's delay. `findByRole` gives up after 1 second,
+     which a loaded machine can miss. CI passes it.
+- **Fix / workaround:** the first passed again after `development` was merged in on
+  2026-11-03. For the second, a longer `findByRole` timeout in that test is the fix,
+  left for its own change. Rerun it alone before treating it as a real failure.
+- **Status:** workaround
 - **Refs:** #332, #330, `frontend/src/features/marketing/sizeTiles.test.tsx`,
   `frontend/src/features/partner/pages/PartnerAccount.test.tsx`

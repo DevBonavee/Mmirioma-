@@ -23,6 +23,23 @@ export const newPasswordField = z.string().superRefine((value, ctx) => {
   if (message) ctx.addIssue({ code: 'custom', message })
 })
 
+/** The sign-up fields shared by the customer and partner forms (#336). */
+export const signUpSecurityFields = {
+  password: newPasswordField,
+  confirm_password: z.string(),
+  accepted_terms: z.boolean().refine((ticked) => ticked, 'Tick the box to confirm you are 18 or older and agree.'),
+}
+
+/**
+ * A refinement for a schema with {@link signUpSecurityFields}. `when` makes it run
+ * even if another field is wrong, so a mismatch shows with the other errors, and on
+ * leaving the field while the rest of the form is still empty.
+ */
+export const passwordsMatch = {
+  check: (v: { password: string; confirm_password: string }) => v.password === v.confirm_password,
+  options: { path: ['confirm_password'], message: 'The passwords do not match.', when: () => true },
+}
+
 /** Something@something.something with no spaces: the email check shared by forms and mocks. */
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 /** Longest email address accepted (RFC 5321 path limit). */
