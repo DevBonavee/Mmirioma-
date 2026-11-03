@@ -171,7 +171,7 @@ describe('the links to the About page', () => {
     expect(within(main).getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about')
   }, SLOW)
 
-  it('keeps each header label on one line, so seven links do not wrap or push the button off the edge', async () => {
+  it('keeps each header label on one line, so the links do not wrap or push the button off the edge', async () => {
     renderAt('/about')
     const nav = await screen.findByRole('navigation', { name: 'Main' }, { timeout: WAIT })
     const links = within(nav).getAllByRole('link')
@@ -195,10 +195,10 @@ describe('the links to the About page', () => {
     }
   }, SLOW)
 
-  it('shows only Home, About and FAQs in the short footer', async () => {
+  it('shows only Home, About, FAQs and Contact in the short footer', async () => {
     renderAt('/about')
     const quick = await screen.findByRole('navigation', { name: 'Quick Links' }, { timeout: WAIT })
-    expect(within(quick).getAllByRole('link').map((l) => l.textContent)).toEqual(['Home', 'About', 'FAQs'])
+    expect(within(quick).getAllByRole('link').map((l) => l.textContent)).toEqual(['Home', 'About', 'FAQs', 'Contact'])
   }, SLOW)
 
   it('has About in the menu that opens on a phone', async () => {

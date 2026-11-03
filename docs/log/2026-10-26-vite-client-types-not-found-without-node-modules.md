@@ -14,5 +14,13 @@
   warned `EBADENGINE` for jsdom 30 and friends on Node v24.14.0 (they want
   `^24.15.0`); the install and typecheck still worked, but upgrade Node to
   24.15 or later if tests misbehave.
+- **Seen again (Daveoski + agent, 2026-11-03):** the same error, twice. First
+  in a checkout with no `frontend/node_modules`: TypeScript then resolved to a
+  stray 7.0.2 in a `node_modules` folder in the user's home directory (outside
+  the repository), which hid the cause; `npm ci` fixed it. Then, after pulling
+  `development`, `npm run typecheck` failed with `Cannot find module
+  'maplibre-gl' or its corresponding type declarations`: the lockfile had gained
+  `maplibre-gl` (#346), and `node_modules` was older. Run `npm ci` again after
+  every pull that changes `frontend/package-lock.json`.
 - **Status:** resolved
 - **Refs:** `frontend/tsconfig.app.json`, `frontend/package-lock.json`

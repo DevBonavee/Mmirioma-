@@ -38,7 +38,7 @@ APP_AND_ACCOUNT = (
     "/signup",
     "/forgot-password",
 )
-PUBLIC_PAGES = ("/", "/about", "/faq", "/terms", "/privacy")
+PUBLIC_PAGES = ("/", "/about", "/faq", "/contact", "/terms", "/privacy")
 
 
 def robots_rules() -> tuple[list[str], list[str], list[str]]:
@@ -144,11 +144,6 @@ def test_sitemap_lists_no_private_or_blocked_path() -> None:
     for path in sitemap_paths():
         assert not path.startswith(PRIVATE), f"sitemap.xml lists the private path {path}"
         assert not blocked(path, disallow), f"sitemap.xml lists {path}, which robots.txt blocks"
-
-
-def test_sitemap_has_no_page_that_does_not_exist_yet() -> None:
-    # /contact is added when that page is built (#344).
-    assert "/contact" not in sitemap_paths()
 
 
 def test_sitemap_has_no_lastmod_it_cannot_vouch_for() -> None:

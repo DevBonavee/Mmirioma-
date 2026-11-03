@@ -17,5 +17,12 @@
   `DATABASE_URL=<…>/mmirioma_fork_test alembic upgrade head`, and run
   integration tests with `TEST_DATABASE_URL` pointing at it. Never point
   the fork's migrations at `mmirioma_test` or `mmirioma`.
+- **Seen again (Daveoski + agent, 2026-11-03):** this checkout had no
+  `backend/.venv`; the system Python failed with `ModuleNotFoundError: No module
+  named 'geoalchemy2'` and `ruff: command not found`. Fixed as above, on Windows:
+  `py -3.14 -m venv .venv && .venv/Scripts/python -m pip install -r
+  requirements-dev.txt`, then run tools as `.venv/Scripts/python -m pytest` and
+  `-m ruff`. Check the folder is ignored with `git check-ignore -v .venv/` (with
+  the slash) before it exists.
 - **Status:** workaround
 - **Refs:** #30

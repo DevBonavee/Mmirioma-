@@ -89,14 +89,16 @@ export function Oma() {
 }
 
 /**
- * Site header (landing and FAQ). It stays stuck to the top while the page
+ * Site header (every public page). It stays stuck to the top while the page
  * scrolls, so the order button is always one tap away. Below 960 px the
  * links move into a menu panel under the header; below 600 px the order
- * button moves into it too. The panel closes on a link tap, on Escape and on
+ * button moves into it too. The gaps narrow below 1180 and 1100 px so the
+ * eight links and the button fit on one line from 961 px (measured;
+ * docs/features/public-pages.md, "Header with eight links"). The panel closes on a link tap, on Escape and on
  * any navigation, and the page behind it does not scroll while it is open
  * (README "Behaviour").
  */
-export function MarketingHeader({ current }: { current: 'home' | 'faq' | 'about' }) {
+export function MarketingHeader({ current }: { current: 'home' | 'faq' | 'about' | 'contact' }) {
   const location = useLocation()
   // The menu belongs to the location it was opened on, so any navigation
   // (a link, Back) closes it without an effect.
@@ -115,15 +117,15 @@ export function MarketingHeader({ current }: { current: 'home' | 'faq' | 'about'
     }
   }, [open])
 
-  const isCurrent = (to: string) => to === { home: '/', faq: '/faq', about: '/about' }[current]
+  const isCurrent = (to: string) => to === { home: '/', faq: '/faq', about: '/about', contact: '/contact' }[current]
 
   return (
     <header className="sticky top-0 z-30 border-0 border-b border-solid border-[#E6EEF7] bg-white/95 backdrop-blur-sm">
-      <div className="mk-wrap flex min-h-[76px] items-center justify-between gap-6">
+      <div className="mk-wrap flex min-h-[76px] items-center justify-between gap-4 min-[1100px]:gap-6">
         <HomeLogo className="shrink-0">
           <BrandLogo className="h-9 min-[1100px]:h-11" />
         </HomeLogo>
-        <nav aria-label="Main" className="flex items-center gap-3 text-[14px] font-medium min-[1100px]:gap-5 min-[1100px]:text-[15px] min-[1180px]:gap-[30px] max-[960.98px]:hidden">
+        <nav aria-label="Main" className="flex items-center gap-2 text-[14px] font-medium min-[1100px]:gap-4 min-[1100px]:text-[15px] min-[1180px]:gap-6 max-[960.98px]:hidden">
           {NAV_LINKS.map((l) => (
             <Link
               key={l.label}
@@ -193,6 +195,8 @@ export function MarketingHeader({ current }: { current: 'home' | 'faq' | 'about'
 }
 
 const FOOT_LINK = 'text-mk-foot-text no-underline hover:text-white'
+/** The pages in the short footer's Quick Links; the full footer lists every `NAV_LINKS` entry. */
+const SHORT_FOOTER_LINKS = ['/', '/about', '/faq', '/contact']
 
 function FootColumn({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -221,7 +225,7 @@ export function MarketingFooter({ variant }: { variant: 'full' | 'short' }) {
             <p className="m-0 text-[15px] leading-[1.65]">{BRAND_LINE}</p>
           </div>
           <FootColumn label="Quick Links">
-            {(full ? NAV_LINKS : NAV_LINKS.filter((l) => l.to === '/' || l.to === '/about' || l.to === '/faq')).map((l) => (
+            {(full ? NAV_LINKS : NAV_LINKS.filter((l) => SHORT_FOOTER_LINKS.includes(l.to))).map((l) => (
               <Link key={l.label} to={l.to} className={FOOT_LINK}>
                 {l.label}
               </Link>

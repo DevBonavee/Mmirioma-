@@ -20,5 +20,13 @@
   1099, 1100, 1179 and 1280 px (one line, button inside, 44 to 113 px spare). To
   check a layout under `overflow-x-clip`, compare each element's right edge with
   its container's, not the document's scroll width.
+- **Seen again (Daveoski + agent, #344, 2026-11-03):** an eighth link,
+  "Contact", put the button's right edge 12 px past the header's padded edge at
+  961 px, and left no room at 1100 and 1180 px (the button touched the edge).
+  Measured in Chrome through the DevTools protocol, comparing the button's right
+  edge with the padded edge. The gaps were narrowed (below 1100 px: 8 px between
+  links and 16 px between logo, links and button; 16 px from 1100 px; 24 px from
+  1180 px). Remeasured from 961 to 1920 px: one line, the button inside, at
+  least 32 px between the last link and the button.
 - **Status:** resolved
-- **Refs:** #338; `frontend/src/features/marketing/MarketingParts.tsx`.
+- **Refs:** #338, #344; `frontend/src/features/marketing/MarketingParts.tsx`.
