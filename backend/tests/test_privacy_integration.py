@@ -12,6 +12,7 @@ Runs only when TEST_DATABASE_URL is set (``alembic upgrade head`` first).
 Every row is created here and deleted afterwards.
 """
 
+import secrets
 import uuid
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -87,6 +88,8 @@ OLD = datetime(2020, 1, 15, 9, 0, tzinfo=UTC)
 POINT = "POINT(7.4951 6.4584)"
 # Zones made by the saved-address tests, deleted after their addresses.
 ZONE_IDS: list[uuid.UUID] = []
+# Phones of the website messages made by the #364 tests, deleted afterwards.
+VISITOR_PHONES: list[str] = []
 
 
 @pytest.fixture(autouse=True)
@@ -101,11 +104,15 @@ def delete_audit_rows(created: Created) -> Iterator[None]:
         connection.execute("DELETE FROM audit_logs WHERE actor_id = ANY(%s)", users)
         connection.execute("DELETE FROM customer_addresses WHERE customer_id = ANY(%s)", users)
         connection.execute("DELETE FROM support_requests WHERE user_id = ANY(%s)", users)
+        connection.execute(
+            "DELETE FROM support_requests WHERE contact_phone = ANY(%s)", (VISITOR_PHONES,)
+        )
         connection.execute("DELETE FROM deletion_requests WHERE user_id = ANY(%s)", users)
         # Driver service zones go with their profile (ON DELETE CASCADE).
         connection.execute("DELETE FROM driver_profiles WHERE user_id = ANY(%s)", users)
         connection.execute("DELETE FROM service_zones WHERE id = ANY(%s)", (ZONE_IDS,))
     ZONE_IDS.clear()
+    VISITOR_PHONES.clear()
 
 
 async def finished_job(sessions: Sessions, s: Setup, driver: User, **fields: object) -> str:
@@ -1311,5 +1318,162 @@ def test_anonymize_partner_replaces_the_reasons_on_their_decision_rows_with_a_ma
                 )
             )
         assert own is not None and own.details["reasons_cleared"] == 2
+
+    run(scenario)
+
+
+VISITOR_NAME = "Chinedu Visitor"
+VISITOR_TEXT = "Do you deliver to Independence Layout?"
+
+
+def new_visitor_phone() -> str:
+    """A phone number no other row uses; its website messages are deleted afterwards."""
+    phone = "+23480" + "".join(secrets.choice("0123456789") for _ in range(8))
+    VISITOR_PHONES.append(phone)
+    return phone
+
+
+async def add_website_message(
+    sessions: Sessions, phone: str, *, resolved: bool = False
+) -> uuid.UUID:
+    """A website contact message from ``phone`` (#339); ``resolved`` marks it resolved."""
+    async with sessions() as session:
+        request = await customer_requests.create_website_support_request(
+            session,
+            name=VISITOR_NAME,
+            phone=phone,
+            message=VISITOR_TEXT,
+            type=SupportRequestType.OTHER,
+        )
+        if resolved:
+            request.status = SupportRequestStatus.RESOLVED
+            request.resolved_at = OLD
+            request.resolution_note = "Called the visitor."
+            await session.commit()
+        return request.id
+
+
+async def website_message_audit_rows(sessions: Sessions, admin: User) -> list[AuditLog]:
+    async with sessions() as session:
+        rows = await session.scalars(
+            select(AuditLog).where(
+                AuditLog.actor_id == admin.id, AuditLog.action == "website_message_deleted"
+            )
+        )
+        return list(rows)
+
+
+def test_delete_website_messages_dry_run_saves_nothing_then_apply_deletes_only_that_phone(
+    created: Created,
+) -> None:
+    # #364: a visitor with no account asks for their contact-form messages to go.
+    async def scenario(sessions: Sessions) -> None:
+        s = await setup(sessions, created)
+        phone, other_phone = new_visitor_phone(), new_visitor_phone()
+        open_one = await add_website_message(sessions, phone)
+        resolved_one = await add_website_message(sessions, phone, resolved=True)
+        someone_else = await add_website_message(sessions, other_phone)
+        # The customer's own request, and a website message that happens to use
+        # the customer's number: only the website one may be touched.
+        own_request = await add_support_request(sessions, s.customer)
+
+        async with sessions() as session:
+            dry = await service.delete_website_messages(
+                session, actor=s.admin, visitor_phone=phone, apply=False
+            )
+        assert (dry.messages_deleted, dry.still_open, dry.applied) == (2, 1, False)
+        assert await exists(sessions, SupportRequest, open_one)
+        assert await exists(sessions, SupportRequest, resolved_one)
+        assert await website_message_audit_rows(sessions, s.admin) == []
+
+        async with sessions() as session:
+            done = await service.delete_website_messages(
+                session, actor=s.admin, visitor_phone=phone, apply=True
+            )
+        assert (done.messages_deleted, done.still_open, done.applied) == (2, 1, True)
+        assert not await exists(sessions, SupportRequest, open_one)
+        assert not await exists(sessions, SupportRequest, resolved_one)
+        # Another visitor's message and a customer's own request are untouched.
+        assert await exists(sessions, SupportRequest, someone_else)
+        assert await exists(sessions, SupportRequest, own_request)
+
+    run(scenario)
+
+
+def test_delete_website_messages_writes_one_audit_row_each_with_no_personal_data(
+    created: Created,
+) -> None:
+    async def scenario(sessions: Sessions) -> None:
+        s = await setup(sessions, created)
+        phone = new_visitor_phone()
+        open_one = await add_website_message(sessions, phone)
+        resolved_one = await add_website_message(sessions, phone, resolved=True)
+
+        async with sessions() as session:
+            await service.delete_website_messages(
+                session, actor=s.admin, visitor_phone=phone, apply=True
+            )
+
+        rows = await website_message_audit_rows(sessions, s.admin)
+        assert {row.target_id for row in rows} == {open_one, resolved_one}
+        assert {row.target_type for row in rows} == {"support_request"}
+        assert sorted(row.details["status"] for row in rows) == ["open", "resolved"]
+        everything = " ".join(f"{row.action} {row.details}" for row in rows)
+        assert phone not in everything and phone[-8:] not in everything
+        assert VISITOR_NAME not in everything and VISITOR_TEXT not in everything
+
+    run(scenario)
+
+
+def test_delete_website_messages_finds_nothing_for_an_unknown_number(created: Created) -> None:
+    async def scenario(sessions: Sessions) -> None:
+        s = await setup(sessions, created)
+        async with sessions() as session:
+            with pytest.raises(LookupError, match="no website message"):
+                await service.delete_website_messages(
+                    session, actor=s.admin, visitor_phone=new_visitor_phone(), apply=True
+                )
+        assert await website_message_audit_rows(sessions, s.admin) == []
+
+    run(scenario)
+
+
+def test_delete_website_messages_never_removes_a_customers_own_support_request(
+    created: Created,
+) -> None:
+    # Even when the customer's phone is the number given, an app request has a
+    # user and no contact phone, so it is not a website message.
+    async def scenario(sessions: Sessions) -> None:
+        s = await setup(sessions, created)
+        own_request = await add_support_request(sessions, s.customer)
+        async with sessions() as session:
+            with pytest.raises(LookupError):
+                await service.delete_website_messages(
+                    session, actor=s.admin, visitor_phone=s.customer.phone, apply=True
+                )
+        assert await exists(sessions, SupportRequest, own_request)
+
+    run(scenario)
+
+
+def test_anonymizing_a_customer_leaves_website_messages_from_their_number(
+    created: Created,
+) -> None:
+    # A website message is never linked to an account (NFR-002), so the account
+    # deletion does not reach it: the procedure runs the new command as well.
+    async def scenario(sessions: Sessions) -> None:
+        s = await setup(sessions, created)
+        website = await add_website_message(sessions, s.customer.phone)
+        VISITOR_PHONES.append(s.customer.phone)
+
+        await anonymize(sessions, s, apply=True)
+        assert await exists(sessions, SupportRequest, website)
+
+        async with sessions() as session:
+            result = await service.delete_website_messages(
+                session, actor=s.admin, visitor_phone=s.customer.phone, apply=True
+            )
+        assert result.messages_deleted == 1
+        assert not await exists(sessions, SupportRequest, website)
 
     run(scenario)

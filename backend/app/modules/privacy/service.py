@@ -19,6 +19,10 @@ Cash (#123) is checked by ``payments.retention``: anonymizing is refused
 while a customer's cash is unsettled in the app, and part payments and
 overpayments settled outside the app (F9, F7) are reported as warnings for
 the privacy contact to check.
+
+Website contact messages (#339) belong to no account, so a visitor's request
+to delete one is a separate command, :func:`delete_website_messages`, which
+finds them by the visitor's phone number (#364).
 """
 
 import uuid
@@ -33,7 +37,7 @@ from app.modules.auth import service as auth_service
 from app.modules.auth.models import User, UserRole
 from app.modules.customers import requests as customer_requests
 from app.modules.customers import retention as addresses
-from app.modules.customers.models import DeletionRequestStatus
+from app.modules.customers.models import DeletionRequestStatus, SupportRequestStatus
 from app.modules.deliveries import retention as deliveries
 from app.modules.dispatch import retention as jobs
 from app.modules.notifications import service as notifications
@@ -132,6 +136,22 @@ class PartnerAnonymizeResult:
     notifications_deleted: int
     reasons_cleared: int
     notes_to_review: int
+    applied: bool
+
+
+@dataclass(frozen=True)
+class WebsiteMessagesResult:
+    """What deleting a visitor's website contact messages changed (or would change).
+
+    Attributes:
+        messages_deleted: Website messages sent from the phone that were deleted.
+        still_open: Of those, how many staff had not resolved yet, so the
+            privacy contact knows an unanswered message is gone.
+        applied: False for a dry run (nothing was saved).
+    """
+
+    messages_deleted: int
+    still_open: int
     applied: bool
 
 
@@ -398,6 +418,64 @@ async def anonymize_partner(
         notifications_deleted=deleted_notes,
         reasons_cleared=reasons,
         notes_to_review=notes,
+        applied=apply,
+    )
+
+
+async def delete_website_messages(
+    session: AsyncSession,
+    *,
+    actor: User,
+    visitor_phone: str,
+    apply: bool,
+) -> WebsiteMessagesResult:
+    """Delete the website contact messages sent from a phone number (#364).
+
+    A person who used the website contact form has no account, so
+    :func:`anonymize_customer` cannot reach their messages (docs/api/public-site.md,
+    "POST /public/contact"; notice section 9). The privacy contact verifies the
+    requester by calling the number back (procedure "Deletion: website contact
+    messages"), then runs this. The whole row is deleted: with the name, phone
+    and message gone nothing useful is left, and the 3-year review deletes
+    resolved ones whole as well. Open (unresolved) messages are deleted too,
+    and counted, because the requester asked for it.
+
+    Only ``website`` requests are touched, never a customer's own support
+    requests, and the phone is not looked up against accounts, so a message is
+    never linked to one (NFR-002). One audit row is written for each deleted
+    message (NFR-004), with the request's id and status and no name, phone or
+    message (NFR-003).
+
+    Args:
+        session: Database session.
+        actor: The admin running it (:func:`get_acting_admin`).
+        visitor_phone: The visitor's normalized phone.
+        apply: Save the changes; otherwise roll them back (dry run).
+
+    Returns:
+        What changed.
+
+    Raises:
+        LookupError: No website message was sent from this number.
+    """
+    found = await addresses.website_requests_by_phone(session, phone=visitor_phone)
+    if not found:
+        raise LookupError("no website message was sent from this number")
+    request_ids = [request_id for request_id, _ in found]
+    deleted = await addresses.delete_website_requests(session, request_ids=request_ids)
+    for request_id, status in found:
+        audit.record(
+            session,
+            actor_id=actor.id,
+            action="website_message_deleted",
+            target_type="support_request",
+            target_id=request_id,
+            details={"status": status.value},
+        )
+    await _finish(session, apply)
+    return WebsiteMessagesResult(
+        messages_deleted=deleted,
+        still_open=sum(1 for _, status in found if status is SupportRequestStatus.OPEN),
         applied=apply,
     )
 

@@ -14,12 +14,15 @@ records are protected by `ON DELETE RESTRICT` foreign keys and must not be
 edited by hand in production, so the technical lead (the privacy contact)
 uses this command-line tool. There are no screens and no API endpoints.
 
-Five commands:
+Six commands:
 
 - `anonymize-customer`: remove a customer's personal details after a
   verified deletion request (procedure, "Deletion" steps 1-3).
 - `anonymize-partner`: the same for a rider or driver (procedure, "Deletion:
   riders and drivers"; #119).
+- `delete-website-messages`: delete the contact-form messages sent from a
+  phone number by a visitor with no account (procedure, "Deletion: website
+  contact messages"; #364).
 - `correct-name`: correct a customer's account name (procedure,
   "Correction").
 - `retention-review`: the database part of the monthly review (procedure,
@@ -38,6 +41,9 @@ python -m app.modules.privacy.cli anonymize-customer --by <admin phone> --custom
 python -m app.modules.privacy.cli anonymize-partner --by <admin phone> --partner <partner phone>           # dry run
 python -m app.modules.privacy.cli anonymize-partner --by <admin phone> --partner <partner phone> --apply
 
+python -m app.modules.privacy.cli delete-website-messages --by <admin phone> --phone <visitor phone>           # dry run
+python -m app.modules.privacy.cli delete-website-messages --by <admin phone> --phone <visitor phone> --apply
+
 python -m app.modules.privacy.cli correct-name --by <admin phone> --customer <customer phone> --name "New Name"
 
 python -m app.modules.privacy.cli retention-review --by <admin phone>           # dry run
@@ -49,13 +55,14 @@ python -m app.modules.privacy.cli set-deletion-status --by <admin phone> --reque
 ```
 
 1. `--by` must be an active admin account; it becomes the audit row's actor.
-2. `anonymize-customer`, `anonymize-partner` and `retention-review` are **dry runs** unless
+2. `anonymize-customer`, `anonymize-partner`, `delete-website-messages` and `retention-review` are **dry runs** unless
    `--apply` is given: the same steps run inside a transaction that is then
    rolled back, so the report is exactly what applying would do.
 3. Output names the account by id and orders by reference, never by name or
-   phone, so it can be copied into the request register.
+   phone, so it can be copied into the request register. `delete-website-messages`
+   prints counts only.
 4. Exit code 0 on success, 1 when refused (unknown admin, customer or
-   partner; customer or partner not ready).
+   partner; customer or partner not ready; no website message from the number).
 
 ## 3. Important files and their responsibilities
 
@@ -67,7 +74,7 @@ python -m app.modules.privacy.cli set-deletion-status --by <admin phone> --reque
 | `backend/app/modules/orders/retention.py` | Finished/unfinished orders, order anonymization, orders due after 3 years, disputed orders, note count |
 | `backend/app/modules/deliveries/retention.py` | Open holds and reviews, GPS clearing, delivery codes, note count |
 | `backend/app/modules/payments/retention.py` | Unsettled cash (refusals), part payments and overpayments (warnings), cash note count |
-| `backend/app/modules/customers/retention.py` | Saved addresses deleted with the account (#82) |
+| `backend/app/modules/customers/retention.py` | Saved addresses deleted with the account (#82); finding and deleting website contact messages by phone (#364) |
 | `backend/app/modules/dispatch/retention.py` | A partner's jobs, live jobs (refusals), profile and zones, decline notes (#119) |
 | `backend/app/modules/audit/service.py` | `actors_with_rows`: which never-verified accounts audit rows name, so they are anonymized, not deleted (#82) |
 | `backend/tests/test_privacy.py` | Arguments, output and helpers (no database) |
@@ -105,6 +112,13 @@ No tables of its own. The tool changes rows of other modules:
 | `pickup_records`, `order_exceptions`, `cash_collections`, `cash_remittances` | Kept (safety and accounting records); incident and pickup notes counted for the privacy contact |
 | `audit_logs` | The driver's four decision rows (`driver_approved`, `driver_suspended`, `driver_activated`, `driver_deactivated`): `details.reason` removed and `details.reason_removed: true` set (#298); other rows and keys kept. Writes `partner_anonymized` (counts: `zones_removed`, `decline_notes_removed`, `gps_points_cleared`, `notifications_deleted`, `reasons_cleared`) |
 
+`delete-website-messages` (#364) changes one table:
+
+| Table | Delete website messages |
+| --- | --- |
+| `support_requests` | Rows with `source = 'website'` and `contact_phone` equal to the normalized phone are deleted whole, resolved or not. Rows with a user (a customer's own requests) are never touched, even if the customer's phone is the number given |
+| `audit_logs` | One `website_message_deleted` row for each message deleted: `target_type` `support_request`, `target_id` the deleted request's id, `details` `{"status": "open" \| "resolved"}`. No name, phone or message |
+
 `correct-name` changes `users.name` and writes `account_name_corrected`.
 `set-deletion-status` changes the request's status, time, `handled_by` and
 (for a refusal) `refusal_reason`, and writes `deletion_request_<status>`
@@ -132,6 +146,19 @@ None.
   actor, time, action and other keys stay. A dry run changes nothing. Audited as
   `partner_anonymized` with counts only (`reasons_cleared` is a count).
 
+- **Website contact messages** (`delete-website-messages`, #364; technical
+  lead's decisions on the issue, 2026-11-03): a visitor who used the website
+  form has no account, so `anonymize-customer` cannot reach their messages and
+  the form never links a message to an account (NFR-002). The privacy contact
+  verifies the requester by calling the number back (notice section 9), then
+  deletes the messages sent from that number. The whole row goes: with the name,
+  phone and message removed nothing useful is left, and the 3-year review
+  already deletes resolved ones whole. Messages staff have not resolved are
+  deleted too, and counted in the report. There is **no automatic link** to a
+  customer account: if the requester is also a customer, the procedure runs
+  both commands. The 3-year review also deletes resolved website messages
+  (`delete_resolved_support_requests` has no user filter; tested in
+  `test_public_contact_form_integration.py`).
 - **Finished orders** are `delivered` and `cancelled` only. A `failed`
   order may be rescheduled and a `disputed` one is open: staff cancel a
   failed order that will not be rescheduled before anonymizing (technical
@@ -200,12 +227,15 @@ None.
 
 Run only by someone with production server access (deployment doc); each
 command names an active admin account, recorded as the audit actor. The
-tool acts on customer accounts only.
+tool acts on customer and partner accounts and, for `delete-website-messages`,
+on website contact messages by phone number.
 
 ## 8. Error handling and edge cases
 
 - Unknown or inactive admin, or a phone that is not a customer's:
   `Error: ...`, exit 1, nothing changed.
+- `delete-website-messages` with a number nobody wrote from: `Error: no website
+  message was sent from this number`, exit 1, nothing changed, no audit row.
 - Customer not ready: `Refused: ...` with one line per blocking order
   reference, exit 1, nothing changed.
 - `set-deletion-status` against the rules (a skipped step, `completed`
@@ -229,6 +259,11 @@ pytest tests/test_privacy.py tests/test_command_models.py
 TEST_DATABASE_URL=<mmirioma_test URL> pytest tests/test_privacy_integration.py
 ```
 
+`delete-website-messages` is covered by five integration tests: dry run then
+apply (only that phone's website messages go), one audit row each with no
+personal data, a number nobody used, a customer's own request never removed, and
+account deletion leaving website messages from the same number.
+
 The review acts on the whole database, so the integration tests date their
 rows 2017-2021 and run it with `now` in 2021, before any other test row.
 
@@ -236,6 +271,10 @@ rows 2017-2021 and run it with `now` in 2021, before any other test row.
 
 - Balances settled outside the app (F9, F7) are not recorded in the app,
   so the tool can only point at them; the privacy contact checks them.
+- A website message is found by exact phone number only. A visitor who wrote
+  from two numbers needs the command for each. Admin "New support request"
+  notifications for a deleted message stay; they hold no personal data
+  ("Someone sent a message through the website.").
 - Support-line messages, server logs, backups and the request register are
   outside the database; the review prints them as a manual checklist.
 - Staff and admin accounts are out of scope. Riders and drivers are covered
