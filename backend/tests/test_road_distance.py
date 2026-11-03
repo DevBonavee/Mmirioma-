@@ -10,6 +10,7 @@ quote flow against a real database is in test_road_distance_integration.py.
 
 import json
 import re
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
@@ -22,8 +23,9 @@ from pydantic import ValidationError
 from app.core.config import Settings, get_settings
 from app.modules.pricing import osrm
 from app.modules.pricing.osrm import FallbackReason, Point, RoadDistanceUnavailable
-from app.modules.pricing.quotes import _same_pin, road_delivery_cost
+from app.modules.pricing.quotes import _road_delivery, _same_pin, road_delivery_cost
 from app.modules.pricing.schemas import QuoteCreate
+from app.modules.sources.service import EligibleSource, SourceLocation
 from app.shared.location import OUT_OF_BOUNDS_MESSAGE, Location, LocationSource
 
 APP = Path(__file__).resolve().parents[1] / "app"
@@ -220,6 +222,75 @@ async def test_one_source_without_a_route_makes_the_whole_answer_unavailable(
             transport=transport(lambda _: httpx2.Response(200, json=table(1000, None))),
         )
     assert raised.value.reason is FallbackReason.NO_ROUTE
+
+
+# --- OSRM's snap distances are carried to the caller (#398, finding of #384) -----------
+
+
+def with_snaps(sources: list[Any], destinations: list[Any], *distances: float) -> dict[str, Any]:
+    return {**table(*distances), "sources": sources, "destinations": destinations}
+
+
+@pytest.mark.anyio
+async def test_the_largest_snap_distance_is_carried_and_no_threshold_is_applied(
+    osrm_on: None,
+) -> None:
+    body = with_snaps(
+        [{"distance": 12.5}, {"distance": 4_128_000.0}], [{"distance": 30}], 1000, 2000
+    )
+    longest = await osrm.longest_road_distance(
+        [SOURCE_A, SOURCE_B], HOME, transport=transport(lambda _: httpx2.Response(200, json=body))
+    )
+    # OSRM answered "Ok" for a point 4,128 km from any road: the figure is carried,
+    # not acted on, until the contract has a threshold.
+    assert longest.max_snap_metres == 4_128_000.0
+    assert longest.metres == 2000
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {},  # an answer with no snap figures
+        {"sources": "n/a", "destinations": None},
+        {"sources": [{"distance": "far"}, {"distance": -1}, {"distance": True}, 5]},
+    ],
+)
+async def test_a_missing_or_unreadable_snap_distance_is_none_not_a_failure(
+    osrm_on: None, extra: dict[str, Any]
+) -> None:
+    body = {**table(1500), **extra}
+    longest = await osrm.longest_road_distance(
+        [SOURCE_A], HOME, transport=transport(lambda _: httpx2.Response(200, json=body))
+    )
+    assert (longest.metres, longest.max_snap_metres) == (1500, None)
+
+
+@pytest.mark.anyio
+async def test_the_quote_keeps_the_snap_distance_of_the_road_it_priced(osrm_on: None) -> None:
+    eligible = [EligibleSource(uuid.uuid4(), 150, SourceLocation(6.4361, 7.5134))]
+    rule = SimpleNamespace(
+        base_delivery_fee_minor_units=100_000,
+        distance_rate_minor_units_per_km=10_000,
+        additional_trip_minor_units=80_000,
+    )
+    body = with_snaps([{"distance": 7.0}], [{"distance": 9.0}], 5000)
+
+    road, reason = await _road_delivery(
+        eligible,
+        pin(),
+        rule,  # type: ignore[arg-type]
+        1,
+        transport(lambda _: httpx2.Response(200, json=body)),
+    )
+
+    assert reason is None and road is not None
+    assert (road.cost_minor_units, road.road_distance_metres, road.max_snap_metres) == (
+        150_000,
+        5000,
+        9.0,
+    )
+    assert road.distance_source_id == eligible[0].source_id
 
 
 # --- The delivery location on a quote -----------------------------------------------

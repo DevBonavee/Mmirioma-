@@ -723,6 +723,13 @@ order; and that no name, phone or address reaches OSRM.
   pin (none was sent, or the privacy rules cleared it) does not constrain the
   order. `OSRM_BASE_URL` stays empty in production until #384's measurement of
   snapped distances is written down.
+- **OSRM's snap distances** (the finding of #384): OSRM answers "Ok" for any point on
+  Earth, moving it to the nearest road in whatever data it holds. The adapter reads
+  the snap `distance` of every source and of the delivery point and carries the largest
+  to the caller (`LongestRoad.max_snap_metres`, `RoadDelivery.max_snap_metres`). **No
+  threshold is applied and nothing is stored yet**: a threshold, its fallback reason
+  and a column need a contract change (proposed by the technical lead in a separate
+  PR). Road-distance pricing must not be switched on before it is agreed.
 - **A pin cleared by the privacy rules** does not make the quote invalid: the
   shape check covers the price, the distance and the rates, not the pin
   (migration `0026`).

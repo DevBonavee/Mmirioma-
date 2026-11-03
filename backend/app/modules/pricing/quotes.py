@@ -238,6 +238,9 @@ class RoadDelivery:
     road_distance_metres: int
     distance_source_id: uuid.UUID
     rule: PriceRule
+    #: OSRM's largest snap distance for this answer, carried for the caller. No threshold
+    #: is applied yet (see :class:`app.modules.pricing.osrm.LongestRoad`).
+    max_snap_metres: float | None = None
 
 
 async def _road_delivery(
@@ -281,7 +284,16 @@ async def _road_delivery(
         trips=trips,
         road_metres=longest.metres,
     )
-    return RoadDelivery(cost, longest.metres, eligible[longest.source_index].source_id, rule), None
+    return (
+        RoadDelivery(
+            cost,
+            longest.metres,
+            eligible[longest.source_index].source_id,
+            rule,
+            longest.max_snap_metres,
+        ),
+        None,
+    )
 
 
 async def pilot_category(session: AsyncSession) -> WaterCategory | None:

@@ -17,6 +17,7 @@ cached.
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Any
 
 import httpx2
 
@@ -63,10 +64,20 @@ class LongestRoad:
     Attributes:
         metres: Whole metres (OSRM's figure, rounded to the nearest metre).
         source_index: Index, in the list given, of the source it belongs to.
+        max_snap_metres: The largest snap distance OSRM reported over the sources
+            and the delivery point, or None when it reported none. OSRM answers
+            "Ok" for any point on Earth, moving it to the nearest road in whatever
+            data it holds (an Enugu point against another country's data came back
+            Ok, 4,128 km away; docs/deployment/hostinger.md section 16), so a large
+            value means the figure is not a road distance for the place that was
+            asked about. **Carried to the caller and not acted on yet**: the contract
+            has no threshold (its version 1 left it out), and road-distance pricing
+            must not be switched on before one is agreed (technical lead, #398).
     """
 
     metres: int
     source_index: int
+    max_snap_metres: float | None = None
 
 
 async def longest_road_distance(
@@ -130,4 +141,30 @@ async def longest_road_distance(
     if any(not isinstance(d, int | float) or isinstance(d, bool) or d < 0 for d in distances):
         raise RoadDistanceUnavailable(FallbackReason.NO_ROUTE)
     index = max(range(last), key=lambda i: distances[i])
-    return LongestRoad(metres=round(distances[index]), source_index=index)
+    return LongestRoad(
+        metres=round(distances[index]),
+        source_index=index,
+        max_snap_metres=_largest_snap(body),
+    )
+
+
+def _largest_snap(body: dict[str, Any]) -> float | None:
+    """The largest ``distance`` OSRM reports on the snapped sources and destinations.
+
+    ``None`` when the answer carries none or something unreadable: a missing figure
+    is not a reason to refuse a quote (the caller decides what a threshold means).
+    """
+    snaps: list[float] = []
+    for key in ("sources", "destinations"):
+        waypoints = body.get(key)
+        if not isinstance(waypoints, list):
+            continue
+        for waypoint in waypoints:
+            distance = waypoint.get("distance") if isinstance(waypoint, dict) else None
+            if (
+                isinstance(distance, int | float)
+                and not isinstance(distance, bool)
+                and distance >= 0
+            ):
+                snaps.append(float(distance))
+    return max(snaps) if snaps else None
