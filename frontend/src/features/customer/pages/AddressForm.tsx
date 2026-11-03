@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { z } from 'zod'
-import { DetailsMapArt, MapFrame, MapPin } from '../../../components/art/Art'
 import { BackLink, Footer, MobileShell, ScrollArea, TopBar, TopBarSpacer, TopBarTitle } from '../../../components/layout/MobileShell'
 import { ErrorBlock, LoadingBlock } from '../../../components/layout/StateScreens'
 import { Button } from '../../../components/ui/Button'
@@ -13,8 +12,10 @@ import { TextField } from '../../../components/ui/Field'
 import { Notice } from '../../../components/ui/Notice'
 import { errorMessage } from '../../../lib/api/errorMessage'
 import { applyServerFieldErrors } from '../../../lib/forms'
-import type { SavedAddress } from '../../../domain/orders'
+import type { DeliveryLocation, SavedAddress } from '../../../domain/orders'
 import { AreaPicker } from '../components/AreaPicker'
+import { LocationCard } from '../components/LocationCard'
+import { AREA_GONE_MESSAGE, isAreaGone, isRefusedPin, REFUSED_PIN_MESSAGE, useMapStart } from '../components/pinSupport'
 import type { AreaChoice } from '../order/livePrice'
 import { useAddAddress, useAddresses, useUpdateAddress } from '../queries'
 
@@ -88,17 +89,30 @@ function AddressFormBody({ existing, isFirst }: { existing?: SavedAddress; isFir
   // An address is saved only with an area (FR-020). A no-longer-served area must be picked again.
   const [area, setArea] = useState<AreaChoice>(existing?.zone?.is_active ? { id: existing.zone.id, name: existing.zone.name } : null)
   const [areaError, setAreaError] = useState<string | undefined>()
+  // The optional pin (#345). It is sent with the address; on an edit `null` removes a saved one.
+  const [location, setLocation] = useState<DeliveryLocation | null>(existing?.location ?? null)
+  const [pinRefused, setPinRefused] = useState(false)
+  const mapStart = useMapStart(area)
 
   const onSubmit = handleSubmit((v) => {
     if (area === null || area === 'not_listed') {
       setAreaError(area === null ? 'Choose the area of this address.' : undefined)
       return
     }
-    const input = { label: v.label, address: v.address, landmark: v.landmark || null, zone_id: area.id, make_default: v.make_default }
+    const input = { label: v.label, address: v.address, landmark: v.landmark || null, zone_id: area.id, make_default: v.make_default, location }
     const options = {
       onSuccess: () => navigate('/addresses'),
-      onError: (e: unknown) => applyServerFieldErrors(e, setError, { label: 'label', address: 'address' }),
+      onError: (e: unknown) => {
+        // Every error keeps all the fields and the pin (design, L3).
+        setPinRefused(isRefusedPin(e))
+        if (isAreaGone(e)) {
+          setArea(null)
+          setAreaError(AREA_GONE_MESSAGE)
+        }
+        applyServerFieldErrors(e, setError, { label: 'label', address: 'address' })
+      },
     }
+    setPinRefused(false)
     if (existing) update.mutate({ id: existing.id, input }, options)
     else add.mutate(input, options)
   })
@@ -115,6 +129,17 @@ function AddressFormBody({ existing, isFirst }: { existing?: SavedAddress; isFir
       }
     >
       <form id="address-form" onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
+        <div className="rise-1 flex flex-col gap-2">
+          <LocationCard
+            value={location}
+            onChange={(next) => {
+              setLocation(next)
+              setPinRefused(false)
+            }}
+            {...mapStart}
+          />
+          {pinRefused && <Notice tone="error">{REFUSED_PIN_MESSAGE}</Notice>}
+        </div>
         <TextField className="rise-1" label="Name" placeholder="e.g. Home, Office, Shop" error={errors.label?.message} {...register('label')} />
         <TextField
           className="rise-2"
@@ -124,10 +149,6 @@ function AddressFormBody({ existing, isFirst }: { existing?: SavedAddress; isFir
           error={errors.address?.message}
           {...register('address')}
         />
-        <MapFrame height={132} className="rise-2">
-          <DetailsMapArt />
-          <MapPin color="#1570D8" ringColor="rgba(21,112,216,.35)" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[88%]" />
-        </MapFrame>
         <AreaPicker
           className="rise-3 m-0 border-0 p-0"
           value={area}
@@ -155,7 +176,7 @@ function AddressFormBody({ existing, isFirst }: { existing?: SavedAddress; isFir
             onChange={(v) => setValue('make_default', v)}
           />
         </Card>
-        {mutation.isError && !Object.keys(errors).length && <Notice tone="error">{errorMessage(mutation.error)}</Notice>}
+        {mutation.isError && !Object.keys(errors).length && !pinRefused && !areaError && <Notice tone="error">{errorMessage(mutation.error)}</Notice>}
       </form>
     </Shell>
   )

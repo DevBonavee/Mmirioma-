@@ -79,6 +79,9 @@ export function Review() {
   // the server then answers outside_service_zone, decision 2), or the one
   // picked for the new address; none for "My area is not listed".
   const area = saved ? (saved.zone ?? null) : newZone && newZone !== 'not_listed' ? newZone : null
+  // The order keeps its own copy of the address's pin (FR-024, #340): the saved
+  // address's, or the one chosen for a new address, even when it is not saved.
+  const deliveryLocation = (saved ? saved.location : draft.new_address.location) ?? null
   const areaPicked = Boolean(saved) || newZone !== null
   const customGallons = choice.delivery_type === 'tanker' && choice.tank_size_gallons === null ? parseGallons(draft.tanker.custom_gallons) : null
   const request: PriceRequest | null =
@@ -120,6 +123,7 @@ export function Review() {
         custom_gallons: customGallons,
         quote_id: quoteId,
         service_zone_id: area?.id ?? null,
+        delivery_location: deliveryLocation,
       },
       {
         onSuccess: (order) => {

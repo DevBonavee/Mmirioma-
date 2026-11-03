@@ -52,6 +52,7 @@ export function addressFromRead(read: AddressRead): SavedAddress {
     landmark: read.landmark,
     is_default: read.is_default,
     zone: { id: read.zone.id, name: read.zone.name, is_active: read.zone.is_active },
+    location: read.location ? { latitude: read.location.latitude, longitude: read.location.longitude, source: read.location.source } : null,
   }
 }
 
@@ -75,9 +76,15 @@ export async function listAddresses(client: ApiClient = apiClient): Promise<Save
   return addresses.map(addressFromRead)
 }
 
-/** The form's address to the `POST`/`PATCH /me/addresses` body. */
+/**
+ * The form's address to the `POST`/`PATCH /me/addresses` body. `location` goes
+ * only when the form set it: absent on a `PATCH` leaves the saved pin alone,
+ * `null` removes it (docs/api/delivery-location.md).
+ */
 export function addressBodyFromInput(input: AddressInput): AddressBody {
-  return { label: input.label, address: input.address, landmark: input.landmark, zone_id: input.zone_id, make_default: input.make_default }
+  const body: AddressBody = { label: input.label, address: input.address, landmark: input.landmark, zone_id: input.zone_id, make_default: input.make_default }
+  if (input.location !== undefined) body.location = input.location
+  return body
 }
 
 /**

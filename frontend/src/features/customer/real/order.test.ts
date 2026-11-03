@@ -184,6 +184,13 @@ describe('orderCreateFromInput', () => {
     expect(body).toMatchObject({ quote_id: 'c7e1b9a2-4d3f-4a6b-8e05-9f2d1c0b3a74', service_zone_id: 'zone-1' })
   })
 
+  it("sends the order's own copy of the address pin, with its source, and nothing when there is none (#345)", () => {
+    const pin = { latitude: 6.452713, longitude: 7.510348, source: 'map_pin' as const }
+    expect(orderCreateFromInput({ ...KEKE_INPUT, delivery_location: pin }).delivery_location).toEqual(pin)
+    expect(orderCreateFromInput({ ...KEKE_INPUT, delivery_location: null })).not.toHaveProperty('delivery_location')
+    expect(orderCreateFromInput(KEKE_INPUT)).not.toHaveProperty('delivery_location')
+  })
+
   it('sends a request for an unlisted area with neither a quote nor a zone', () => {
     const body = orderCreateFromInput({ ...KEKE_INPUT, quote_id: null, service_zone_id: null })
     expect(body).not.toHaveProperty('quote_id')

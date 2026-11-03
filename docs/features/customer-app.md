@@ -17,8 +17,9 @@ hidden for the pilot (see section 6).
 1. **Sign in / create account** (`/signin`, `/signup`): phone number and
    password only. New accounts go straight to home; the phone stays
    unverified until staff verify it manually (FR-003).
-2. **Home** (`/home`): delivery address, order by Keke or Tanker, quick
-   actions (Reorder, Addresses, My orders), latest order.
+2. **Home** (`/home`): delivery address ("Set your delivery address" until one
+   is saved), order by Keke or Tanker, quick actions (Reorder, Addresses, My
+   orders), latest order.
 3. **Order** (`/order` → `/order/keke` or `/order/tanker`):
    - Keke: jerrycan size (25 or 50 L) and count (12, 24, 30, 60). No water source.
    - Tanker: tank type (ground, overhead), size (500, 750, 1,000 gallons or
@@ -27,7 +28,10 @@ hidden for the pilot (see section 6).
    - No price yet: it comes on Review, after the address and area (#42).
 4. **Address**: returning customers pick a saved address (`/order/address`);
    others enter details and the area (`/order/details`), then choose how to
-   keep a new address (`/order/save-address`).
+   keep a new address (`/order/save-address`). A new address can carry a map pin
+   (#345): the customer taps "Use my location" or places it by hand, and the
+   phone's location is asked for only on that tap. Typing the address always
+   works. See [delivery-location.md](delivery-location.md).
 5. **Review** (`/order/review`): the server's total, pay on delivery, place
    the order; or "Send request" when the app has no price. In mock mode a
    request goes to support (the mock has no quote requests).

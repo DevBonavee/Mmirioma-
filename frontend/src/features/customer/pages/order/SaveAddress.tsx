@@ -12,6 +12,7 @@ import { errorMessage } from '../../../../lib/api/errorMessage'
 import { cx } from '../../../../lib/cx'
 import type { SaveMode } from '../../order/draft'
 import { useOrderDraft } from '../../order/orderDraftContext'
+import { isRefusedPin, REFUSED_PIN_MESSAGE } from '../../components/pinSupport'
 import { useAddAddress, useAddresses } from '../../queries'
 
 const NAME_CHOICES = ['Home', 'Office', "Mum's House", 'Shop']
@@ -68,7 +69,15 @@ export function SaveAddress() {
       return
     }
     add.mutate(
-      { label, address: draft.new_address.address, landmark: draft.new_address.landmark || null, zone_id: zoneId, make_default: mode === 'default' },
+      {
+        label,
+        address: draft.new_address.address,
+        landmark: draft.new_address.landmark || null,
+        zone_id: zoneId,
+        make_default: mode === 'default',
+        // The pin chosen on Delivery details is saved with the address (#345).
+        location: draft.new_address.location,
+      },
       {
         onSuccess: (saved) => {
           update((d) => ({ address_id: saved.id, new_address: { ...d.new_address, save: mode, label } }))
@@ -170,7 +179,7 @@ export function SaveAddress() {
                 {nameError && name !== OTHER && <p role="alert" className="mt-1.5 mb-0 text-caption font-bold text-red">{nameError}</p>}
               </div>
             )}
-            {add.isError && <Notice tone="error">{errorMessage(add.error)}</Notice>}
+            {add.isError && <Notice tone="error">{isRefusedPin(add.error) ? REFUSED_PIN_MESSAGE : errorMessage(add.error)}</Notice>}
             <Notice className="rise-4">You can edit or remove saved addresses any time from your account.</Notice>
           </>
         )}

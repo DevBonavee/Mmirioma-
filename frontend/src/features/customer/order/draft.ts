@@ -4,7 +4,7 @@
  * connection does not wipe what the customer entered (NFR-012). It holds no
  * secrets and no prices: prices always come from the server.
  */
-import type { CanSizeLitres, TankSizeGallons, TankType, WaterChoice, WaterSource } from '../../../domain/orders'
+import type { CanSizeLitres, DeliveryLocation, TankSizeGallons, TankType, WaterChoice, WaterSource } from '../../../domain/orders'
 import type { AreaChoice } from './livePrice'
 
 export type SaveMode = 'default' | 'another' | 'once'
@@ -17,8 +17,11 @@ export interface OrderDraft {
   source: WaterSource
   /** A saved address id, or `null` when entering a new address. */
   address_id: string | null
-  /** `zone`: the area picked for it (FR-020), "My area is not listed", or none yet. */
-  new_address: { address: string; landmark: string; label: string; save: SaveMode; zone: AreaChoice }
+  /**
+   * `zone`: the area picked for it (FR-020), "My area is not listed", or none yet.
+   * `location`: the optional map pin (#345); kept with the draft like the address text.
+   */
+  new_address: { address: string; landmark: string; label: string; save: SaveMode; zone: AreaChoice; location: DeliveryLocation | null }
   receiver_name: string
   receiver_phone: string
   instructions: string
@@ -39,7 +42,7 @@ export function newDraft(): OrderDraft {
     tanker: { tank_type: 'ground', tank_size_gallons: 750, custom_gallons: '' },
     source: 'borehole',
     address_id: null,
-    new_address: { address: '', landmark: '', label: '', save: 'another', zone: null },
+    new_address: { address: '', landmark: '', label: '', save: 'another', zone: null, location: null },
     receiver_name: '',
     receiver_phone: '',
     instructions: '',

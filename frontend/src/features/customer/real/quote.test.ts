@@ -91,11 +91,13 @@ describe('getQuote (real)', () => {
 })
 
 describe('listServiceZones (real)', () => {
-  it('loads the areas from the contract example, id and name only', async () => {
+  it('loads the areas from the contract example: id, name and the centre the pin map starts at (#345)', async () => {
     const { fetch, client } = clientReturning({ body: zonesSample })
     const zones = await listServiceZones(client)
     expect(fetch.mock.calls[0][0]).toBe('http://api.test/api/v1/service-zones')
-    expect(zones).toEqual(zonesSample.items.map((z: { id: string; name: string }) => ({ id: z.id, name: z.name })))
+    expect(zones).toEqual(
+      zonesSample.items.map((z: { id: string; name: string; centre: { latitude: number; longitude: number } }) => ({ id: z.id, name: z.name, centre: z.centre })),
+    )
   })
 
   it('passes a 503 through', async () => {

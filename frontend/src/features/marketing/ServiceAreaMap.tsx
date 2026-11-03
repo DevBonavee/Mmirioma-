@@ -1,13 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ServiceArea } from '../../lib/api/serviceAreas'
-import { loadMapLibre, type MapLibre } from './loadMapLibre'
-
-/**
- * Where the map tiles come from (docs/architecture/maps.md, option M1:
- * OpenFreeMap). One configuration value, public by design, so moving to
- * another provider is a configuration change and not a code change.
- */
-const STYLE_URL: string = import.meta.env.VITE_MAP_STYLE_URL || 'https://tiles.openfreemap.org/styles/liberty'
+import { loadMapLibre, MAP_STYLE_URL as STYLE_URL, type MapLibre } from './loadMapLibre'
 
 /** The map is given up on after this long without loading (tiles or style never arrived). */
 const LOAD_TIMEOUT_MS = 10_000

@@ -12,6 +12,8 @@ import type { DeliveryType, KekeDetails, TankerDetails, WaterSourcePreference } 
 export interface ServiceZoneOption {
   id: string
   name: string
+  /** The zone's centre (admin-directory.md, amendment #346). Absent from an older server. */
+  centre?: { latitude: number; longitude: number }
 }
 
 /** Body of `GET /service-zones`. */
