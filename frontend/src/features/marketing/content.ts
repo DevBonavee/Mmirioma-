@@ -33,21 +33,6 @@ export const NAV_LINKS: { label: string; to: string }[] = [
   { label: 'Service Areas', to: '/#areas' },
 ]
 
-/** Planned areas from the design. A sample until the pilot zone is confirmed (PRD §13.1, decision Q5). */
-export const SERVICE_AREAS = [
-  'GRA',
-  'Ogui',
-  'Independence Layout',
-  'Trans-Ekulu',
-  'Abakpa',
-  'New Haven',
-  'Thinkers Corner',
-  'Anyika',
-  'Emene',
-  'Uwani',
-  'and nearby areas',
-]
-
 export const FAQ_CATEGORIES = ['Ordering', 'Delivery', 'Delivery code', 'Payments', 'Riders & drivers', 'Account & safety'] as const
 export type FaqCategory = (typeof FAQ_CATEGORIES)[number]
 

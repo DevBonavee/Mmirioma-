@@ -44,10 +44,11 @@ question.
 
 ## Layout
 
-- **1280 px:** two columns as now: heading, intro, the list and the "Not on
-  the list" card on the left; the map on the right, about 420 px high.
-- **360 px:** one column: heading, intro, the map (about 280 px high), the
-  list, the card.
+- **As built (#346):** the section shares its row with the FAQs, so the
+  areas block is one column at every width: heading, intro, the map (280 px
+  high, 360 px from 640 px up), the list, the "Not on the list" card. The
+  approved sketch put the map beside the list at 1280 px; that needs a third
+  column next to the FAQs and was not built. Reviewer: say if you want it.
 - The list is the existing pill chips (`PinIcon` and the name), built from the
   API names, in the API order (by name).
 - Intro text, replacing the "Sample list" sentence: "The areas we deliver to

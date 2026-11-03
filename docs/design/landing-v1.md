@@ -40,7 +40,7 @@ Round 2 (all recommendations accepted):
 | 2 | Two Install buttons on one page | "Install Customer App" prompts on the landing page; "Install Driver App" opens `/partner/login` (partner manifest) where the install card is. Partner pages live under `/partner/` |
 | 3 | Quality claims in the copy | Reworded (see below) |
 | 4 | "Our Partners" strip | Dropped until real partnerships are agreed |
-| 5 | Service areas | The design's list, labelled as a sample until the pilot zone is confirmed |
+| 5 | Service areas | The design's list, labelled as a sample until the pilot zone is confirmed. **Replaced in #346** by the real active zones on a map ([landing-service-areas.md](landing-service-areas.md)); the sample list and its wording are gone |
 | 6 | Fonts | Outfit and DM Sans on the four public pages only, Google Fonts with offline copies |
 | 7 | Service-worker tool | `vite-plugin-pwa` 1.3.0 (dev dependency), `injectManifest` mode with our own worker |
 | 8 | Partner app name and icon | "MmiriOma Partner", short name "MO Partner"; same drop icon as the customer app (web-ready-logos) |
@@ -257,7 +257,7 @@ or cramped section found is fixed in the code pull request and listed there.
 The check found no horizontal scroll at any of the four widths. At 360 px the
 tanker "1,000" and "Custom" labels were wider than their 41 px tiles, so below
 420 px they use a smaller size (14 px and 12 px). The
-service areas list keeps its "sample" wording until #346 replaces it.
+service areas list kept its "sample" wording until #346 replaced it with the real zones.
 
 ## Open items
 
@@ -266,7 +266,7 @@ service areas list keeps its "sample" wording until #346 replaces it.
   customers, which the app does not do (FR-037); fine as a disclosure, but
   check it. Paystack is named as the payment processor in the FAQ, Terms and
   Privacy.
-- **Service areas** are a sample until the pilot zone is confirmed (PRD §13.1).
+- **Service areas** were a sample until #346; they now come from the active service zones (PRD §13.1: the pilot zone is whatever the administrator switches on).
 - **Icons** (2026-10-20): the official set from `web-ready-logos/` is in
   `frontend/public` (favicons, app icons, logos). Both apps use the same drop
   icon; the pack's icons keep the drop inside the safe zone, so the manifests

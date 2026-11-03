@@ -234,11 +234,11 @@ function Rows({ rows }: { rows: [ReactNode, ReactNode][] }) {
 }
 
 /*
- * The Privacy page mirrors PRIVACY_NOTICE.md (version 4.0) section by
+ * The Privacy page mirrors PRIVACY_NOTICE.md (version 5.0) section by
  * section, with the same facts (#93). Change both together; the notice is the
  * source.
  */
-const PRIVACY_VERSION = 'Version 4.0, last updated 2 November 2026.'
+const PRIVACY_VERSION = 'Version 5.0, last updated 3 November 2026.'
 
 const PRIVACY: Section[] = [
   {
@@ -410,6 +410,7 @@ const PRIVACY: Section[] = [
             "The driver assigned to your order sees the contact's first name and last initial, phone number, delivery address, landmark, instructions and quantity, and only while they are assigned to the delivery.",
             "Our authorized staff (administrators and dispatchers) see order and account details, including riders' and drivers' vehicle and approval details, to confirm, dispatch and support orders and to approve riders and drivers. They also see the messages sent through the website contact form, to answer them.",
             'Termii, our SMS provider, receives your phone number and the text of each message we send you.',
+            'OpenFreeMap, our map provider, receives your IP address and the parts of the map your device downloads when you look at the map of our service areas on our website. It does not receive any address you type.',
             "Hostinger (HOSTINGER Global S.à r.l., Luxembourg), our hosting provider, runs the server and stores the service's data and backups in its data centre in Paris, France.",
             'Backblaze (Backblaze, Inc., United States) stores an off-site copy of our backups in its data centre in Amsterdam, the Netherlands.',
           ]}
@@ -642,7 +643,7 @@ function LegalPage({
             <p className={cx('m-0 text-[13px] font-bold tracking-[2px]', terms ? 'text-primary' : 'text-[#0B6A5F]')}>LEGAL</p>
             <h1 className="m-0 font-display text-[clamp(40px,5vw,60px)] font-extrabold tracking-[-1.5px] text-ink">{title}</h1>
             <p className="m-0 max-w-[640px] text-[17px] leading-[1.6] text-[#3A4F67]">{intro}</p>
-            <p className="mt-1.5 mb-0 text-[14px] font-semibold text-slate">Effective date: 2 November 2026</p>
+            <p className="mt-1.5 mb-0 text-[14px] font-semibold text-slate">Effective date: 3 November 2026</p>
           </div>
         </section>
         <section>

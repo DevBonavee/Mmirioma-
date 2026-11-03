@@ -161,6 +161,22 @@ async def list_zones(session: AsyncSession) -> list[ZoneView]:
     return await _zone_views(session, None)
 
 
+async def list_active_zone_geometry(session: AsyncSession) -> list[ZoneView]:
+    """Return the active zones with their centre and boundary, by name (#346).
+
+    The public ``GET /service-zones``: no fees (``fees`` is empty), because
+    customers see the total only. An inactive zone is never returned, and
+    ``centre`` is always set (FR-010).
+
+    Args:
+        session: Database session.
+
+    Returns:
+        Active zones only.
+    """
+    return await _zone_views(session, None, active_only=True, with_fees=False)
+
+
 async def list_active_zones(session: AsyncSession) -> list[ServiceZone]:
     """Return the zones a customer or partner can pick (FR-020), by name.
 
@@ -168,7 +184,8 @@ async def list_active_zones(session: AsyncSession) -> list[ServiceZone]:
         session: Database session.
 
     Returns:
-        Active zones only. Callers expose ``id`` and ``name`` only.
+        Active zones only, as rows. The public endpoint uses
+        :func:`list_active_zone_geometry` to add the position.
     """
     rows = await session.scalars(
         select(ServiceZone)
@@ -393,7 +410,13 @@ async def update_zone(
 # --- Helpers --------------------------------------------------------------------------
 
 
-async def _zone_views(session: AsyncSession, zone_id: uuid.UUID | None) -> list[ZoneView]:
+async def _zone_views(
+    session: AsyncSession,
+    zone_id: uuid.UUID | None,
+    *,
+    active_only: bool = False,
+    with_fees: bool = True,
+) -> list[ZoneView]:
     # Geography has no ST_X/ST_Y; a geometry cast reads the stored values
     # (as in deliveries.holds). ST_AsGeoJSON returns the boundary as text.
     centre = cast(ServiceZone.centre, Geometry)
@@ -409,16 +432,22 @@ async def _zone_views(session: AsyncSession, zone_id: uuid.UUID | None) -> list[
     )
     if zone_id is not None:
         query = query.where(ServiceZone.id == zone_id)
+    if active_only:
+        query = query.where(ServiceZone.is_active.is_(True))
     rows = (await session.execute(query)).all()
 
     fees_by_zone: dict[uuid.UUID, list[ServiceZoneDeliveryFee]] = {}
-    fee_query = select(ServiceZoneDeliveryFee)
-    if zone_id is not None:
-        fee_query = fee_query.where(ServiceZoneDeliveryFee.zone_id == zone_id)
-    for fee in await session.scalars(fee_query):
-        fees_by_zone.setdefault(fee.zone_id, []).append(fee)
-    # Labels come through the sources module's service (module boundary).
-    labels = {category.id: category.label for category in await sources.list_categories(session)}
+    labels: dict[uuid.UUID, str] = {}
+    if with_fees:
+        fee_query = select(ServiceZoneDeliveryFee)
+        if zone_id is not None:
+            fee_query = fee_query.where(ServiceZoneDeliveryFee.zone_id == zone_id)
+        for fee in await session.scalars(fee_query):
+            fees_by_zone.setdefault(fee.zone_id, []).append(fee)
+        # Labels come through the sources module's service (module boundary).
+        labels = {
+            category.id: category.label for category in await sources.list_categories(session)
+        }
 
     views = []
     for zone, latitude, longitude, boundary_json in rows:
