@@ -16,6 +16,7 @@ from app.modules.customers.models import (
     SupportRequestType,
 )
 from app.modules.orders.schemas import DeliveryAddress, Landmark
+from app.shared.location import Location, LocationRead
 
 
 def _blank_to_none(value: str) -> str | None:
@@ -58,6 +59,10 @@ class AddressInput(BaseModel):
     landmark: Landmark | None = None
     zone_id: uuid.UUID
     make_default: StrictBool = False
+    #: Optional map point (docs/api/delivery-location.md). On ``PATCH``, absent
+    #: leaves the saved point alone and ``null`` removes it; ``POST`` saves none
+    #: when absent. Which of the two happened is read from ``model_fields_set``.
+    location: Location | None = None
 
 
 class AddressZoneRead(BaseModel):
@@ -76,6 +81,7 @@ class AddressRead(BaseModel):
     address: str
     landmark: str | None
     zone: AddressZoneRead
+    location: LocationRead | None
     is_default: bool
     created_at: datetime
     updated_at: datetime

@@ -24,6 +24,7 @@ import uuid
 from datetime import date, datetime
 from enum import StrEnum
 
+from geoalchemy2 import WKBElement
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
@@ -38,6 +39,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin
+from app.shared.location import (
+    location_constraints,
+    point_column,
+    source_column,
+    stored_properties,
+)
 
 # Field limits from docs/api/orders.md ("Field rules"). The database enforces
 # a quantity range too, so no code path can store nonsense quantities. It is
@@ -230,6 +237,14 @@ class Order(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         contact_phone: Their Nigerian mobile number in E.164 form.
         delivery_address: Free-text address (FR-020).
         landmark: Optional landmark.
+        delivery_location: Optional map point of the delivery address
+            (``geography(POINT, 4326)``, #340). The order's own copy: changing
+            or deleting a saved address never changes it (FR-024). Personal
+            data, cleared with the address by the privacy tool.
+        delivery_location_source: How the point was set; set exactly when
+            ``delivery_location`` is.
+        delivery_location_latitude: Read-only, the point's latitude.
+        delivery_location_longitude: Read-only, the point's longitude.
         delivery_instructions: Optional instructions.
         preferred_delivery_date: Optional preferred date (Africa/Lagos). A
             preference only, not a booked slot (FR-025 slots come later).
@@ -314,6 +329,7 @@ class Order(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             " AND keke_can_size_litres IS NULL AND keke_can_count IS NULL)",
             name="delivery_details_shape",
         ),
+        *location_constraints("delivery_location", "delivery_location_source", "delivery_location"),
     )
 
     reference: Mapped[str] = mapped_column(String(REFERENCE_LENGTH), unique=True)
@@ -325,6 +341,11 @@ class Order(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     contact_phone: Mapped[str] = mapped_column(String(16))
     delivery_address: Mapped[str] = mapped_column(String(DELIVERY_ADDRESS_MAX_LENGTH))
     landmark: Mapped[str | None] = mapped_column(String(LANDMARK_MAX_LENGTH))
+    delivery_location: Mapped[WKBElement | None] = point_column()
+    delivery_location_source: Mapped[str | None] = source_column()
+    delivery_location_latitude: Mapped[float | None]
+    delivery_location_longitude: Mapped[float | None]
+    delivery_location_latitude, delivery_location_longitude = stored_properties(delivery_location)
     delivery_instructions: Mapped[str | None] = mapped_column(
         String(DELIVERY_INSTRUCTIONS_MAX_LENGTH)
     )

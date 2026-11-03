@@ -72,6 +72,7 @@ class AnonymizeResult:
     Attributes:
         customer_id: The account's id, for the request register.
         orders_anonymized: Orders whose contact and address were removed.
+        order_locations_cleared: Map points cleared from those orders (#340).
         gps_points_cleared: GPS points removed from those orders.
         addresses_removed: Saved addresses deleted (profile data, notice §8).
         support_messages_removed: Support request messages replaced; the
@@ -90,6 +91,7 @@ class AnonymizeResult:
 
     customer_id: uuid.UUID
     orders_anonymized: int
+    order_locations_cleared: int
     gps_points_cleared: int
     addresses_removed: int
     support_messages_removed: int
@@ -168,6 +170,7 @@ class ReviewResult:
             instead, because audit rows name them as the actor (NFR-004).
         gps_points_cleared: GPS points older than 90 days removed.
         orders_anonymized: Orders finished over 3 years ago anonymized.
+        order_locations_cleared: Map points cleared from those orders (#340).
         support_requests_deleted: Support requests resolved over 3 years
             ago deleted (complaints, notice §8; #82).
         deletion_requests_deleted: Deletion requests completed or refused
@@ -182,6 +185,7 @@ class ReviewResult:
     unverified_accounts_anonymized: int
     gps_points_cleared: int
     orders_anonymized: int
+    order_locations_cleared: int
     support_requests_deleted: int
     deletion_requests_deleted: int
     applied: bool
@@ -284,6 +288,7 @@ async def anonymize_customer(
     notes += await payments.count_notes(session, order_ids=order_ids)
     marker = await accounts.new_phone_marker(session)
     await accounts.anonymize_account(session, customer, phone_marker=marker)
+    locations = await orders.count_order_locations(session, order_ids=order_ids)
     anonymized = await orders.anonymize_orders(session, order_ids=order_ids, now=now)
     gps = await deliveries.clear_order_gps(session, order_ids=order_ids, now=now)
     removed = await addresses.delete_addresses(session, customer_ids=[customer_id])
@@ -297,6 +302,7 @@ async def anonymize_customer(
         target_id=customer_id,
         details={
             "orders_anonymized": anonymized,
+            "order_locations_cleared": locations,
             "gps_points_cleared": gps,
             "addresses_removed": removed,
             "support_messages_removed": cleared.messages,
@@ -308,6 +314,7 @@ async def anonymize_customer(
     return AnonymizeResult(
         customer_id=customer_id,
         orders_anonymized=anonymized,
+        order_locations_cleared=locations,
         gps_points_cleared=gps,
         addresses_removed=removed,
         support_messages_removed=cleared.messages,
@@ -592,6 +599,7 @@ async def retention_review(
     old_orders = await orders.completed_order_ids(
         session, completed_before=years_before(now, ORDER_PERIOD_YEARS)
     )
+    locations = await orders.count_order_locations(session, order_ids=old_orders)
     anonymized = await orders.anonymize_orders(session, order_ids=old_orders, now=now)
     gps += await deliveries.clear_order_gps(session, order_ids=old_orders, now=now)
 
@@ -603,6 +611,7 @@ async def retention_review(
         unverified_accounts_anonymized=accounts_anonymized,
         gps_points_cleared=gps,
         orders_anonymized=anonymized,
+        order_locations_cleared=locations,
         support_requests_deleted=support_deleted,
         deletion_requests_deleted=deletion_deleted,
         applied=apply,
