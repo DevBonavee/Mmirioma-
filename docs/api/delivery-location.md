@@ -175,10 +175,11 @@ Each has a recommendation; the reviewer decides.
    Recommendation: add `delivery_location` to quotes in the issue that builds
    road-distance pricing, with its match rule, not now.
 5. **Where the customer's map starts without the phone's position** (#345
-   design, open question 2). `GET /service-zones` sends no coordinates.
-   Recommendation: a frontend setting for the default centre, as the design
-   proposes; adding the zone `centre` to `GET /service-zones` is the
-   alternative if the reviewer prefers it.
+   design, open question 2). Since the
+   [#346 amendment](admin-directory.md#amendment-346-zone-centre-and-boundary-on-get-service-zones)
+   (agreed 2026-11-03), `GET /service-zones` returns each zone's `centre`.
+   Recommendation: start the map at the centre of the zone the customer
+   picked, which needs no new field or setting.
 
 ## Changes
 
