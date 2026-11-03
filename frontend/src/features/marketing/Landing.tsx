@@ -2,7 +2,8 @@ import { useState, type CSSProperties, type PointerEvent, type ReactNode } from 
 import { Link } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { whatsappLink } from '../../lib/whatsapp'
-import { LANDING_FAQS, OBJECTIONS, ORDER_CTA, tileFill } from './content'
+import { OUTLINE_BUTTON, PRIMARY_BUTTON } from './buttonStyles'
+import { HOW_STEPS, LANDING_FAQS, OBJECTIONS, ORDER_CTA, tileFill } from './content'
 import {
   ArrowRightIcon,
   BigPinIcon,
@@ -21,11 +22,6 @@ import { useSupportContact } from './queries'
 import { CheckAreaLink, ServiceAreas } from './ServiceAreas'
 import { FloatingActions } from './SiteExtras'
 import { useMarketingPage } from './useMarketingPage'
-
-const PRIMARY_BUTTON =
-  'inline-flex items-center justify-center gap-2.5 rounded-[10px] bg-primary text-center font-bold text-white no-underline transition-colors duration-150 hover:bg-primary-dark hover:text-white'
-const OUTLINE_BUTTON =
-  'inline-flex items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-solid border-primary bg-white text-center font-bold text-primary no-underline transition-colors duration-150 hover:bg-mk-panel hover:text-primary-dark'
 
 /**
  * Public landing page at `/` (design/MmiriOma-landing-handoff, "Landing").
@@ -165,12 +161,14 @@ function Benefits() {
   )
 }
 
-const STEPS: { img: string; w: number; h: number; circle: string; title: string; text: string }[] = [
-  { img: 'step-order', w: 82, h: 122, circle: 'bg-primary', title: 'Order', text: 'Pick keke or tanker, the size and your address.' },
-  { img: 'step-deliver', w: 145, h: 92, circle: 'bg-primary', title: 'We bring it', text: 'A rider collects the water and heads to you.' },
-  { img: 'step-pour', w: 115, h: 122, circle: 'bg-mk-step3', title: 'We pour it', text: 'Into your drums, or your ground or overhead tank.' },
-  { img: 'step-code', w: 87, h: 108, circle: 'bg-mk-step4', title: 'Give your code', text: 'Share your delivery code once all the water is in.' },
+/** The pictures and circle colours of the four steps; the words are `HOW_STEPS` in content.ts. */
+const STEP_ART: { img: string; w: number; h: number; circle: string }[] = [
+  { img: 'step-order', w: 82, h: 122, circle: 'bg-primary' },
+  { img: 'step-deliver', w: 145, h: 92, circle: 'bg-primary' },
+  { img: 'step-pour', w: 115, h: 122, circle: 'bg-mk-step3' },
+  { img: 'step-code', w: 87, h: 108, circle: 'bg-mk-step4' },
 ]
+const STEPS = HOW_STEPS.map((step, i) => ({ ...STEP_ART[i], ...step }))
 
 function HowItWorks() {
   return (

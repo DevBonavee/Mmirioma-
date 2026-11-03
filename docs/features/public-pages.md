@@ -19,6 +19,15 @@ the legal pages. Anyone can open them, signed in or not.
   tanker 500, 750, 1,000 and Custom) fill with water on hover, on keyboard focus
   and on a tap (#330). The fill is only a picture of the size, not a price, a
   quantity claim or a recommendation. See "Size tiles" below.
+- `/about` (#338, [design](../design/about.md)): About us. The heading and the
+  footer's one-line description, "How delivery works" (the same four steps as the
+  landing page, from `HOW_STEPS`), "Where we deliver" (only a link to `/#areas`),
+  "Who to contact" (the place, the email, the phone and, when it is on, WhatsApp,
+  from `useSupportContact`) and the closing "Order Water" and "Ask us on
+  WhatsApp" buttons. Every sentence is one the site already shows. **"Who we
+  are" is not on the page**: its copy has not been supplied, and the page leaves
+  a section out rather than show a placeholder (the owner's reply is on #338).
+  A column of up to 720 px; the short footer.
 - "Order Water" → `/order` (sign-in first when signed out).
 - "Become a Rider or Driver" → `/partner/signup`.
 - The hero has exactly two buttons, "Order water" (→ `/order`) and "Become a
@@ -48,12 +57,13 @@ the legal pages. Anyone can open them, signed in or not.
 
 | Path | Responsibility |
 | --- | --- |
-| `frontend/src/features/marketing/routes.tsx` | The four public routes |
-| `Landing.tsx`, `FaqPage.tsx`, `LegalPages.tsx` | The pages |
+| `frontend/src/features/marketing/routes.tsx` | The five public routes |
+| `Landing.tsx`, `AboutPage.tsx`, `FaqPage.tsx`, `LegalPages.tsx` | The pages |
+| `buttonStyles.ts` | The filled and outlined button classes the landing and About pages share |
 | `MarketingParts.tsx` | Header with mobile menu, footer, install button, picture and heading helpers |
 | `frontend/src/components/brand/HomeLogo.tsx`, `logoTarget.ts` | The logo link every screen uses, and the rule for where it goes |
 | `seoTags.ts` | The search and sharing tags a page sets and restores: canonical, description, Open Graph, Twitter ([seo.md](seo.md), #331) |
-| `content.ts` | Copy shared by pages and tests: nav, areas, FAQs, worries (`OBJECTIONS`), `ORDER_CTA`, `filterFaqs`, `tileFill` (how high a size tile's water rises) |
+| `content.ts` | Copy shared by pages and tests: nav, areas, FAQs, worries (`OBJECTIONS`), `ORDER_CTA`, `filterFaqs`, `tileFill` (how high a size tile's water rises), `BRAND_LINE`, `HOW_STEPS` (the four delivery steps the landing and About pages share), `ABOUT_TITLE` and `ABOUT_DESCRIPTION` |
 | `SiteExtras.tsx` | Floating WhatsApp and Back to top buttons |
 | `queries.ts`, `publicApi.ts` | The support contact: `useSupportContact`, `useWhatsappNumber` (mock or `GET /public/contact`) |
 | `frontend/src/lib/api/publicSite.ts` | Typed `getPublicContact` client |
@@ -104,6 +114,16 @@ on (`lib/whatsapp.ts`), so help is always reachable.
   `SUPPORT_WHATSAPP_ENABLED`, never an admin screen. With `whatsapp: null`,
   every WhatsApp button is hidden and the 404 page, FAQ, landing page and
   Contact us offer the phone instead.
+
+### Header with seven links
+
+The header has seven links since #338. Below 1100 px (down to the 960 px where it
+collapses into the menu) it is compact: the logo is `h-9` and the labels are 14 px
+with a 12 px gap; from 1100 px the logo is `h-11`, the labels 15 px and the gap
+20 px, and from 1180 px the gap is 30 px. Each label stays on one line
+(`whitespace-nowrap`). Measured on 2026-11-03 at 962, 1099, 1100, 1179 and 1280 px:
+one line, the "Order Water" button inside the header, and 44 to 113 px spare
+between the links and the button.
 
 ### Logo links
 
@@ -175,6 +195,12 @@ checks (FAQs and worries, including no Paystack, points or payouts), FAQ empty s
 with its order and apply links, section order (benefits before how it
 works; worries last, no newsletter), the WhatsApp button link, the 404 page
 and its driver-app variant, `/app` still redirecting.
+`src/features/marketing/AboutPage.test.tsx`: the heading and lead, the four steps
+(and the same steps on the landing page), no "Who we are" and no placeholder, the
+areas link and no area named, the contact card with the phone from the server,
+WhatsApp shown and hidden, the closing buttons, no quality claim or number of its
+own, the title, description and canonical, "About" in the header, the mobile
+menu and both footers, the header labels on one line, and the 404 for `/about/team`.
 `src/app/logoLinks.test.tsx`: the logo link on each shell (public pages,
 Terms, FAQ, 404, three sign-in pages, customer top bar, receipt, admin header,
 partner top bar), the hero's two buttons, install in its own section, and the

@@ -20,6 +20,25 @@ export const CONTACT = {
   place: 'Enugu, Nigeria',
 } as const
 
+/** The one-line description of the service, as the footer and the About page say it. */
+export const BRAND_LINE = 'Water delivery for homes, offices and businesses in Enugu. Poured into your drums or tank.'
+
+/**
+ * The four steps from order to a full tank, in the words of the landing page's
+ * "How MmiriOma works" and the About page's "How delivery works" (#338). One copy,
+ * so the two pages cannot drift apart.
+ */
+export const HOW_STEPS: { title: string; text: string }[] = [
+  { title: 'Order', text: 'Pick keke or tanker, the size and your address.' },
+  { title: 'We bring it', text: 'A rider collects the water and heads to you.' },
+  { title: 'We pour it', text: 'Into your drums, or your ground or overhead tank.' },
+  { title: 'Give your code', text: 'Share your delivery code once all the water is in.' },
+]
+
+/** The About page's title and description (`/about`, docs/design/about.md "Search tags"). */
+export const ABOUT_TITLE = 'About MmiriOma | Water delivery in Enugu'
+export const ABOUT_DESCRIPTION = 'MmiriOma brings water to homes, offices and businesses in Enugu by keke or tanker. See how delivery works and who to contact.'
+
 /** Label of every "order" button on the public pages (owner's choice, 2026-10-21). */
 export const ORDER_CTA = 'Order Water'
 
@@ -29,6 +48,7 @@ export const NAV_LINKS: { label: string; to: string }[] = [
   { label: 'How It Works', to: '/#how' },
   { label: 'Our Services', to: '/#options' },
   { label: 'For Drivers', to: '/#drivers' },
+  { label: 'About', to: '/about' },
   { label: 'FAQs', to: '/faq' },
   { label: 'Service Areas', to: '/#areas' },
 ]

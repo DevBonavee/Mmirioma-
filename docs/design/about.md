@@ -174,6 +174,20 @@ Recommendations by @nnamdi-security, 2026-11-03, approved with the design:
    adds `/about` to `sitemap.xml` and changes the `/about` assertion in
    `backend/tests/test_seo_files.py` in the same PR (#331 has merged).
 
+## Built (2026-11-03, #338)
+
+The page is built to this design, without "Who we are" (no copy yet) and with the
+areas as a link only, as the review decisions say. Two things the build found:
+
+- **The header needed room for the seventh link.** At 962 px, with the logo at its
+  full size and 15 px labels, the "Order Water" button ran 51 px past the header
+  edge, and the page's own clipping hid it, so no scrollbar showed. Below 1100 px
+  the header is now compact (smaller logo, 14 px labels, a 12 px gap), and each
+  label stays on one line. The menu still takes over at 960 px, as designed. See
+  [public-pages.md](../features/public-pages.md).
+- **The "How delivery works" heading is left-aligned**, like the other headings on
+  the page, instead of the centred heading the landing page uses.
+
 ## Changes to the design system
 
 None. The page reuses the landing page's kicker, section heading, cards and

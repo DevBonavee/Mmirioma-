@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- The public pages only, as absolute URLs on the production domain.
-     /about and /contact are added when those pages exist.
+     /contact is added when that page exists.
      No lastmod: nothing here knows when a page last changed. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://mmiriomadelivery.com/</loc>
+  </url>
+  <url>
+    <loc>https://mmiriomadelivery.com/about</loc>
   </url>
   <url>
     <loc>https://mmiriomadelivery.com/faq</loc>
