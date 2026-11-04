@@ -313,6 +313,69 @@
   .mo-chip-gold { background: var(--color-gold-tint); color: var(--color-gold-ink); }
 }
 
+/* Public account pages use the whole canvas, with one document scrollbar.
+ * The form's line length is independent of the full-width brand/content grid.
+ * These rules override the shell's viewport utilities, including on phones so
+ * registration and keyboard/zoom changes cannot trap the final action.
+ */
+.mo-auth {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+.mo-auth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 18px clamp(22px, 3.5vw, 64px);
+  border-bottom: 1px solid var(--color-line);
+  background: #fff;
+}
+.mo-auth-switch {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  max-width: 140px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+.mo-auth-grid { display: grid; flex: 1; min-width: 0; }
+.mo-auth-hero { min-width: 0; background: #e9f5ff; }
+.mo-auth-story { position: relative; height: 210px; overflow: hidden; }
+.mo-auth-water { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
+.mo-auth-shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, #e9f5ff 100%); }
+.mo-auth-copy { display: none; }
+.mo-auth-hero[data-audience='partner'] { background: #0b4fa8; }
+[data-audience='partner'] .mo-auth-water { opacity: 0.3; mix-blend-mode: screen; }
+[data-audience='partner'] .mo-auth-shade { background: linear-gradient(160deg, #0b4fa833, #1570d844 55%, #16a0b877); }
+.mo-auth-vehicle { position: absolute; width: 210px; right: 8%; bottom: 12px; filter: drop-shadow(0 10px 12px #0a254033); }
+.mo-auth-main { display: flex; min-width: 0; align-items: center; justify-content: center; padding: 28px 22px max(36px, env(safe-area-inset-bottom)); }
+.mo-auth-form { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; max-width: 640px; }
+@media (min-width: 768px) {
+  .mo-auth-story { height: 260px; }
+  .mo-auth-main { padding: 40px clamp(32px, 5vw, 80px); }
+}
+@media (min-width: 1024px) {
+  .mo-auth-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+  .mo-auth-story { position: sticky; top: 0; height: calc(100dvh - 81px); min-height: 560px; }
+  .mo-auth-water { object-position: 50% 25%; }
+  .mo-auth-shade { background: linear-gradient(180deg, #e9f5ff00 10%, #e9f5ff66 40%, #e9f5fff5 72%, #e9f5ff 100%); }
+  .mo-auth-copy { display: block; position: absolute; inset: auto 0 0; padding: clamp(32px, 4vw, 80px); }
+  .mo-auth-copy h2 { margin: 16px 0; font-size: clamp(40px, 3.4vw, 68px); line-height: 1.1; font-weight: 800; letter-spacing: -1.5px; }
+  .mo-auth-copy p { margin: 0; font-size: clamp(16px, 1.2vw, 22px); line-height: 1.6; }
+  .mo-auth-copy .mo-auth-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+  [data-audience='partner'] .mo-auth-copy { color: #fff; }
+  [data-audience='partner'] .mo-auth-shade { background: linear-gradient(180deg, #0b4fa833 25%, #0b4fa8ee 85%); }
+  .mo-auth-vehicle { width: 48%; max-width: 380px; top: 12%; bottom: auto; }
+  .mo-auth-form { max-width: 560px; }
+}
+
 /*
  * Window scroll for legacy phone screens and fluid partner workspaces, from 768 px
  * (docs/design/responsive.md, #342). MobileShell sets data-scroll="window" on the

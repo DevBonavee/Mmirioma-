@@ -205,11 +205,13 @@ async function measure(page) {
     };
     const frame = document.querySelector('.h-dvh');
     const mains = [...document.querySelectorAll('main')];
+    const auth = document.querySelector('.mo-auth');
+    const authLayout = auth ? Object.fromEntries(['hero', 'main', 'form'].map((name) => [name, box(auth.querySelector(`.mo-auth-${name}`))])) : null;
     const outliers = [...document.querySelectorAll('button,a,input,select,textarea,h1,h2,[role="dialog"]')].filter((el) => {
       const r = el.getBoundingClientRect(), s = getComputedStyle(el);
       return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && (r.left < -1 || r.right > innerWidth + 1);
     }).slice(0, 20).map((el) => ({ role: el.getAttribute('role'), tag: el.tagName.toLowerCase(), label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 100), ...box(el) }));
-    return { viewport: { width: innerWidth, height: innerHeight }, documentWidth: document.documentElement.scrollWidth, documentHeight: document.documentElement.scrollHeight, frame: frame ? box(frame) : null, mains: mains.map(box), dialogs: [...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].map(box), headings: [...document.querySelectorAll('h1,h2')].map((e) => e.textContent.trim()).slice(0, 10), navs: [...document.querySelectorAll('nav')].filter((e) => e.getBoundingClientRect().width).map((e) => ({ label: e.getAttribute('aria-label'), ...box(e) })), geometryOutliers: outliers, loadingVisible: Boolean(document.querySelector('.skeleton,.animate-drop-bob')), alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.textContent.trim().slice(0, 180)) };
+    return { authLayout, viewport: { width: innerWidth, height: innerHeight }, documentWidth: document.documentElement.scrollWidth, documentHeight: document.documentElement.scrollHeight, frame: frame ? box(frame) : null, mains: mains.map(box), dialogs: [...document.querySelectorAll('[role="dialog"],[role="alertdialog"]')].map(box), headings: [...document.querySelectorAll('h1,h2')].map((e) => e.textContent.trim()).slice(0, 10), navs: [...document.querySelectorAll('nav')].filter((e) => e.getBoundingClientRect().width).map((e) => ({ label: e.getAttribute('aria-label'), ...box(e) })), geometryOutliers: outliers, loadingVisible: Boolean(document.querySelector('.skeleton,.animate-drop-bob')), alerts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.textContent.trim().slice(0, 180)) };
   });
 }
 
@@ -232,8 +234,8 @@ const boundaries = [
   { width: 1279, height: 800 }, { width: 1280, height: 800 }, { width: 1920, height: 1080 },
   { width: 1440, height: 568 }, { width: 390, height: 568 },
 ];
-const boundaryCases = new Set(['customer-home', 'customer-order-detail', 'driver-home', 'driver-assigned-delivery', 'driver-refill', 'rider-delivery-code']);
-const shotCases = new Set(['customer-home', 'customer-delivery-details-new', 'driver-home', 'driver-available-deliveries', 'driver-assigned-delivery', 'driver-refill', 'rider-delivery-code']);
+const boundaryCases = new Set(['customer-home', 'customer-order-detail', 'driver-home', 'driver-assigned-delivery', 'driver-refill', 'rider-delivery-code', 'customer-sign-in', 'customer-registration', 'partner-login', 'partner-registration-tanker']);
+const shotCases = new Set(['customer-home', 'customer-delivery-details-new', 'driver-home', 'driver-available-deliveries', 'driver-assigned-delivery', 'driver-refill', 'rider-delivery-code', 'customer-sign-in', 'customer-registration', 'partner-login', 'partner-registration-tanker']);
 
 (async () => {
   fs.mkdirSync(output, { recursive: true });
@@ -280,9 +282,31 @@ const shotCases = new Set(['customer-home', 'customer-delivery-details-new', 'dr
             assert.ok(m.documentWidth <= viewport.width, 'Document overflows horizontally');
             assert.deepEqual(m.geometryOutliers, [], 'Interactive content spills past viewport');
             assert.ok(m.frame, 'Page frame is missing');
-            const authCard = scenario.account === 'guest';
-            const expectedWidth = authCard ? Math.min(viewport.width, 768) : viewport.width;
+            const expectedWidth = viewport.width;
             assert.ok(Math.abs(m.frame.width - expectedWidth) <= 1, `Frame still narrow: ${m.frame.width}, expected ${expectedWidth}`);
+            if (scenario.account === 'guest') {
+              assert.ok(m.authLayout, 'Public page is missing its responsive account layout');
+              const { hero, main, form } = m.authLayout;
+              assert.ok(form.width >= Math.min(280, viewport.width - 44) && form.width <= 641, 'Inputs have an unreadable line length');
+              if (viewport.width >= 1024) {
+                assert.ok(Math.abs(hero.y - main.y) < 1 && Math.abs(hero.x + hero.width - main.x) < 1, 'Desktop hero and form must share a row');
+                assert.ok(Math.abs(hero.width + main.width - viewport.width) < 2, 'Desktop columns leave unused outer space');
+              } else {
+                assert.ok(Math.abs(hero.width - viewport.width) < 1 && main.y >= hero.y + hero.height - 1, 'Small-screen content must stack at full width');
+              }
+              const lastAction = page.locator('.mo-auth-main button[type="submit"], .mo-auth-main a').last();
+              if (await lastAction.count()) {
+                await lastAction.scrollIntoViewIfNeeded();
+                assert.ok(await lastAction.evaluate((el) => {
+                  // Inline links can wrap; their union box includes empty space.
+                  return [...el.getClientRects()].some((r) => {
+                    const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+                    return r.width > 0 && r.height > 0 && hit && (hit === el || el.contains(hit));
+                  });
+                }), 'Last account action is covered or unreachable');
+              }
+              await page.evaluate(() => window.scrollTo(0, 0));
+            }
             if (scenario.id.endsWith('home') && !scenario.loading) {
               const nav = page.getByRole('navigation', { name: scenario.account === 'customer' ? 'Main' : scenario.account === 'driver' ? 'Driver' : 'Rider', exact: true });
               assert.equal(await nav.count(), 1, 'Exactly one visible primary navigation');

@@ -4,8 +4,8 @@ import { PaneContext, ShellScopeContext, type PaneKind, type ShellScopeValue } f
 
 /**
  * Sets the width (and header navigation) of every `MobileShell` below it.
- * Customer/partner areas use fluid workspaces; signed-out routes use a readable
- * card. Without a scope the shell retains the legacy phone-preview policy.
+ * Customer/partner workspaces and public account pages are fluid. Without a
+ * scope the shell retains the legacy phone-preview policy.
  */
 export function ShellScope({ width, nav, children }: ShellScopeValue & { children: ReactNode }) {
   return <ShellScopeContext value={{ width, nav }}>{children}</ShellScopeContext>

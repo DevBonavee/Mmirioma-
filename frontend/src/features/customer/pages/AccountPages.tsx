@@ -8,6 +8,7 @@ import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { z } from 'zod'
+import { AuthLayout } from '../../../components/layout/AuthLayout'
 import { BackLink, Footer, MobileShell, ScrollArea, TopBar, TopBarSpacer, TopBarTitle } from '../../../components/layout/MobileShell'
 import { ErrorBlock, LoadingBlock } from '../../../components/layout/StateScreens'
 import { Button, ButtonLink } from '../../../components/ui/Button'
@@ -219,7 +220,7 @@ export function DeleteAccount() {
 /** Forgot password. There is no reset endpoint yet, so the honest path is support. */
 export function ForgotPassword({ back = '/signin', contact = '/support/contact' }: { back?: string; contact?: string }) {
   return (
-    <Page back={back} title="Forgot password">
+    <AuthLayout audience={contact.startsWith('/partner/') ? 'partner' : 'customer'} backTo={back}>
       <Card pad className="rise-1">
         <h1 className="m-0 text-section font-extrabold">Reset your password</h1>
         <p className="mt-1.5 mb-0 text-sub text-mute">
@@ -233,6 +234,6 @@ export function ForgotPassword({ back = '/signin', contact = '/support/contact' 
       <ButtonLink className="rise-2" to={back} variant="alt">
         Back to sign in
       </ButtonLink>
-    </Page>
+    </AuthLayout>
   )
 }

@@ -2,8 +2,8 @@ import { createContext, useContext, type ReactNode } from 'react'
 
 /**
  * Page-width policies. Customer and partner workspaces fill the available
- * width; only standalone authentication forms and legacy phone previews are
- * capped. Width is independent of the page's scroll owner and navigation.
+ * width, including public authentication pages. Only legacy phone previews
+ * are capped. Width is independent of the page's scroll owner and navigation.
  */
 export type ShellWidth = 'phone' | 'customer' | 'partner' | 'card'
 

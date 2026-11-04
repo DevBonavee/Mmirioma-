@@ -10,13 +10,13 @@ import { useShellScope, usePane, type ShellWidth } from './shellContext'
 
 /**
  * Workspaces fill the viewport, including widths between phones and tablets.
- * Auth forms keep a readable cap; legacy phone previews stay independent.
+ * Public account pages are fluid too; legacy phone previews stay independent.
  */
 const FRAME: Record<ShellWidth, string> = {
   phone: 'max-w-phone',
   customer: 'w-full min-w-0',
   partner: 'w-full min-w-0',
-  card: 'w-full md:max-w-3xl',
+  card: 'w-full min-w-0',
 }
 
 /**
@@ -24,7 +24,8 @@ const FRAME: Record<ShellWidth, string> = {
  * region and reachable actions. Partner pages use window scrolling from 768 px;
  * customer list/detail panes retain independent scroll regions. Map scenes can
  * request a viewport frame so absolute-positioned content has a stable height.
- * Inside a Pane this fills the pane rather than nesting another page frame.
+ * AuthLayout uses document scrolling at every size. Inside a Pane this fills
+ * the pane rather than nesting another page frame.
  */
 export function MobileShell({
   children,
@@ -54,7 +55,7 @@ export function MobileShell({
         className={cx(
           'relative mx-auto flex h-dvh flex-col overflow-hidden text-body text-ink',
           FRAME[width],
-          (width === 'phone' || width === 'card') && 'sm:border-x sm:border-line sm:shadow-card',
+          width === 'phone' && 'sm:border-x sm:border-line sm:shadow-card',
           fill,
           className,
         )}

@@ -30,8 +30,15 @@ as historical decisions, not presented as a newly approved desktop design.
   panes remain in place.
 - Driver navigation uses the existing destinations in a desktop header at
   1280 px, and evenly spaced bottom tabs below that width.
-- Standalone auth forms grow up to a readable 768 px width. Assignment sheets
-  become centered dialogs up to 640 px; full-screen map pages remain fluid.
+- Public account pages (customer and partner sign-in, registration, password
+  help and contact) fill the viewport. From 1024 px a branded illustration
+  panel sits beside the form; below that they stack. Only inputs retain a
+  readable line length (560 px desktop / 640 px tablet). All sizes use document
+  scrolling to keep long forms reachable. This replaces the earlier 768 px
+  account-page cap after the user supplied a desktop screenshot and requested
+  a full-width website layout. This revision awaits PR review.
+- Assignment sheets become centered dialogs up to 640 px; full-screen map
+  pages remain fluid.
 - Branding, routes, state transitions, feature flags and API contracts are
   preserved. See [implementation and verification](../features/responsive-layout.md).
 

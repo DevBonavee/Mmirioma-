@@ -32,17 +32,11 @@ describe('MobileShell width', () => {
     expect(cls).not.toContain('xl:max-w-customer-wide')
   })
 
-  it.each(['customer', 'partner'] as const)('uses the fluid %s workspace without the phone cap', (width) => {
+  it.each(['customer', 'partner', 'card'] as const)('uses the fluid %s workspace without the phone cap', (width) => {
     const { container } = render(<MemoryRouter><ShellScope width={width}>{screenContents()}</ShellScope></MemoryRouter>)
     expect(frame(container)).toHaveAttribute('data-shell', width)
     expect(frame(container)).toHaveClass('w-full', 'min-w-0')
     expect(frame(container).className).not.toContain('max-w-')
-  })
-
-  it('allows standalone auth forms to fill phones and grow to a readable larger card', () => {
-    const { container } = render(<MemoryRouter><ShellScope width="card">{screenContents()}</ShellScope></MemoryRouter>)
-    expect(frame(container)).toHaveClass('w-full', 'md:max-w-3xl')
-    expect(frame(container)).not.toHaveClass('max-w-phone')
   })
 
   it('does not reintroduce the old customer column through main or footer padding', () => {

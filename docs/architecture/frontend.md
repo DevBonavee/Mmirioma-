@@ -212,11 +212,18 @@ use `hit-48`: the look stays, the touch area is 48 × 48.
   (`.foot`). Customer and partner `ShellScope` workspaces fill the available
   width, including the 431–767 px range previously capped at 430 px. They do
   not reapply the former 720 px main/footer content band. Standalone customer
-  and partner auth routes use `card`: full width on phones, up to 768 px on
-  larger screens. The default `phone` policy remains for legacy previews and
+  and partner public account routes use `card`, also full viewport width. The default `phone` policy remains for legacy previews and
   unrelated routes. `CustomerArea`, `PartnerArea` and public auth routes set
   their scope explicitly. Footer and tab bar pad above the phone's home bar
   (`env(safe-area-inset-bottom)`).
+- `components/layout/AuthLayout.tsx`: customer and partner sign-in, registration,
+  password-help and contact pages share a full-width header and brand/form grid.
+  From 1024 px the two columns sit beside each other; below that they stack.
+  The form is limited to 560 px on desktop / 640 px on tablet for readability,
+  independently of the page width. `.mo-auth` overrides the viewport-height
+  frame and uses document scrolling on every device, so long forms and
+  short-height browser windows can reach the final action. No duplicate forms
+  or changes to authentication, registration fields or feature APIs.
 - Window scroll (rider and driver app): below 768 px the shell keeps one
   internal scroll region. From 768 px the `partner` and legacy `phone` scopes mark their frame
   `data-scroll="window"` (not for a `background="ink"` drawer menu, whose panel

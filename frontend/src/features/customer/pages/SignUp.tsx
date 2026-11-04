@@ -3,7 +3,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Logo } from '../../../components/brand/Logo'
-import { BackLink, MobileShell, ScrollArea, TopBar } from '../../../components/layout/MobileShell'
+import { AuthLayout } from '../../../components/layout/AuthLayout'
 import { Button } from '../../../components/ui/Button'
 import { ScreenHeading } from '../../../components/ui/Content'
 import { PageTabs } from '../../../components/ui/Controls'
@@ -74,74 +74,71 @@ export function SignUp() {
   const wait = retryAfterSeconds(err)
 
   return (
-    <MobileShell background="white">
-      <TopBar className="border-b-0" left={<BackLink to="/signin" />} />
-      <ScrollArea className="gap-3.5 px-[22px] pt-2 pb-[22px]">
-        <div className="rise-1 flex items-center gap-3.5">
-          <Logo variant="mark" height={75} alt="" className="animate-float" />
-          <ScreenHeading title="Create your account" sub="It takes less than a minute." />
-        </div>
-        <div className="rise-2">
-          <PageTabs
-            variant="blue"
-            label="Account"
-            tabs={[
-              { to: '/signin', label: 'Sign in', current: false },
-              { to: '/signup', label: 'Create account', current: true },
-            ]}
-          />
-        </div>
-        <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3.5">
-          {registerMutation.isError && !fieldLevel && (
-            <Notice tone="error">
-              {wait !== null ? `Too many tries. Wait ${Math.max(1, Math.ceil(wait / 60))} minutes, then try again.` : errorMessage(err)}
-            </Notice>
-          )}
-          <TextField
-            className="rise-3"
-            label="Full name"
-            autoComplete="name"
-            placeholder="e.g. Adaeze Nwosu"
-            error={errors.name?.message}
-            {...register('name')}
-          />
-          <TextField
-            className="rise-3"
-            label="Phone number"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="0803 123 4567"
-            hint="We send delivery codes to this number."
-            error={errors.phone?.message}
-            {...register('phone', {
-              onBlur: (event) => {
-                if (event.target.value) void trigger('phone')
-              },
-            })}
-          />
-          <SignUpSecurityFields
-            password={password}
-            passwordField={register('password')}
-            confirmField={register('confirm_password', {
-              onBlur: (event) => {
-                if (event.target.value) void trigger('confirm_password')
-              },
-            })}
-            termsField={register('accepted_terms')}
-            errors={{ password: errors.password?.message, confirm: errors.confirm_password?.message, terms: errors.accepted_terms?.message }}
-          />
-          <Button type="submit" className="rise-5" loading={registerMutation.isPending} disabled={passwordProblem(password) !== null}>
-            Create account
-          </Button>
-        </form>
-        <p className="m-0 text-center text-[13px] text-slate">
-          Register as a driver?{' '}
-          <Link to="/partner/signup" className="font-bold text-primary no-underline hover:text-primary-dark">
-            Click here
-          </Link>
-        </p>
-      </ScrollArea>
-    </MobileShell>
+    <AuthLayout backTo="/signin">
+      <div className="rise-1 flex items-center gap-3.5">
+        <Logo variant="mark" height={75} alt="" className="animate-float" />
+        <ScreenHeading title="Create your account" sub="It takes less than a minute." />
+      </div>
+      <div className="rise-2">
+        <PageTabs
+          variant="blue"
+          label="Account"
+          tabs={[
+            { to: '/signin', label: 'Sign in', current: false },
+            { to: '/signup', label: 'Create account', current: true },
+          ]}
+        />
+      </div>
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3.5">
+        {registerMutation.isError && !fieldLevel && (
+          <Notice tone="error">
+            {wait !== null ? `Too many tries. Wait ${Math.max(1, Math.ceil(wait / 60))} minutes, then try again.` : errorMessage(err)}
+          </Notice>
+        )}
+        <TextField
+          className="rise-3"
+          label="Full name"
+          autoComplete="name"
+          placeholder="e.g. Adaeze Nwosu"
+          error={errors.name?.message}
+          {...register('name')}
+        />
+        <TextField
+          className="rise-3"
+          label="Phone number"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder="0803 123 4567"
+          hint="We send delivery codes to this number."
+          error={errors.phone?.message}
+          {...register('phone', {
+            onBlur: (event) => {
+              if (event.target.value) void trigger('phone')
+            },
+          })}
+        />
+        <SignUpSecurityFields
+          password={password}
+          passwordField={register('password')}
+          confirmField={register('confirm_password', {
+            onBlur: (event) => {
+              if (event.target.value) void trigger('confirm_password')
+            },
+          })}
+          termsField={register('accepted_terms')}
+          errors={{ password: errors.password?.message, confirm: errors.confirm_password?.message, terms: errors.accepted_terms?.message }}
+        />
+        <Button type="submit" className="rise-5" loading={registerMutation.isPending} disabled={passwordProblem(password) !== null}>
+          Create account
+        </Button>
+      </form>
+      <p className="m-0 text-center text-[13px] text-slate">
+        Register as a driver?{' '}
+        <Link to="/partner/signup" className="font-bold text-primary no-underline hover:text-primary-dark">
+          Click here
+        </Link>
+      </p>
+    </AuthLayout>
   )
 }

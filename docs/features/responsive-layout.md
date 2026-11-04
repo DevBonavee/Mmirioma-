@@ -14,8 +14,11 @@ Phones retain one-column pages with reachable footer actions. Larger screens use
 the available width, with two/three-column driver dashboard and delivery-card
 grids, two-column delivery details/code entry and the existing customer
 list/detail panes. At 1280 px primary navigation moves to the header for both
-roles. Authentication forms are full-width on phones and capped at 768 px on
-larger screens for readable inputs. Assignment sheets become centered dialogs
+roles. Public account pages fill the viewport: a brand panel and form share
+a row from 1024 px, and stack below that width. Only the input column has a
+readable line length (up to 560 px on desktop, 640 px on tablets); the page
+itself has no width cap. These pages use document scrolling at every size,
+including long registration forms and short browser windows. Assignment sheets become centered dialogs
 up to 640 px with a maximum height and internal scrolling; routed account menus
 expand up to 720 px. Neither limit constrains the surrounding app workspace.
 
@@ -24,7 +27,11 @@ expand up to 720 px. Neither limit constrains the surrounding app workspace.
 - `frontend/src/components/layout/MobileShell.tsx`, `shellContext.ts`,
   `ShellScope.tsx`: fluid customer/partner scopes, explicit auth/legacy policies,
   shared header and consistent main/footer bounds.
-- `frontend/src/styles/components.css`: workspace gutters, window scrolling and
+- `frontend/src/components/layout/AuthLayout.tsx`: shared customer/partner
+  sign-in, registration, password-help and contact composition; uses the existing
+  official logo and illustrations. Brand artwork fills the left desktop column
+  and a compact top region on phones/tablets.
+- `frontend/src/styles/components.css`: public account grid, workspace gutters, window scrolling and
   sticky grouped headers/actions on larger partner screens.
 - `frontend/src/features/customer/CustomerArea.tsx` and
   `frontend/src/features/partner/PartnerArea.tsx`: apply the scope around role
@@ -98,13 +105,15 @@ The default covers representative customer and both vehicle workflows at
 390, 768 and 1440 px. `--boundaries` adds 360, 600, 1024, 1279, 1280 and 1920 px
 checks plus 568 px-high desktop/phone viewports. Checks assert actual workspace
 width, horizontal overflow, visible navigation, tab alignment, assignment-action
-reachability and physical-keyboard code entry. Existing mock fixtures are reset
+reachability and physical-keyboard code entry. Public account checks also measure
+full-width stacked/desktop columns, readable inputs and reachable final actions.
+The four sign-in/registration routes also run at every boundary viewport. Existing mock fixtures are reset
 in isolated contexts; API and external requests are blocked. No credentials or
 browser storage exports are written. Results and selected simulated screenshots
 are saved under the OS temporary directory (`mmirioma-responsive-checks`), or
 `AUDIT_OUTPUT` when explicitly supplied.
 
-Verified on 4 November 2026:
+Workspace verification on 4 November 2026 (before the full-width public-account follow-up):
 
 | Check | Result |
 | --- | --- |
@@ -122,6 +131,25 @@ before-change audit. The full frontend suite emits jsdom's existing unsupported
 `window.scrollTo` notices; these do not fail the tests. The build retains its
 previously documented PWA plugin deprecation and large-chunk warnings.
 
+Public-account follow-up on 4 November 2026:
+
+- 121 unique screen/state and viewport combinations passed for customer sign-in,
+  registration and validation, password help and contact, plus partner sign-in,
+  Keke/tanker registration and validation, password help and contact. Widths:
+  360, 390, 600, 768, 1024, 1279, 1280, 1440 and 1920 px; short-height phone
+  and desktop windows included. Frames fill the viewport, desktop columns share
+  a row, smaller screens stack, inputs stay readable and final actions are
+  reachable. There were no horizontal overflows or browser runtime errors.
+- Complete frontend Vitest suite: 125 files and 1,632 tests passed after the
+  account-page follow-up (428.89 seconds, two workers).
+- Final lint, TypeScript check, real-mode production build and demo-value
+  exclusion check all passed. Only the existing PWA deprecation and map chunk
+  size warnings remain.
+- 33 standard-viewport screenshots captured with simulated data. Results from
+  the focused driver-login hit-test and final contact-branding rechecks replace
+  those routes in `full-width-auth-verified.json` under the same temporary
+  output root. No before-change audit evidence was overwritten.
+
 ## 10. Known limitations
 
 This is headless browser coverage, not physical-device or native PWA certification.
@@ -134,4 +162,5 @@ old widths as the present implementation.
 
 Issue-log entries: [layout caps](../log/2026-11-04-customer-partner-phone-width-caps.md),
 [format-command quoting](../log/2026-11-04-responsive-format-command-quoting.md),
+[public account width follow-up](../log/2026-11-04-public-account-desktop-width.md),
 and [verification environment notes](../log/2026-11-04-responsive-checks-config-discovery.md).
