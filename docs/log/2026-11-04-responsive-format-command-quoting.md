@@ -11,6 +11,9 @@
   wrappers in CodeStep and PartnerShared; it changes no JSX behavior.
   The publishing whitespace check also caught an extra blank line at EOF in
   the browser-check script; it was trimmed and `node --check` passed.
+  During CI monitoring, quoted jq predicates likewise lost their quotes in
+  Windows argument parsing (`function not defined: in_progress/0`). Reading
+  `gh ... --json` with PowerShell `ConvertFrom-Json` avoided that quoting layer.
 - **Status:** resolved
 - **Refs:** `frontend/src/features/partner/pages/CodeStep.tsx`,
   `frontend/src/features/partner/pages/PartnerShared.tsx`.
