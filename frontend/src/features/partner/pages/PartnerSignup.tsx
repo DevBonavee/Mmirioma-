@@ -21,6 +21,7 @@ import { passwordProblem } from '../../../lib/format/password'
 import { applyServerFieldErrors, passwordsMatch, phoneField, signUpSecurityFields } from '../../../lib/forms'
 import { HOME_PATH } from '../../auth/authPaths'
 import { SignUpSecurityFields } from '../../auth/SignUpSecurityFields'
+import { saveTourStatus } from '../../onboarding/tourStorage'
 import { SESSION_KEY, useLogout, useSession } from '../../auth/useSession'
 import { formatPhone } from '../../../lib/format/phone'
 import { cx } from '../../../lib/cx'
@@ -90,7 +91,7 @@ export function PartnerSignupPage() {
     <AuthLayout audience="partner" backTo="/menu">
       <ScreenHeading className="rise-1" title="Deliver with MmiriOma" sub="Ride a keke or drive a tanker, and earn on every delivery." />
       <div className="rise-2 flex justify-center">
-        <Illustration name="keke" className="animate-drive w-44" />
+        <Illustration name="keke-rider" className="animate-drive w-44" />
       </div>
       <Notice className="rise-3">
         You are signed in to the customer app as <b>{formatPhone(user.phone)}</b>. A rider or driver account needs its own phone number. Log out
@@ -116,6 +117,7 @@ export function PartnerSignup() {
   const signup = useMutation({
     mutationFn: partnerSignup,
     onSuccess: (session) => {
+      saveTourStatus(session.user, 'pending')
       qc.clear()
       qc.setQueryData(SESSION_KEY, session)
       // A new partner cannot be approved until the phone is verified (partners.md decision 9).
@@ -184,7 +186,7 @@ export function PartnerSignup() {
             render={({ field }) => (
               <div className="grid grid-cols-2 gap-3">
                 <OptionTile selected={field.value === 'keke'} onSelect={() => field.onChange('keke')} className="pt-4 pb-3">
-                  <Illustration name="keke" className="h-14 w-auto" />
+                  <Illustration name="keke-rider" className="h-14 w-auto" />
                   <span className="text-[15px] font-extrabold">Keke</span>
                   <span className="text-tab text-mute">Jerrycans</span>
                 </OptionTile>

@@ -178,7 +178,7 @@ The code for it is a separate pull request.
    these in #337, after the 2026-10-21 labels, so the later request wins for
    the hero. The header and closing section keep their labels for now; the owner
    can align them in a later change.
-2. **The partner app's logo goes to `/partner/`, not `/`.** The installed
+2. **Historical decision, superseded by the owner on 4 November 2026:** the partner app's logo went to `/partner/`, not `/`. The installed
    partner app has the scope `/partner/` (`partner.webmanifest`), so `/` would
    leave it. This is a deliberate exception to #337's "every logo links to `/`";
    read that Done-when item as "every logo links to its app's home".
@@ -216,16 +216,15 @@ a new screen cannot forget it.
 | Public pages, header and footer | `/` |
 | Customer app: top bars, sign-in, receipt | `/` |
 | Admin: header, menu drawer, staff sign-in | `/` (the logo used to open `/admin`; the dashboard stays one click away in the sidebar) |
-| Partner app: top bars, sign-in | `/partner/` |
+| Partner app: top bars, sign-in | `/` (owner amendment, 4 November 2026) |
 | 404 page | `/` |
 
-The partner app is the exception. It installs with the scope `/partner/`, so a
-link to `/` would open outside the installed app. Its logo goes to `/partner/`,
-which is the partner's own home when signed in and the sign-in page when not.
+The owner's 4 November 2026 request supersedes the partner exception: its logo
+also opens `/`. The partner PWA may open that page outside its `/partner/` scope.
+The manifest, launch URL and partner Home navigation keep their current behavior.
 
-The logo marks inside the "Delivered" celebration circle and beside the "Create
-your account" heading are illustrations, not screen logos. They stay as they are,
-with no link and no name.
+The logo marks inside the "Delivered" celebration circle and beside "Create your
+account" also link to `/`, with the same accessible name, as requested by the owner.
 
 ### Leaving an unfinished order
 
@@ -247,8 +246,8 @@ the draft already survives a reload (it is kept in the browser's session storage
 - Admin: the logo leaves the admin area for the public site. Values typed into
   an admin form are lost when the page changes, as they already are with any link
   in the sidebar; no prompt is added for admin pages.
-- Rider app: handled by the `/partner/` rule above. A link that must go to the
-  public site, such as Terms or the privacy notice, is not changed here.
+- Rider app: its logo now opens the public homepage under the owner's amendment.
+  Its Home tab still opens the partner dashboard.
 
 ### Phone, tablet and desktop
 
@@ -291,3 +290,72 @@ cards. Each card has a full-width photo above its HTML instructions, with a
 reserved aspect ratio and rounded top corners. The artwork's three-step copy,
 25-litre labels and water-quality claims do not replace the website's business
 rules or approved HTML copy. See [implementation notes](../features/public-pages.md#how-it-works-photography-4-november-2026).
+
+## Owner's Keke Delivery banner update (2026-11-04)
+
+The owner requested replacing the Keke Delivery artwork with the supplied
+"MmiriOma Keke Delivery Hero Banner.png". It is stored unchanged as
+`frontend/public/marketing/keke-delivery-banner.png` (2172 x 724).
+
+The banner replaces the old title/illustration row on larger screens, fills
+the card's inner width and retains its complete 3:1 composition from 768 px.
+On smaller screens the existing heading and description remain readable HTML
+above a 3:2 photo crop focused on the rider and containers. The HTML title and
+description remain accessible to screen readers at every size. Existing size
+subcards, interactions, grid and Tanker Delivery presentation are preserved.
+No business rules or API contracts change. See
+[implementation notes](../features/public-pages.md#keke-delivery-banner-4-november-2026).
+
+## Owner's homepage cargo-keke update (2026-11-04)
+
+The owner supplied a heavy-duty electric cargo-tricycle reference and requested
+its use in the homepage hero, facing right with a realistic seated rider,
+MmiriOma branding, no white background and 25-litre water containers at the back.
+The final generated scene is
+`frontend/public/marketing/homepage-hero-keke.png` (1890 x 832); the matching
+transparent cutout is `frontend/public/marketing/homepage-keke-rider.png`
+(1536 x 1024). The partner app uses the same cutout at the owner's request.
+See the [image-edit prompts](prompts/homepage-cargo-keke.md) for provenance.
+
+The new vehicle is placed clear of the live headline, buttons and badges.
+Desktop fades the empty left region into the blue background; tablet and
+mobile use a right-anchored crop below the copy. The existing tanker, hero
+copy and actions remain. Container labels are illustrative and do not amend
+the application's capacity rules. See
+[implementation and browser checks](../features/public-pages.md#homepage-loaded-cargo-keke-4-november-2026).
+
+## Owner's recruitment and app-preview update (2026-11-04)
+
+The owner requested clearer, natural-looking images for the recruitment banner
+and install cards. The banner uses a new photorealistic imagegen edit with the
+same navy copy area and official logos; its prompt is in
+`prompts/driver-banner-photography.md`. The phone cards now display sharp captures
+of the actual app with labelled synthetic accounts, within CSS phone frames.
+The underlying PNG captures are 1170 x 2340 and retain their aspect ratio.
+Existing copy and install/signup actions are preserved. See
+[asset paths and reproduction](../features/public-pages.md#clear-driver-banner-and-app-previews-4-november-2026).
+
+## Owner's phone-fit and animated-hero amendment (2026-11-04)
+
+The owner requested phones entirely inside their install cards, more creative
+and professional "Water at your gate" typography, a slow headline bounce and
+an animated, realistic-looking water drop beside the hero's Order water action.
+They explicitly requested removal of a pause control.
+
+The cards now reserve internal padding around the phones, copy and install
+buttons, with no negative phone margin. The hero reuses Outfit, navy and teal,
+with differentiated weights and a subtle curved underline. Its six-second
+bounce moves only the lettering. The order button's SVG drop uses translucent
+gradients and reflections, with a 3.8-second bob. Both honor reduced motion;
+no pause control, new font or external animation library is added. Existing
+copy and link/install destinations remain. See
+[implementation notes](../features/public-pages.md#contained-phone-previews-and-hero-motion-4-november-2026).
+
+## Readability review (2026-11-04)
+
+The hero accent now uses the existing darker brand teal `#0E6F74` rather than
+`#13A3AA`. Its contrast against the pale hero gradient is at least 5.36:1
+(previously 2.77:1). About, FAQ, Contact and the live-text Oma brand treatment
+reuse this darker text token. Official image logos and the approved palette
+are unchanged. The reduced-motion behavior and the owner's request for no
+pause control remain in effect.

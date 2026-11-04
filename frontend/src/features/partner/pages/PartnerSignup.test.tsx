@@ -107,6 +107,7 @@ describe('PartnerSignup password and terms (#336, the same as the customer form)
   }
 
   beforeEach(() => {
+    localStorage.removeItem('mmirioma:tour:v1:driver:u1')
     server.areas = [{ id: 'zone-1', name: 'Zone One' }]
     server.refusal = null
     server.signedUp = []
@@ -197,6 +198,7 @@ describe('PartnerSignup after success', () => {
     await fillSecurity(user)
     await user.click(screen.getByRole('button', { name: 'Create account' }))
     expect(await screen.findByText('Verify phone screen')).toBeInTheDocument()
+    expect(localStorage.getItem('mmirioma:tour:v1:driver:u1')).toBe('pending')
   })
 })
 

@@ -61,7 +61,7 @@ export function AssignedSheet({ job }: { job: PartnerJob }) {
               {job.customer.distance_km === null ? '' : ` ${job.customer.distance_km} km`}
             </div>
           </div>
-          <Illustration name={jobDeliveryType(job, vehicle)} className="animate-drive w-28" />
+          <Illustration name={jobDeliveryType(job, vehicle) === 'keke' ? 'keke-rider' : 'tanker'} className="animate-drive w-28" />
         </div>
         {/* Partner pay is out of the MVP: no line rather than "not known yet". */}
         {job.earning_minor_units !== null && (

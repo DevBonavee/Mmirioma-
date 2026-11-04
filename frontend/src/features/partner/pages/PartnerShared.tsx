@@ -115,12 +115,12 @@ export function PartnerHistory() {
         </div>
         {history.isPending && <LoadingBlock />}
         {history.isError && <ErrorBlock error={history.error} onRetry={() => history.refetch()} />}
-        {history.isSuccess && list.length === 0 && <EmptyBlock illustration="keke" title="No trips in this period" text="Finished trips show here." />}
+        {history.isSuccess && list.length === 0 && <EmptyBlock illustration={vehicle === 'keke' ? 'keke-rider' : 'tanker'} title="No trips in this period" text="Finished trips show here." />}
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {list.map((j) => (
             <Card key={j.reference} className="rise-3 flex items-center gap-3 p-3">
               <span className="flex h-[52px] w-16 shrink-0 items-center justify-center rounded-icon bg-sky">
-                <Illustration name={jobDeliveryType(j, vehicle)} className="w-14" />
+                <Illustration name={jobDeliveryType(j, vehicle) === 'keke' ? 'keke-rider' : 'tanker'} className="w-14" />
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-[14px] font-extrabold">{jobQuantity(j)}</div>
@@ -271,7 +271,7 @@ export function PartnerVehicle() {
           <>
             <div className="rise-1 relative overflow-hidden rounded-hero bg-[linear-gradient(160deg,#EEF6FF,#CFE3FB)] p-4 text-center">
               {approvalChip}
-              <Illustration name={vehicle} alt={vehicle === 'keke' ? 'Your keke' : 'Your tanker'} className="animate-drive mx-auto mt-4 w-[230px]" />
+              <Illustration name={vehicle === 'keke' ? 'keke-rider' : 'tanker'} alt={vehicle === 'keke' ? 'Your keke' : 'Your tanker'} className="animate-drive mx-auto mt-4 w-[230px]" />
               <div className="mt-1.5 text-[20px] font-extrabold">
                 {vehicle === 'keke' ? 'Keke' : 'Tanker'} · {p.vehicle.plate}
               </div>
@@ -394,7 +394,7 @@ export function PartnerIssue() {
       <ScrollArea className="gap-3">
         {job && (
           <Card className="rise-1 flex items-center gap-3 px-3.5 py-2.5">
-            <Illustration name={vehicle} className="w-16" />
+            <Illustration name={vehicle === 'keke' ? 'keke-rider' : 'tanker'} className="w-16" />
             <div className="flex-1">
               <div className="font-extrabold">{job.reference}</div>
               <div className="text-caption text-mute">

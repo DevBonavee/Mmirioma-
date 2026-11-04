@@ -3,6 +3,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { Logo } from '../../../components/brand/Logo'
+import { HomeLogo } from '../../../components/brand/HomeLogo'
 import { AuthLayout } from '../../../components/layout/AuthLayout'
 import { Button } from '../../../components/ui/Button'
 import { ScreenHeading } from '../../../components/ui/Content'
@@ -76,7 +77,7 @@ export function SignUp() {
   return (
     <AuthLayout backTo="/signin">
       <div className="rise-1 flex items-center gap-3.5">
-        <Logo variant="mark" height={75} alt="" className="animate-float" />
+        <HomeLogo><Logo variant="mark" height={75} alt="" className="animate-float" /></HomeLogo>
         <ScreenHeading title="Create your account" sub="It takes less than a minute." />
       </div>
       <div className="rise-2">

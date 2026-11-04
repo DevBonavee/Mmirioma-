@@ -43,8 +43,8 @@ the legal pages. Anyone can open them, signed in or not.
   is only in the "Put MmiriOma on your phone" section; the header has no
   install link.
 - Every screen logo is a link home named "MmiriOma, home", drawn by one
-  component, `HomeLogo` (#337): to `/`, or to `/partner/` inside the partner app
-  so the installed app keeps its scope. See "Logo links" below.
+  component, `HomeLogo` (#337): to `/` from every app, including the partner app
+  (owner request, 4 November 2026). See "Logo links" below.
 - Every public page has a floating "Chat on WhatsApp" button (bottom right;
   icon only below 640 px; hidden while WhatsApp support is off) and, after 600 px of scrolling, "Back to top" above
   it. Back to top scrolls up (instantly under reduced motion) and moves focus
@@ -91,6 +91,142 @@ Lint, TypeScript,
 the real-mode production build and demo-value exclusion check also passed, with
 only the existing PWA plugin and map chunk warnings.
 
+### Keke Delivery banner (4 November 2026)
+
+The owner supplied `MmiriOma Keke Delivery Hero Banner.png` to replace the old
+vehicle artwork in the Keke Delivery card under `/#options`. Its unchanged
+2172 x 724 PNG is `frontend/public/marketing/keke-delivery-banner.png`.
+
+`OptionCard` accepts an optional `banner` layout. The Keke card uses its full
+inner width rather than the former 320 px illustration limit. From 768 px,
+the complete 3:1 banner fits without cropping or stretching; the HTML heading
+and description remain available to screen readers. Below 768 px the heading
+and description are visible HTML, and a 3:2 photo window focuses on the rider
+and containers at the right of the source so the artwork's printed text does
+not become tiny. Image loading is lazy and the window reserves its proportions.
+
+The supplied artwork is illustrative: it does not replace delivery types,
+capacities or ordering rules. The can pictures, quantity tiles, water-fill
+interaction and Tanker Delivery card retain their existing behavior.
+
+Verification: Chrome checks passed at 360, 390, 600, 767, 768, 1024, 1440 and
+1920 px, covering image loading, full card width, responsive proportions,
+heading visibility and all eight existing quantity tiles. No horizontal
+overflow or browser errors. Section screenshots at 390, 768 and 1440 px are
+in the temporary `mmirioma-keke-banner` folder. All 134 public-page tests in
+9 files passed after this change. Lint, TypeScript, the real-mode production
+build and demo-value exclusion check also passed. The existing map chunk and
+PWA warnings remain; this build also printed an informational plugin-timing
+report without failing.
+
+### Homepage loaded cargo keke (4 November 2026)
+
+The owner supplied `Heavy-duty-Electric-cargo-tricycle.jpg.webp`, requested a
+right-facing cargo keke with a realistic seated rider and MmiriOma branding,
+then specified a load of 25-litre water containers. The built-in imagegen tool
+produced the transparent cutout and the homepage composition. The final edit
+prompts and reference provenance are recorded in
+[homepage-cargo-keke.md](../design/prompts/homepage-cargo-keke.md).
+
+- `frontend/public/marketing/homepage-keke-rider.png`: 1536 x 1024 transparent
+  PNG, also used by the partner app. The cargo bed carries capped blue
+  containers marked `25 L`, secured behind the rider with transport straps.
+- `frontend/public/marketing/homepage-hero-keke.png`: 1890 x 832 opaque scene
+  combining the loaded vehicle with the existing white tanker and surroundings.
+  Both vehicles face right. The foreground vehicle sits clear of the live
+  headline, buttons and badges.
+
+Above 1180 px, `.mk-hero::before` displays the scene against the existing blue
+gradient. Its left mask fades the empty copy region into the background while
+preserving opaque vehicles. At 1180 px and below, the hero uses an eager image
+with a reserved 1410:969 display ratio and `object-fit: cover`, anchored right
+to crop the unused left area. The complete rider and keke remain visible.
+The HTML headline, links and ordering controls are preserved. The 25-litre
+labels are illustrative artwork, not a change to capacity or pricing rules.
+
+The static Open Graph, Twitter and structured-data image URLs now reference
+the same scene; `seoTags.test.tsx` checks the updated share-image URL.
+
+Playwright checked 11 widths: 360, 390, 768, 860, 861, 1024, 1180, 1181, 1280,
+1440 and 1920 px. Image loading, breakpoint behavior, action links and horizontal
+overflow passed. Screenshots were captured at 390, 768, 1440 and 1920 px; the
+desktop composition was reviewed for clearance around the copy and controls.
+The combined marketing, partner and brand test run passed 354 tests in 26 files.
+Lint, TypeScript, the real-mode production build and demo-value exclusion check
+also passed. The build retains the existing large map-chunk and PWA
+`inlineDynamicImports` deprecation warnings.
+
+### Clear driver banner and app previews (4 November 2026)
+
+The owner identified the soft recruitment banner and distorted phone artwork.
+The driver section now uses `frontend/public/marketing/drivers-photo.png`
+(1983 x 793), a new photorealistic imagegen edit with natural skin/fabric detail,
+legible official branding and a navy transition behind the live HTML copy.
+It is generated marketing artwork, not a photograph of an actual employee.
+The [final prompt and provenance](../design/prompts/driver-banner-photography.md)
+are retained. Existing headings, benefits and signup links remain.
+
+The two install cards replace the old `phone-customer` and `phone-driver`
+illustrations with captures of the actual running React app, taken at three
+device pixels per CSS pixel (1170 x 2340):
+`frontend/public/marketing/app-preview-customer.png` and
+`frontend/public/marketing/app-preview-partner.png`. Each uses an isolated,
+synthetic account and a visible "SAMPLE APP PREVIEW" label. No real account or
+production data is captured. CSS draws a restrained phone frame, so branding
+and interface text come from the real app rather than generated phone imagery.
+Images keep their aspect ratios and load lazily below the hero.
+
+Regenerate the previews against an existing mock Vite server using
+`PLAYWRIGHT_MODULE=/path/to/playwright node scripts/capture-install-previews.cjs`
+from `frontend/`. The script refuses real-API mode and blocks external/API
+requests. These are screenshots, not an interactive second app; existing install
+buttons retain their behavior. Marketing browser checks cover image decoding,
+dimensions and page overflow at 320, 390, 768 and 1440 px in
+`scripts/check-first-time-tour.cjs`.
+
+The final check passed 23 tour/navigation/marketing/signup browser scenarios,
+including decoded artwork at four regular widths and a short viewport equivalent
+to 200% desktop zoom. The full frontend suite passed 1,641 tests; final targeted
+regression passed 255 tests. Lint, typecheck, real-mode build and demo-value
+exclusion also passed, retaining the existing map/PWA warnings.
+
+### Readability review (4 November 2026)
+
+The hero accent and pale-background brand text on About, FAQ and Contact use
+the existing `mk-teal-button` token (`#0E6F74`). This raises hero text contrast
+from a minimum of 2.77:1 to 5.36:1 over its sky gradient. The contrast regression
+in `sizeTiles.test.tsx` checks the token used by the actual headline rule.
+Brand image assets and the underlying palette are preserved.
+
+### Contained phone previews and hero motion (4 November 2026)
+
+The owner requested that both phones fit fully within their white install cards.
+`AppCard` now uses `.mk-app-card` with internal padding, centered columns and a
+zero-margin phone frame. This removes the previous `margin-top: -28px` protrusion.
+Phones retain their screen aspect ratio, copy/buttons remain inside the padded
+card, and the layout stacks below 600 px. Existing PNGs and install actions
+are preserved.
+
+"Water at your gate" keeps the approved Outfit family with a lighter first
+line, stronger teal second line, refined tracking and a restrained curved
+underline. `.mk-hero-heading-motion` bounces by at most 6 px over a six-second
+cycle, including a smaller settling bounce. Only the lettering moves; the
+lead and links retain their layout positions.
+
+The hero's Order water link uses a translucent SVG droplet with layered aqua
+gradients, reflected highlights and a light rim. It bobs up to 3 px over a
+3.8-second cycle with slight squash/stretch, retaining a fixed 26 x 30 slot.
+React `useId` keeps its gradient references unique. The SVG is decorative and
+hidden from assistive technology; the link is still named "Order water" and
+opens `/order`. Other uses of `DropFilledIcon` are unchanged.
+
+The owner explicitly requested no pause control. None is shown; both animations
+stop under `prefers-reduced-motion: reduce`. All motion uses transforms, with no
+text reflow or animation library. A temporary Playwright check measures card,
+phone, copy and button bounds across 320, 390, 600, 601, 768, 995, 996, 1024,
+1280, 1440 and 1920 px, and checks normal/reduced animation behavior. Final
+results are in the accompanying issue log.
+
 ## 3. Important files
 
 | Path | Responsibility |
@@ -112,7 +248,7 @@ only the existing PWA plugin and map chunk warnings.
 | `icons.tsx` | The design's icons, path for path |
 | `marketing.css` | Breakpoint rules for the hero and drivers backgrounds and grids, and the size tiles' water (`.mk-tile`) |
 | `useMarketingPage.ts` | Fonts, title and description, scrolling to `#section` |
-| `frontend/public/marketing/` | Images (WebP plus PNG/JPG), including the owner-supplied `how-it-works-guide.png` photo source |
+| `frontend/public/marketing/` | Images (WebP plus PNG/JPG), including the owner-supplied `how-it-works-guide.png` and `keke-delivery-banner.png` |
 | `frontend/src/styles/theme.css` | `mk-*` colours and the Outfit / DM Sans font tokens |
 
 ## 4. Database models and relationships
@@ -233,10 +369,13 @@ is at least 44 px tall. Where it goes:
 | --- | --- |
 | Public pages (header, footer), 404, customer app, sign-in pages | `/` |
 | Admin header, menu drawer and staff sign-in | `/` (it used to open `/admin`; the dashboard is in the sidebar) |
-| Partner app (any path under `/partner`) | `/partner/`, so the installed app stays inside its scope `/partner/` |
+| Partner app (any path under `/partner`) | `/`, as requested by the owner on 4 November 2026 |
 
-Not links: the logo marks beside the "Create your account" heading and in the
-"Delivered" circle. They are illustrations with no name.
+The marks beside "Create your account" and in the "Delivered" circle also link
+to `/`. This supersedes their earlier decorative exceptions. The partner PWA
+may open the public page outside its `/partner/` scope; its launch URL and Home
+tab continue to open the partner app. An unfinished customer order retains its
+existing leave-confirmation guard.
 
 A test in `src/app/logoLinks.test.tsx` renders each shell, and scans the source
 for a `<Logo>` or `<BrandLogo>` outside `<HomeLogo>`, so a new screen that

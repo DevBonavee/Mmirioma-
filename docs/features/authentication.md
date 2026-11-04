@@ -66,6 +66,33 @@ session state (<Navigate>), never navigate() calls: React Router runs
 navigations as transitions, which would lose to the guards' own redirects.
 ```
 
+### Shared account-page photography (4 November 2026)
+
+The owner-provided water-and-hands photograph is served locally from
+`frontend/public/marketing/auth-water-hands.jpg` (1600 x 1066, 404,087 bytes).
+It is an unchanged copy of `WhatsApp Image 2026-11-04 at 6.11.20 PM.jpeg`.
+`frontend/src/components/layout/AuthLayout.tsx` replaces its decorative water-drop
+background with this photo on customer/partner sign-in and registration and the
+other account routes using that layout. It has an empty alt because the existing
+headings/copy provide the page meaning. Partner vehicle illustrations remain.
+
+`frontend/src/styles/components.css` supplies responsive crops, navy text-support
+gradients and the transform-only `auth-water-drift` animation (20 seconds).
+The input area and explanatory copy stay still; reduced motion disables the
+photo animation and transforms. No image-generation, animation dependency,
+video request, new endpoint or form behavior is introduced. See the
+[design amendment](../design/authentication.md#owners-photograph-and-motion-amendment-2026-11-04).
+
+Validation: 84 relevant authentication, signup, shell and logo tests passed in
+six files. Chrome passed 36 route/viewport cases across `/signin`, `/signup`,
+`/partner/login` and `/partner/signup`, plus three normal-motion checks.
+Widths: 320, 390, 640, 720, 768, 1023, 1024, 1440 and 1920 px; the 720 px case
+uses a short 500 px height. Checks cover full-resolution decode, photo frame
+coverage, no blur/filter or blend, reduced motion, form validation and action
+reachability, retained partner vehicles, logo destination and runtime errors.
+Lint, typecheck, real-mode build and demo-value exclusion passed. The original
+photo matches the copied asset byte-for-byte. Existing build warnings remain.
+
 ## 3. Important files
 
 | File | Responsibility |

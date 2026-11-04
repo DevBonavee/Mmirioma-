@@ -23,4 +23,8 @@
   `maplibre-gl` (#346), and `node_modules` was older. Run `npm ci` again after
   every pull that changes `frontend/package-lock.json`.
 - **Status:** resolved
+- **Quality-review recurrence (2026-11-04):** The read-only npm audit dry-run
+  again reported `EBADENGINE`: local Node is 24.14.0 while jsdom 30.1.3 and
+  related test tools require `^24.15.0` on Node 24. README now states the
+  supported minimum. No global Node installation or lockfile was changed.
 - **Refs:** `frontend/tsconfig.app.json`, `frontend/package-lock.json`

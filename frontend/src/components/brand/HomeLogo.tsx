@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { HOME_LOGO_NAME, homeFor } from './logoTarget'
 
@@ -17,9 +17,8 @@ import { HOME_LOGO_NAME, homeFor } from './logoTarget'
  * @param className - Extra classes for the link, for example its alignment.
  */
 export function HomeLogo({ children, className }: { children: ReactNode; className?: string }) {
-  const { pathname } = useLocation()
   return (
-    <Link to={homeFor(pathname)} aria-label={HOME_LOGO_NAME} className={cx('flex min-h-11 items-center no-underline', className)}>
+    <Link to={homeFor()} aria-label={HOME_LOGO_NAME} className={cx('flex min-h-11 items-center no-underline', className)}>
       {children}
     </Link>
   )

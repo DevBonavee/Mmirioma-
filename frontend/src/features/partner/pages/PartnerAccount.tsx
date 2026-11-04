@@ -38,6 +38,7 @@ import { cx } from '../../../lib/cx'
 import { formatPhone } from '../../../lib/format/phone'
 import { useLogout, useSession } from '../../auth/useSession'
 import { InstallMenuItem } from '../../pwa/InstallParts'
+import { TourReplay } from '../../onboarding/WelcomeTour'
 import { PushSettingRows } from '../../pwa/PushParts'
 import { jobStepPath, usePartnerApp } from '../partnerContext'
 import { useActiveJobs, useAvailableJobs, usePartnerNotifications, usePartnerProfile, useUpdatePartnerProfile } from '../queries'
@@ -169,6 +170,7 @@ export function PartnerMenu() {
         Account settings
       </MenuItem>
       <InstallMenuItem app="partner" />
+      <TourReplay audience={vehicle} />
     </DrawerMenu>
   )
 }
@@ -222,6 +224,7 @@ export function PartnerProfilePage() {
               {vehicle === 'keke' ? 'Vehicle and papers' : 'Tanker and papers'}
               <ChevronRightIcon size={18} strokeWidth={2.2} color="#56677D" roundJoin={false} className="ml-auto" />
             </Link>
+            <TourReplay audience={vehicle} placement="card" />
           </>
         )}
       </ScrollArea>

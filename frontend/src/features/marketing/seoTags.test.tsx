@@ -40,7 +40,7 @@ describe('the landing page HTML as the server sends it (index.html)', () => {
     expect(meta(served, 'meta[name="twitter:title"]')).toBeTruthy()
     expect(meta(served, 'meta[name="twitter:description"]')).toBeTruthy()
     for (const selector of ['meta[property="og:image"]', 'meta[name="twitter:image"]']) {
-      expect(meta(served, selector)).toBe(`${SITE_URL}/marketing/hero-scene.jpg`)
+      expect(meta(served, selector)).toBe(`${SITE_URL}/marketing/homepage-hero-keke.png`)
     }
     expect(meta(served, 'meta[property="og:image:alt"]')).toBeTruthy()
   })

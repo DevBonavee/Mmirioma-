@@ -56,7 +56,7 @@ export function AvailableOrders({ header }: { header?: ReactNode }) {
         {jobs.isError && <ErrorBlock error={jobs.error} onRetry={() => jobs.refetch()} />}
         {jobs.isSuccess && list.length === 0 && (
           <EmptyBlock
-            illustration="keke"
+            illustration="keke-rider"
             title={offline ? 'You are offline' : 'No orders right now'}
             text={offline ? 'Go online from your dashboard to see orders.' : 'New orders show up here. Check again soon.'}
           />

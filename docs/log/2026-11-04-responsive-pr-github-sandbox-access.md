@@ -12,3 +12,7 @@
   credential was replaced, displayed or copied into the repository.
 - **Status:** resolved
 - **Refs:** Responsive-layout PR preparation.
+- **Recurrence (2026-11-05):** The PR query again hit the sandbox's socket
+  restriction. Approved network access verified that PR #406 remains open
+  against development with the expected branch head and review requests. No
+  credential change was needed.

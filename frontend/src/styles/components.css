@@ -346,15 +346,27 @@
   text-decoration: none;
 }
 .mo-auth-grid { display: grid; flex: 1; min-width: 0; }
-.mo-auth-hero { min-width: 0; background: #e9f5ff; }
+.mo-auth-hero { min-width: 0; background: #082a46; }
 .mo-auth-story { position: relative; height: 210px; overflow: hidden; }
-.mo-auth-water { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
-.mo-auth-shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 45%, #e9f5ff 100%); }
-.mo-auth-copy { display: none; }
+.mo-auth-water {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 55% 62%;
+  transform-origin: 55% 62%;
+  animation: auth-water-drift 20s ease-in-out infinite;
+}
+/* A gentle photographic pan/zoom, with enough overscan to avoid exposed edges.
+ * Keep forms, copy and the fleet still; only the supplied photo moves. */
+@keyframes auth-water-drift {
+  0%, 100% { transform: scale(1.035) translate3d(-.4%, 0, 0); }
+  50% { transform: scale(1.085) translate3d(.5%, -.6%, 0); }
+}
+.mo-auth-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #082a4600 65%, #082a4633); }
+.mo-auth-copy { display: none; color: white; }
 .mo-auth-hero[data-audience='partner'] { background: #0b4fa8; }
-[data-audience='partner'] .mo-auth-water { opacity: 0.3; mix-blend-mode: screen; }
-[data-audience='partner'] .mo-auth-shade { background: linear-gradient(160deg, #0b4fa833, #1570d844 55%, #16a0b877); }
-.mo-auth-vehicle { position: absolute; width: 210px; right: 8%; bottom: 12px; filter: drop-shadow(0 10px 12px #0a254033); }
 .mo-auth-main { display: flex; min-width: 0; align-items: center; justify-content: center; padding: 28px 22px max(36px, env(safe-area-inset-bottom)); }
 .mo-auth-form { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; max-width: 640px; }
 @media (min-width: 768px) {
@@ -364,16 +376,43 @@
 @media (min-width: 1024px) {
   .mo-auth-grid { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
   .mo-auth-story { position: sticky; top: 0; height: calc(100dvh - 81px); min-height: 560px; }
-  .mo-auth-water { object-position: 50% 25%; }
-  .mo-auth-shade { background: linear-gradient(180deg, #e9f5ff00 10%, #e9f5ff66 40%, #e9f5fff5 72%, #e9f5ff 100%); }
+  .mo-auth-water { object-position: 55% 50%; }
+  .mo-auth-shade { background: linear-gradient(180deg, #082a4600 24%, #082a4655 46%, #082a46e8 72%, #082a46fa); }
   .mo-auth-copy { display: block; position: absolute; inset: auto 0 0; padding: clamp(32px, 4vw, 80px); }
   .mo-auth-copy h2 { margin: 16px 0; font-size: clamp(40px, 3.4vw, 68px); line-height: 1.1; font-weight: 800; letter-spacing: -1.5px; }
   .mo-auth-copy p { margin: 0; font-size: clamp(16px, 1.2vw, 22px); line-height: 1.6; }
   .mo-auth-copy .mo-auth-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
-  [data-audience='partner'] .mo-auth-copy { color: #fff; }
-  [data-audience='partner'] .mo-auth-shade { background: linear-gradient(180deg, #0b4fa833 25%, #0b4fa8ee 85%); }
-  .mo-auth-vehicle { width: 48%; max-width: 380px; top: 12%; bottom: auto; }
   .mo-auth-form { max-width: 560px; }
+}
+
+/* The partner banner explains the app at every width. Copy and both vehicles
+ * participate in layout, so neither can overlap or disappear behind the form. */
+[data-audience='partner'] .mo-auth-story {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  height: auto;
+  padding: clamp(24px, 4vw, 56px);
+}
+[data-audience='partner'] .mo-auth-shade { background: linear-gradient(155deg, #052943d9, #052943c9 52%, #07356d99); }
+[data-audience='partner'] .mo-auth-copy { position: relative; display: block; padding: 0; color: white; }
+[data-audience='partner'] .mo-auth-copy h2 { margin: 12px 0 16px; font-size: clamp(30px, 3.4vw, 54px); line-height: 1.12; font-weight: 800; letter-spacing: -.03em; }
+[data-audience='partner'] .mo-auth-copy p { margin: 0; max-width: 520px; font-size: 16px; line-height: 1.65; color: #e5f2ff; }
+[data-audience='partner'] .mo-auth-copy .mo-auth-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: #bde9f4; }
+.mo-auth-fleet { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: 20px; width: 100%; max-width: 620px; margin: 0 auto; }
+.mo-auth-fleet figure { display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 12px; margin: 0; }
+.mo-auth-fleet picture { display: block; width: 100%; }
+.mo-auth-fleet img { display: block; width: 100%; height: auto; object-fit: contain; filter: drop-shadow(0 12px 12px #05284940); }
+.mo-auth-fleet figcaption { padding: 7px 12px; border: 1px solid #ffffff40; border-radius: 999px; color: white; background: #07356d80; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-align: center; }
+@media (min-width: 640px) and (max-width: 1023px) {
+  [data-audience='partner'] .mo-auth-story { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: center; }
+}
+@media (min-width: 1024px) {
+  [data-audience='partner'] .mo-auth-story { min-height: max(640px, calc(100dvh - 81px)); justify-content: space-evenly; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mo-auth-water { animation: none; transform: none; }
 }
 
 /*

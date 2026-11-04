@@ -7,6 +7,7 @@ import { Card, CardLink } from '../../../components/ui/Card'
 import { Chip } from '../../../components/ui/Chip'
 import { SectionHeader, TextLink } from '../../../components/ui/Content'
 import { HomeAppCard } from '../../pwa/PushParts'
+import { AutomaticTour } from '../../onboarding/WelcomeTour'
 import { ToggleKnob } from '../../../components/ui/Controls'
 import { Notice } from '../../../components/ui/Notice'
 import { errorMessage } from '../../../lib/api/errorMessage'
@@ -51,6 +52,7 @@ export function DriverHome() {
 
   return (
     <MobileShell>
+      <AutomaticTour audience="tanker" blocked={!p || p.approval === 'suspended' || (p.approval === 'approved' && (!active.isSuccess || active.data.length > 0))} />
       <TopBar left={<MenuLink to={`${base}/menu`} />} right={<ProfileLink to={`${base}/menu`} name={p?.name ?? '·'} tone="green" />} />
       <ScrollArea className="gap-3 md:grid md:grid-cols-2 md:content-start xl:grid-cols-3 xl:gap-5">
         {profile.isPending && <LoadingBlock />}

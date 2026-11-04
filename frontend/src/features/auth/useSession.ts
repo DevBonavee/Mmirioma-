@@ -3,6 +3,7 @@ import { ApiError } from '../../lib/api/client'
 import type { LoginInput, RegisterInput, Session, User } from '../../lib/api/auth'
 import type { CodePurpose, PhoneChangeInput } from '../../lib/api/phoneVerification'
 import { clearDraft } from '../customer/order/draft'
+import { saveTourStatus } from '../onboarding/tourStorage'
 import { getMe, getPhoneCodeStatus, login, logout, register, requestPhoneChange, requestPhoneVerification, verifyPhone, verifyPhoneChange } from './authApi'
 
 export const SESSION_KEY = ['session'] as const
@@ -53,6 +54,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: (input: RegisterInput) => register(input),
     onSuccess: (session) => {
+      saveTourStatus(session.user, 'pending')
       qc.clear()
       clearDraft()
       qc.setQueryData(SESSION_KEY, session)

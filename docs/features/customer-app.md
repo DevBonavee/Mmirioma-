@@ -15,8 +15,10 @@ hidden for the pilot (see section 6).
 ## 2. Feature workflow
 
 1. **Sign in / create account** (`/signin`, `/signup`): phone number and
-   password only. New accounts go straight to home; the phone stays
-   unverified until staff verify it manually (FR-003).
+   password only. New accounts go to SMS phone verification, with the existing
+   "Do this later" action; verification is required before the first order
+   (FR-003). After reaching home, eligible new accounts can take the optional
+   [welcome tour](first-time-tour.md), also replayable from the account menu.
 2. **Home** (`/home`): delivery address ("Set your delivery address" until one
    is saved), order by Keke or Tanker, quick actions (Reorder, Addresses, My
    orders), latest order.

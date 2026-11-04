@@ -125,10 +125,21 @@ are 10 px rounded rectangles, not pills (owner request).
 
 ### Assets and icons
 
+- `features/onboarding/`: the owner-authorized optional first-time guide, with
+  customer/rider/tanker copy, native modal accessibility, signup-only eligibility
+  and a versioned browser-local marker containing no profile or job data. It
+  reuses existing session and home-screen queries; see
+  `docs/features/first-time-tour.md` for entry, replay and priority behavior.
+
 - `public/brand/`: official logos (use `<Logo>` from `src/components/brand/Logo.tsx`,
   WebP with PNG fallback, right density per screen). Never redraw the logo.
 - `public/illustrations/`: keke, tanker, gift, jerrycan, drop-hero (use
   `<Illustration>`). `jerrycan` and `drop-hero` exist only as WebP.
+- `public/marketing/homepage-keke-rider.png`: transparent loaded cargo keke,
+  exposed as `<Illustration name="keke-rider">` for partner screens. The original
+  `keke` name retains its handoff asset for other callers. The homepage scene is
+  `public/marketing/homepage-hero-keke.png`; edit prompts are in
+  `docs/design/prompts/homepage-cargo-keke.md`.
 - `public/favicon.ico`, `favicon-16.png`, `favicon-32.png`, `apple-touch-icon.png`,
   `public/icons/icon-{192,512,1024}.png` and `public/manifest.webmanifest`.
 - `src/components/icons/`: the 74 inline stroke icons from the design HTML,
@@ -224,6 +235,15 @@ use `hit-48`: the look stays, the touch area is 48 × 48.
   frame and uses document scrolling on every device, so long forms and
   short-height browser windows can reach the final action. No duplicate forms
   or changes to authentication, registration fields or feature APIs.
+  The partner banner keeps its explanatory copy visible at every width and
+  places the existing loaded keke and tanker in a responsive fleet grid. At
+  640–1023 px copy and vehicles share a row; smaller screens and the desktop
+  brand column stack them. All content participates in layout rather than
+  using an isolated absolutely positioned vehicle.
+  The owner-supplied 1600 x 1066 photograph at
+  `public/marketing/auth-water-hands.jpg` replaces the shared decorative drop
+  background. CSS gives only the photograph a gentle 20-second pan/zoom and
+  removes it under reduced motion; navy overlays support the white copy.
 - Window scroll (rider and driver app): below 768 px the shell keeps one
   internal scroll region. From 768 px the `partner` and legacy `phone` scopes mark their frame
   `data-scroll="window"` (not for a `background="ink"` drawer menu, whose panel

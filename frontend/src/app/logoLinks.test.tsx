@@ -10,7 +10,7 @@ import { AppProviders } from './providers'
 import { routes } from './router'
 
 // Every screen logo is a link home named "MmiriOma, home" (#337, docs/design/landing-v1.md "Logo links"):
-// to `/`, or to `/partner/` inside the partner app so the installed app keeps its scope. Each shell is
+// to `/`, including the partner app (owner request, 4 November 2026). Each shell is
 // rendered whole, so a logo that is not wrapped in HomeLogo fails here. The source scan at the end catches
 // a logo added to a screen these tests do not render.
 const WAIT = 10_000
@@ -72,9 +72,9 @@ describe('the sign-in pages', () => {
     expect((await homeLinks())[0]).toHaveAttribute('href', '/')
   }, SLOW)
 
-  it('link the partner logo to the partner home, inside the installed app', async () => {
+  it('link the partner logo to the public homepage', async () => {
     renderAt('/partner/login')
-    expect((await homeLinks())[0]).toHaveAttribute('href', '/partner/')
+    expect((await homeLinks())[0]).toHaveAttribute('href', '/')
   }, SLOW)
 })
 
@@ -100,10 +100,10 @@ describe('the signed-in shells', () => {
     expect(screen.queryByRole('link', { name: 'MmiriOma admin dashboard' })).toBeNull()
   }, SLOW)
 
-  it('link the partner top bar logo to the partner home', async () => {
+  it('link the partner top bar logo to the public homepage', async () => {
     await mockLogin({ phone: '0800 000 0101', password: DEMO_PASSWORD })
     renderAt('/partner/rider')
-    expect((await homeLinks())[0]).toHaveAttribute('href', '/partner/')
+    expect((await homeLinks())[0]).toHaveAttribute('href', '/')
   }, SLOW)
 })
 
@@ -126,9 +126,6 @@ describe('the landing hero', () => {
 })
 
 describe('every logo in the source is inside HomeLogo', () => {
-  // The logo marks beside the "Create your account" heading and in the "Delivered" celebration circle are
-  // illustrations (`alt=""`, no link), as the design decided.
-  const DECORATIVE = ['/features/customer/pages/SignUp.tsx', '/features/customer/pages/order/Delivered.tsx']
   // The component's own definitions, the dev gallery pages, and tests.
   const SKIPPED = (path: string) => /\.test\.tsx$/.test(path) || path.includes('/dev/') || path.endsWith('/components/brand/Logo.tsx') || path.endsWith('/components/brand/HomeLogo.tsx')
 
@@ -139,10 +136,10 @@ describe('every logo in the source is inside HomeLogo', () => {
     expect(drawing.length).toBeGreaterThanOrEqual(10)
   })
 
-  it('has no <Logo> or <BrandLogo> outside a <HomeLogo>, apart from the two decorative marks', () => {
+  it('has no <Logo> or <BrandLogo> outside a <HomeLogo>', () => {
     const loose: string[] = []
     for (const [path, text] of Object.entries(sources)) {
-      if (SKIPPED(path) || DECORATIVE.some((d) => path.endsWith(d))) continue
+      if (SKIPPED(path)) continue
       for (const match of text.matchAll(/<(Logo|BrandLogo)\b/g)) {
         const before = text.slice(0, match.index)
         const open = before.lastIndexOf('<HomeLogo')

@@ -87,7 +87,7 @@ export function JobDetail() {
                   </>
                 )}
               </div>
-              <Illustration name={keke ? 'keke' : 'tanker'} className={cx('animate-drive', keke ? 'w-[132px]' : 'mr-[-26px] w-[150px]')} />
+              <Illustration name={keke ? 'keke-rider' : 'tanker'} className={cx('animate-drive', keke ? 'w-[132px]' : 'mr-[-26px] w-[150px]')} />
             </div>
             <RouteCard job={j} className="rise-3" />
             {(j.earning_minor_units !== null || j.instructions) && (
