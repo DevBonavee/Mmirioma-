@@ -161,12 +161,17 @@ function Benefits() {
   )
 }
 
-/** The pictures and circle colours of the four steps; the words are `HOW_STEPS` in content.ts. */
-const STEP_ART: { img: string; w: number; h: number; circle: string }[] = [
-  { img: 'step-order', w: 82, h: 122, circle: 'bg-primary' },
-  { img: 'step-deliver', w: 145, h: 92, circle: 'bg-primary' },
-  { img: 'step-pour', w: 115, h: 122, circle: 'bg-mk-step3' },
-  { img: 'step-code', w: 87, h: 108, circle: 'bg-mk-step4' },
+/**
+ * Photo windows in the owner's 1448 x 1086 delivery guide (4 November 2026).
+ * Each window is 550 x 280 source pixels, excluding the printed page header
+ * and instructions. The phone scene serves both phone-related steps; the
+ * approved four-step copy stays in accessible HTML, independent of the image.
+ */
+const STEP_ART: { x: number; y: number; alt: string; circle: string }[] = [
+  { x: 730, y: 108, alt: 'Ordering water on a smartphone', circle: 'bg-primary' },
+  { x: 530, y: 410, alt: 'A delivery rider carrying blue water containers', circle: 'bg-primary' },
+  { x: 770, y: 720, alt: 'A water delivery arriving at a customer’s home', circle: 'bg-mk-step3' },
+  { x: 835, y: 108, alt: 'Using a phone for a water delivery', circle: 'bg-mk-step4' },
 ]
 const STEPS = HOW_STEPS.map((step, i) => ({ ...STEP_ART[i], ...step }))
 
@@ -184,11 +189,18 @@ function HowItWorks() {
       />
       <div className="mk-steps">
         {STEPS.map((s, i) => (
-          <div key={s.title} className="relative flex flex-col gap-3.5 rounded-[20px] bg-white px-[26px] py-8 shadow-[0_8px_28px_rgba(15,60,120,0.07)]">
-            <Pic name={s.img} width={s.w} height={s.h} className="block h-16 w-auto self-center" />
-            <span className={cx('mt-2 inline-flex size-[30px] items-center justify-center rounded-full text-[14px] font-bold text-white', s.circle)}>{i + 1}</span>
-            <h3 className="m-0 font-display text-[20px] font-bold text-ink">{s.title}</h3>
-            <p className="m-0 text-[15px] leading-[1.6] text-slate">{s.text}</p>
+          <div key={s.title} className="relative flex min-w-0 flex-col rounded-[20px] bg-white shadow-[0_8px_28px_rgba(15,60,120,0.07)]">
+            <div
+              className="mk-step-photo"
+              style={{ '--mk-photo-left': `${-s.x / 550 * 100}%`, '--mk-photo-top': `${-s.y / 280 * 100}%` } as CSSProperties}
+            >
+              <img src="/marketing/how-it-works-guide.png" width={1448} height={1086} alt={s.alt} loading="lazy" decoding="async" />
+            </div>
+            <div className="flex flex-1 flex-col gap-3.5 px-[26px] pt-5 pb-7">
+              <span className={cx('inline-flex size-[30px] items-center justify-center rounded-full text-[14px] font-bold text-white', s.circle)}>{i + 1}</span>
+              <h3 className="m-0 font-display text-[20px] font-bold text-ink">{s.title}</h3>
+              <p className="m-0 text-[15px] leading-[1.6] text-slate">{s.text}</p>
+            </div>
             {i < STEPS.length - 1 && (
               <span className="mk-step-arrow absolute top-1/2 right-[-27px] text-mk-arrow" aria-hidden="true">
                 <DottedArrowIcon />

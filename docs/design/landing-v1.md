@@ -275,3 +275,19 @@ service areas list kept its "sample" wording until #346 replaced it with the rea
 - **Social links** and real partner logos.
 - **Image sharpness**: the pictures were cut from a 734 px mockup and
   upscaled; swap in originals with the same file names.
+
+## Owner's step-photo update (2026-11-04)
+
+The owner supplied "MmiriOma Motorcycle Water Delivery Guide.png" and a mobile
+screenshot of the existing icons, requesting realistic imagery that fits the
+same website section. The "How MmiriOma works" cards now use photo portions
+of that supplied guide. The source is retained unchanged at
+`frontend/public/marketing/how-it-works-guide.png`; CSS clips photo windows
+without displaying the guide's outer header or printed step instructions.
+
+The existing four delivery steps, copy, numbered circles, desktop arrows and
+grid breakpoints remain. The phone photo serves the Order and Give your code
+cards. Each card has a full-width photo above its HTML instructions, with a
+reserved aspect ratio and rounded top corners. The artwork's three-step copy,
+25-litre labels and water-quality claims do not replace the website's business
+rules or approved HTML copy. See [implementation notes](../features/public-pages.md#how-it-works-photography-4-november-2026).

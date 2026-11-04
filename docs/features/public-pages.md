@@ -60,6 +60,37 @@ the legal pages. Anyone can open them, signed in or not.
   jumps to section 13. `/privacy` is the website copy of `PRIVACY_NOTICE.md`
   (version 2.0, #93, #104), section by section; change both together.
 
+### How it works photography (4 November 2026)
+
+The owner supplied a realistic delivery-guide image to replace the small step
+icons on `/`. The four existing steps and their shared `HOW_STEPS` copy remain
+Order / We bring it / We pour it / Give your code. The guide is artwork, not a
+new specification for capacities, quality claims, vehicles or delivery proof.
+
+`frontend/public/marketing/how-it-works-guide.png` is an unchanged copy of the
+supplied 1448 x 1086 PNG. Each card uses a 550 x 280 photo window from it,
+positioned with CSS percentages so the photograph scales without distortion.
+The phone scene is reused for the two phone-related steps. The graphic's outer
+logo, menu and printed instructions stay outside the windows; website headings,
+numbers and instructions remain readable HTML. Photo windows reserve their
+aspect ratio before loading, have descriptive alt text and load lazily. The
+same image URL lets all four windows share the browser cache.
+
+The existing grid remains four columns above 1100 px, two at 601-1100 px and one
+at 600 px or below. Photos span their card width and clip inside its rounded
+top corners. If the source image is replaced, update the source dimensions,
+window offsets in `STEP_ART` and crop sizing in `marketing.css` together.
+
+Verification: 10 Chrome viewport widths (360, 390, 600, 601, 768, 1024, 1100,
+1101, 1440 and 1920 px) passed image loading, source-window proportions, card
+fit, grid and horizontal-overflow checks with no browser errors. Screenshots
+at 390, 768 and 1440 px are in the temporary `mmirioma-how-it-works` folder.
+The focused public-page suite passed 134 tests in 9 files. Before pushing for
+review, the complete frontend suite also passed all 1,632 tests in 125 files.
+Lint, TypeScript,
+the real-mode production build and demo-value exclusion check also passed, with
+only the existing PWA plugin and map chunk warnings.
+
 ## 3. Important files
 
 | Path | Responsibility |
@@ -81,7 +112,7 @@ the legal pages. Anyone can open them, signed in or not.
 | `icons.tsx` | The design's icons, path for path |
 | `marketing.css` | Breakpoint rules for the hero and drivers backgrounds and grids, and the size tiles' water (`.mk-tile`) |
 | `useMarketingPage.ts` | Fonts, title and description, scrolling to `#section` |
-| `frontend/public/marketing/` | Images (WebP plus PNG/JPG) |
+| `frontend/public/marketing/` | Images (WebP plus PNG/JPG), including the owner-supplied `how-it-works-guide.png` photo source |
 | `frontend/src/styles/theme.css` | `mk-*` colours and the Outfit / DM Sans font tokens |
 
 ## 4. Database models and relationships

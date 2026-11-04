@@ -138,6 +138,26 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 32px;
   }
+  /* One supplied guide, cached once. Crop its photo scenes in the layout so
+   * instructions remain real text and the source bitmap stays unchanged.
+   * Width and offsets correspond to a 550 x 280 window in a 1448 px image.
+   */
+  .mk-step-photo {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 550 / 280;
+    overflow: hidden;
+    border-radius: 20px 20px 0 0;
+    background: var(--color-mk-panel);
+  }
+  .mk-step-photo img {
+    position: absolute;
+    width: calc(100% * 1448 / 550);
+    max-width: none;
+    height: auto;
+    left: var(--mk-photo-left);
+    top: var(--mk-photo-top);
+  }
   .mk-approval {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
