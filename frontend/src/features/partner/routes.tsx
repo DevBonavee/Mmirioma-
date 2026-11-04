@@ -2,6 +2,7 @@ import type { RouteObject } from 'react-router-dom'
 import { RequireRole } from '../auth/RequireRole'
 import { SignedOutOnly } from '../auth/SessionRedirects'
 import { PARTNER_PAY_ENABLED } from '../../lib/features'
+import { ShellScope } from '../../components/layout/ShellScope'
 import { PartnerArea, PartnerHomeRedirect } from './PartnerArea'
 
 /**
@@ -14,12 +15,12 @@ import { PartnerArea, PartnerHomeRedirect } from './PartnerArea'
  * lazy (its own chunk), so customers never download partner screens.
  */
 export const partnerRoutes: RouteObject[] = [
-  { path: '/partner/login', lazy: () => import('./pages/PartnerLogin').then((m) => ({ element: <SignedOutOnly><m.PartnerLogin /></SignedOutOnly> })) }, // r-login
-  { path: '/partner/signup', lazy: () => import('./pages/PartnerSignup').then((m) => ({ Component: m.PartnerSignupPage })) }, // added; handles a signed-in customer itself
-  { path: '/partner/forgot-password', lazy: () => import('../customer/pages/AccountPages').then((m) => ({ element: <m.ForgotPassword back="/partner/login" contact="/partner/contact" /> })) }, // added
-  { path: '/partner/contact', lazy: () => import('../customer/pages/SupportContact').then((m) => ({ element: <m.SupportContact back={-1} /> })) }, // added
-  { path: '/partner/password', lazy: () => import('../customer/pages/AccountPages').then((m) => ({ element: <RequireRole role="driver"><m.ChangePassword back="/partner" /></RequireRole> })) }, // added
-  { path: '/partner/verify-phone', lazy: () => import('./pages/PartnerVerifyPhone').then((m) => ({ element: <RequireRole role="driver"><m.PartnerVerifyPhone /></RequireRole> })) }, // added (docs/design/partner-phone-verification.md)
+  { path: '/partner/login', lazy: () => import('./pages/PartnerLogin').then((m) => ({ element: <ShellScope width="card"><SignedOutOnly><m.PartnerLogin /></SignedOutOnly></ShellScope> })) }, // r-login
+  { path: '/partner/signup', lazy: () => import('./pages/PartnerSignup').then((m) => ({ element: <ShellScope width="card"><m.PartnerSignupPage /></ShellScope> })) }, // added; handles a signed-in customer itself
+  { path: '/partner/forgot-password', lazy: () => import('../customer/pages/AccountPages').then((m) => ({ element: <ShellScope width="card"><m.ForgotPassword back="/partner/login" contact="/partner/contact" /></ShellScope> })) }, // added
+  { path: '/partner/contact', lazy: () => import('../customer/pages/SupportContact').then((m) => ({ element: <ShellScope width="card"><m.SupportContact back={-1} /></ShellScope> })) }, // added
+  { path: '/partner/password', lazy: () => import('../customer/pages/AccountPages').then((m) => ({ element: <ShellScope width="partner"><RequireRole role="driver"><m.ChangePassword back="/partner" /></RequireRole></ShellScope> })) }, // added
+  { path: '/partner/verify-phone', lazy: () => import('./pages/PartnerVerifyPhone').then((m) => ({ element: <ShellScope width="partner"><RequireRole role="driver"><m.PartnerVerifyPhone /></RequireRole></ShellScope> })) }, // added (docs/design/partner-phone-verification.md)
   { path: '/partner', element: <PartnerHomeRedirect /> },
   {
     path: '/partner/rider',

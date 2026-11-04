@@ -48,13 +48,13 @@ export function RiderHome() {
   return (
     <MobileShell>
       <PartnerHomeTopBar />
-      <ScrollArea className="gap-3">
+      <ScrollArea className="gap-3 md:grid md:grid-cols-2 md:content-start xl:grid-cols-3 xl:gap-5">
         {profile.isPending && <LoadingBlock />}
         {profile.isError && <ErrorBlock error={profile.error} onRetry={() => profile.refetch()} />}
         {p && (
           <>
             <ScreenHeading
-              className="rise-1"
+              className="rise-1 md:col-span-full"
               titleClassName="text-[22px]"
               title={`${greeting()}, ${p.name.split(' ')[0]}!`}
               sub={`Keke rider · ${p.service_areas.join(' and ')} area`}
@@ -140,7 +140,7 @@ export function RiderHome() {
             <HomeAppCard app="partner" className="rise-4" />
 
             <SectionHeader
-              className="rise-5"
+              className="rise-5 md:col-span-full"
               title={`Available orders (${available.data?.length ?? 0})`}
               action={<TextLink to={`${base}/orders`} className="text-sub">View all</TextLink>}
             />

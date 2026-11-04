@@ -209,34 +209,42 @@ use `hit-48`: the look stays, the touch area is 48 × 48.
 - `components/layout/MobileShell.tsx`: `MobileShell` (`.ph`), `TopBar` (`.top`)
   with `BackLink`, `MenuLink`, `NotificationsLink`, `ProfileLink`,
   `TopBarTitle`, `TopBarSpacer`; `ScrollArea` (`.scroll`) and `Footer`
-  (`.foot`). The shell is `100dvh` tall with one scrolling area; from 360 px it
-  fills the screen. From 768 px it is a centred column whose width a `ShellScope`
-  (`ShellScope.tsx`, `shellContext.ts`) sets for the screens below it: 430 px
-  without one (rider and driver app), `customer` 720 px then up to 1120 px from
-  1280 px with the header navigation, `card` 480 px for the signed-out customer
-  screens. `CustomerArea` and the customer routes set it, so the partner files
-  need no change. Footer and tab bar pad above the phone's home bar
+  (`.foot`). Customer and partner `ShellScope` workspaces fill the available
+  width, including the 431–767 px range previously capped at 430 px. They do
+  not reapply the former 720 px main/footer content band. Standalone customer
+  and partner auth routes use `card`: full width on phones, up to 768 px on
+  larger screens. The default `phone` policy remains for legacy previews and
+  unrelated routes. `CustomerArea`, `PartnerArea` and public auth routes set
+  their scope explicitly. Footer and tab bar pad above the phone's home bar
   (`env(safe-area-inset-bottom)`).
-- Window scroll (rider and driver app, #342): below 768 px the shell is as
-  above. From 768 px the `phone`-width shell marks its frame
+- Window scroll (rider and driver app): below 768 px the shell keeps one
+  internal scroll region. From 768 px the `partner` and legacy `phone` scopes mark their frame
   `data-scroll="window"` (not for a `background="ink"` drawer menu, whose panel
   fills the screen), and the rules at the end of `styles/components.css` let the
   column grow with its content, so the browser window scrolls and a desktop
   browser shows one scrollbar. The header (`.mo-top`) sticks to the top of the
-  window and the footer (`.mo-foot`) or tab bar (`.mo-tabs`) to the bottom. A
-  sheet drawn over the column (`AssignedSheet`) is `fixed` from 768 px, kept
-  inside the 430 px column, because the column is no longer one viewport high.
-  To undo it, remove the `data-scroll` attribute and that CSS block.
+  window together with desktop navigation (`.mo-header`), and the footer
+  (`.mo-foot`) or tab bar (`.mo-tabs`) to the bottom. Full-screen absolute map
+  scenes use `MobileShell viewport` to retain a stable viewport height.
+  `AssignedSheet` covers the viewport and becomes a centered, scrollable
+  dialog up to 640 px wide from 768 px; it stays a bottom sheet on phones.
 - Two panes (customer Orders and Addresses, 1280 px and up): `pages/Splits.tsx`
   draws a list `Pane` and a detail `Pane` side by side. A screen inside a pane
   (`usePane()`) fills the pane instead of the page, and the list pane has no
   top bar. Below 1280 px the same routes show the one screen, chosen with
   `useMediaQuery` (`lib/useMediaQuery.ts`); everything else uses Tailwind
   breakpoints.
-- `components/layout/BottomTabBar.tsx`: `.tabs`, current tab `aria-current`.
+- Customer and partner primary navigation moves from bottom tabs to header
+  links at 1280 px. The partner destination list is shared by both views and
+  keeps Earnings disabled. `BottomTabBar.tsx` divides the width by the number
+  of enabled items, so three partner links do not leave an empty fourth track.
+- Driver dashboards, available jobs and history use responsive card grids;
+  delivery details and code entry use two columns on larger screens. The
+  keypad stays readable rather than stretching its keys across the workspace.
 - `components/layout/DrawerMenu.tsx`: slide-in menu screens (`c-menu`, `r-menu`,
   `t-menu`); closes on backdrop, close button or Escape. `tone="green"` gives
   the tanker app's green backdrop, header and current row (`MenuItem tone`).
+  Menus expand to a centered panel up to 720 px on tablets/desktops.
 - `components/layout/AdminShell.tsx` and `adminNav.tsx`: header (logo, search,
   notifications, profile), the full 13-item sidebar from the dashboard design
   on every admin page, count badges. From 1024 px the 248 px sidebar is on the

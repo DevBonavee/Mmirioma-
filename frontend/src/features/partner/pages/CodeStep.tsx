@@ -88,132 +88,136 @@ function CodeEntryScreen({ job: j }: { job: PartnerJob }) {
   return (
     <MobileShell>
       <TopBar left={<BackLink to={`${base}/jobs/${j.reference}/customer`} />} />
-      <ScrollArea className="gap-3.5">
-        <ScreenHeading
-          className="rise-1"
-          title="Enter delivery code"
-          sub={
-            showError
-              ? `${j.reference}${contactSuffix(j)}`
-              : smsFailed
-                ? `The code could not be sent to ${j.customer.contact_name ? `${firstName}'s phone` : 'the customer'}. Send a new code.`
-                : keke
-                ? `Pour the water first. Then ask the customer for the 6-digit code we sent to their phone${j.customer.phone ? ` ending ${phoneEnding(j.customer.phone)}` : ''}.`
-                : `Pump the water in first, then ask ${firstName} for the 6-digit code sent to their phone.`
-          }
-        />
-        {!showError && (
-          <JobMiniCard
-            className="rise-2"
-            job={j}
-            sub={keke ? `${jobQuantity(j)}${contactSuffix(j)}` : `${jobQuantity(j, 'short')}${tankType ? ` · ${tankType} tank` : ''}`}
-            trailing={j.earning_minor_units !== null ? <Chip tone="amber">{formatNaira(j.earning_minor_units)}</Chip> : undefined}
+      <ScrollArea className="gap-3.5 lg:grid lg:grid-cols-2 lg:content-start lg:items-start lg:gap-8">
+        <div className="flex min-w-0 flex-col gap-3.5">
+          <ScreenHeading
+            className="rise-1"
+            title="Enter delivery code"
+            sub={
+              showError
+                ? `${j.reference}${contactSuffix(j)}`
+                : smsFailed
+                  ? `The code could not be sent to ${j.customer.contact_name ? `${firstName}'s phone` : 'the customer'}. Send a new code.`
+                  : keke
+                  ? `Pour the water first. Then ask the customer for the 6-digit code we sent to their phone${j.customer.phone ? ` ending ${phoneEnding(j.customer.phone)}` : ''}.`
+                  : `Pump the water in first, then ask ${firstName} for the 6-digit code sent to their phone.`
+            }
           />
-        )}
-        <CodeBoxes className="rise-3" value={showError ? (wrong ?? '') : code} invalid={showError} />
-        {showError ? (
-          <>
-            <div role="alert" className="rise-2 flex items-start gap-2.5 rounded-option border-[1.5px] border-solid border-[#FCA5A5] bg-[#FEF2F2] px-3.5 py-3 text-sub text-[#7F1D1D]">
-              <AlertCircleTallIcon size={20} strokeWidth={2.2} color="#DC2626" roundJoin={false} className="shrink-0" />
-              {locked ? (
-                <div>
-                  <b>Too many wrong codes.</b> The code is locked. Ask admin to confirm the delivery.
-                </div>
-              ) : expired ? (
-                <div>
-                  <b>This code has expired.</b> Send a new code, then ask the customer to read it to you.
-                </div>
-              ) : (
-                <div>
-                  <b>That code is not right.</b> Ask the customer to read it again. You have{' '}
-                  <b>
-                    {j.code_tries_left} {j.code_tries_left === 1 ? 'try' : 'tries'} left
-                  </b>
-                  .
-                </div>
-              )}
-            </div>
-            {!locked && !expired && (
-              <Button className="rise-3" onClick={tryAgain}>
-                Try again
-              </Button>
-            )}
-            <Card pad className="rise-4 flex flex-col gap-2.5">
-              <div className="flex items-center gap-3">
-                <IconBadge tone="gold">
-                  <TimerIcon size={20} strokeWidth={2.2} roundJoin={false} />
-                </IconBadge>
-                <div className="flex-1">
-                  <div className="font-extrabold">Code expired?</div>
-                  <div className="text-caption text-mute">Codes expire after [CODE TIME LIMIT]. You can send a new one.</div>
-                </div>
+          {!showError && (
+            <JobMiniCard
+              className="rise-2"
+              job={j}
+              sub={keke ? `${jobQuantity(j)}${contactSuffix(j)}` : `${jobQuantity(j, 'short')}${tankType ? ` · ${tankType} tank` : ''}`}
+              trailing={j.earning_minor_units !== null ? <Chip tone="amber">{formatNaira(j.earning_minor_units)}</Chip> : undefined}
+            />
+          )}
+        </div>
+        <div className="flex w-full min-w-0 flex-col gap-3.5 lg:max-w-[560px] lg:justify-self-center">
+          <CodeBoxes className="rise-3" value={showError ? (wrong ?? '') : code} invalid={showError} />
+          {showError ? (
+            <>
+              <div role="alert" className="rise-2 flex items-start gap-2.5 rounded-option border-[1.5px] border-solid border-[#FCA5A5] bg-[#FEF2F2] px-3.5 py-3 text-sub text-[#7F1D1D]">
+                <AlertCircleTallIcon size={20} strokeWidth={2.2} color="#DC2626" roundJoin={false} className="shrink-0" />
+                {locked ? (
+                  <div>
+                    <b>Too many wrong codes.</b> The code is locked. Ask admin to confirm the delivery.
+                  </div>
+                ) : expired ? (
+                  <div>
+                    <b>This code has expired.</b> Send a new code, then ask the customer to read it to you.
+                  </div>
+                ) : (
+                  <div>
+                    <b>That code is not right.</b> Ask the customer to read it again. You have{' '}
+                    <b>
+                      {j.code_tries_left} {j.code_tries_left === 1 ? 'try' : 'tries'} left
+                    </b>
+                    .
+                  </div>
+                )}
               </div>
-              <Button
-                variant="alt"
-                className="h-[46px]"
-                disabled={wait > 0}
-                loading={resend.isPending}
-                onClick={() => resend.mutate(undefined, { onSuccess: tryAgain })}
-              >
-                {wait > 0 ? `Send a new code in ${mmss(wait)}` : 'Send a new code'}
-              </Button>
-              {newCodeSent && <Notice tone="success">A new code was sent to the customer.</Notice>}
-              {resend.isError && <Notice tone="error">{errorMessage(resend.error)}</Notice>}
-            </Card>
-            <Link to={issueLink} className="rise-5 text-center text-sub font-bold text-primary no-underline hover:text-primary-dark">
-              Still not working? Ask admin to confirm the delivery
-            </Link>
-          </>
-        ) : waiting ? (
-          <>
-            <Notice className="rise-3">
-              <b>Waiting for the delivery code.</b> We send it to the customer when you finish unloading.
-            </Notice>
-            {/* The code is issued only after unloading (FR-035, #13). */}
-            <Button className="rise-4" loading={unloaded.isPending} onClick={() => unloaded.mutate()}>
-              Unloading done, send the code
-            </Button>
-            {unloaded.isError && <Notice tone="error">{errorMessage(unloaded.error)}</Notice>}
-          </>
-        ) : (
-          <>
-            {smsFailed ? (
-              <>
-                <Notice className="rise-3" tone="error">
-                  <b>The code could not be sent to the customer.</b> Send a new code.
-                </Notice>
-                <Button className="rise-3 h-[46px]" variant="alt" disabled={wait > 0} loading={resend.isPending} onClick={() => resend.mutate()}>
+              {!locked && !expired && (
+                <Button className="rise-3" onClick={tryAgain}>
+                  Try again
+                </Button>
+              )}
+              <Card pad className="rise-4 flex flex-col gap-2.5">
+                <div className="flex items-center gap-3">
+                  <IconBadge tone="gold">
+                    <TimerIcon size={20} strokeWidth={2.2} roundJoin={false} />
+                  </IconBadge>
+                  <div className="flex-1">
+                    <div className="font-extrabold">Code expired?</div>
+                    <div className="text-caption text-mute">Codes expire after [CODE TIME LIMIT]. You can send a new one.</div>
+                  </div>
+                </div>
+                <Button
+                  variant="alt"
+                  className="h-[46px]"
+                  disabled={wait > 0}
+                  loading={resend.isPending}
+                  onClick={() => resend.mutate(undefined, { onSuccess: tryAgain })}
+                >
                   {wait > 0 ? `Send a new code in ${mmss(wait)}` : 'Send a new code'}
                 </Button>
-              </>
-            ) : (
-              <div className="rise-3 flex justify-between text-[13px]">
-                <span className="text-mute">Code sent to customer</span>
-                <button
-                  type="button"
-                  disabled={wait > 0 || resend.isPending}
-                  onClick={() => resend.mutate()}
-                  className="cursor-pointer border-0 bg-transparent p-0 font-bold text-primary disabled:cursor-default"
-                >
-                  {wait > 0 ? `Resend in ${mmss(wait)}` : 'Resend code'}
-                </button>
+                {newCodeSent && <Notice tone="success">A new code was sent to the customer.</Notice>}
+                {resend.isError && <Notice tone="error">{errorMessage(resend.error)}</Notice>}
+              </Card>
+              <Link to={issueLink} className="rise-5 text-center text-sub font-bold text-primary no-underline hover:text-primary-dark">
+                Still not working? Ask admin to confirm the delivery
+              </Link>
+            </>
+          ) : waiting ? (
+            <>
+              <Notice className="rise-3">
+                <b>Waiting for the delivery code.</b> We send it to the customer when you finish unloading.
+              </Notice>
+              {/* The code is issued only after unloading (FR-035, #13). */}
+              <Button className="rise-4" loading={unloaded.isPending} onClick={() => unloaded.mutate()}>
+                Unloading done, send the code
+              </Button>
+              {unloaded.isError && <Notice tone="error">{errorMessage(unloaded.error)}</Notice>}
+            </>
+          ) : (
+            <>
+              {smsFailed ? (
+                <>
+                  <Notice className="rise-3" tone="error">
+                    <b>The code could not be sent to the customer.</b> Send a new code.
+                  </Notice>
+                  <Button className="rise-3 h-[46px]" variant="alt" disabled={wait > 0} loading={resend.isPending} onClick={() => resend.mutate()}>
+                    {wait > 0 ? `Send a new code in ${mmss(wait)}` : 'Send a new code'}
+                  </Button>
+                </>
+              ) : (
+                <div className="rise-3 flex justify-between text-[13px]">
+                  <span className="text-mute">Code sent to customer</span>
+                  <button
+                    type="button"
+                    disabled={wait > 0 || resend.isPending}
+                    onClick={() => resend.mutate()}
+                    className="cursor-pointer border-0 bg-transparent p-0 font-bold text-primary disabled:cursor-default"
+                  >
+                    {wait > 0 ? `Resend in ${mmss(wait)}` : 'Resend code'}
+                  </button>
+                </div>
+              )}
+              {newCodeSent && <Notice tone="success">A new code was sent to the customer.</Notice>}
+              {resend.isError && smsFailed && <Notice tone="error">{errorMessage(resend.error)}</Notice>}
+              <div className="rise-4">
+                <Keypad value={code} onChange={setCode} disabled={verify.isPending} />
               </div>
-            )}
-            {newCodeSent && <Notice tone="success">A new code was sent to the customer.</Notice>}
-            {resend.isError && smsFailed && <Notice tone="error">{errorMessage(resend.error)}</Notice>}
-            <div className="rise-4">
-              <Keypad value={code} onChange={setCode} disabled={verify.isPending} />
-            </div>
-            {verify.isError && !(verify.error instanceof ApiError && ['invalid_code', 'code_locked'].includes(verify.error.code)) && (
-              <Notice tone="error">{errorMessage(verify.error)}</Notice>
-            )}
-            {USE_MOCKS && j.demo_code && (
-              <p className="m-0 text-center text-chip text-mute">
-                Demo: the customer's code is <b className="tracking-[2px]">{j.demo_code}</b>
-              </p>
-            )}
-          </>
-        )}
+              {verify.isError && !(verify.error instanceof ApiError && ['invalid_code', 'code_locked'].includes(verify.error.code)) && (
+                <Notice tone="error">{errorMessage(verify.error)}</Notice>
+              )}
+              {USE_MOCKS && j.demo_code && (
+                <p className="m-0 text-center text-chip text-mute">
+                  Demo: the customer's code is <b className="tracking-[2px]">{j.demo_code}</b>
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </ScrollArea>
       {/* While waiting, "Unloading done, send the code" is the only action (G2 on #133). */}
       {!showError && !waiting && (

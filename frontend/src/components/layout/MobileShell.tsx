@@ -9,54 +9,40 @@ import { IconButton, IconLink } from '../ui/IconButton'
 import { useShellScope, usePane, type ShellWidth } from './shellContext'
 
 /**
- * Frame classes by width. Below 768 px every width is the same phone screen.
- * From 768 px: phone stays 430, customer is 720 and then up to 1120 from
- * 1280 px, card is 480.
+ * Workspaces fill the viewport, including widths between phones and tablets.
+ * Auth forms keep a readable cap; legacy phone previews stay independent.
  */
 const FRAME: Record<ShellWidth, string> = {
   phone: 'max-w-phone',
-  customer: 'max-w-phone md:max-w-customer xl:max-w-customer-wide',
-  card: 'max-w-phone md:max-w-card',
+  customer: 'w-full min-w-0',
+  partner: 'w-full min-w-0',
+  card: 'w-full md:max-w-3xl',
 }
 
-/** Side padding that centres content in a 720 px column inside the 1120 px customer area (xl only). */
-const XL_COLUMN = 'xl:px-[max(18px,calc((100%_-_720px)/2))]'
-
 /**
- * Frame for every phone screen (`.ph` in the design, drawn at 390 × 844).
- *
- * It fills the viewport height (`100dvh`, so the browser toolbar does not
- * hide the footer) with a fixed header, one scrolling area and a fixed footer
- * or tab bar. From 360 px up it stretches to the screen width; on tablets and
- * desktops it is a centred column on the page background, so the phone layout
- * keeps its proportions. The column is 430 px unless a `ShellScope` says
- * otherwise (customer: 720 px, then up to 1120 px from 1280 px; see
- * `docs/design/responsive.md`).
- *
- * Inside a `Pane` it does not draw the page at all: it fills the pane.
- *
- * The `phone` width (the rider and driver app and the screens outside the
- * customer area) lets the browser window scroll from 768 px, with the header and
- * the footer or tab bar sticky, so a desktop browser shows one scrollbar, not a
- * second one inside the column (`data-scroll="window"`, styled in
- * `styles/components.css`). Below 768 px the frame is the viewport and the
- * scrolling area scrolls, as it always did. A `background="ink"` screen (a drawer
- * menu) keeps the viewport-high frame because its panel fills the screen.
+ * Shared customer/partner page frame. Phones keep one internal scrolling
+ * region and reachable actions. Partner pages use window scrolling from 768 px;
+ * customer list/detail panes retain independent scroll regions. Map scenes can
+ * request a viewport frame so absolute-positioned content has a stable height.
+ * Inside a Pane this fills the pane rather than nesting another page frame.
  */
 export function MobileShell({
   children,
   background = 'canvas',
+  viewport = false,
   className,
 }: {
   children: ReactNode
   /** Screen background: canvas (default), white (sign-in) or ink (drawer menus). */
   background?: 'canvas' | 'white' | 'ink'
+  /** Keep viewport height for full-screen maps instead of partner window scrolling. */
+  viewport?: boolean
   className?: string
 }) {
   const { width } = useShellScope()
   const pane = usePane()
   const fill = background === 'white' ? 'bg-white' : background === 'ink' ? 'bg-ink' : 'bg-canvas'
-  const windowScroll = width === 'phone' && background !== 'ink'
+  const windowScroll = (width === 'phone' || width === 'partner') && background !== 'ink' && !viewport
   if (pane) {
     return <div className={cx('relative flex min-h-0 flex-1 flex-col overflow-hidden text-body text-ink', fill, className)}>{children}</div>
   }
@@ -64,10 +50,11 @@ export function MobileShell({
     <div className="min-h-dvh bg-canvas">
       <div
         data-scroll={windowScroll ? 'window' : undefined}
+        data-shell={width}
         className={cx(
           'relative mx-auto flex h-dvh flex-col overflow-hidden text-body text-ink',
           FRAME[width],
-          'sm:border-x sm:border-line sm:shadow-card',
+          (width === 'phone' || width === 'card') && 'sm:border-x sm:border-line sm:shadow-card',
           fill,
           className,
         )}
@@ -97,7 +84,7 @@ export function TopBar({
   // The list pane of a two-pane layout has no bar of its own: the page header above both panes serves it.
   if (pane === 'list') return null
   return (
-    <>
+    <div className="mo-header shrink-0">
       <header
         className={cx(
           'mo-top',
@@ -112,9 +99,9 @@ export function TopBar({
         )}
         {right ?? <TopBarSpacer />}
       </header>
-      {/* Customer desktop (1280 px and up): the links that the tab bar carries on a phone. */}
+      {/* Desktop: the same destinations carried by the mobile tab bar. */}
       {nav && pane === null && <div className="hidden shrink-0 xl:block">{nav}</div>}
-    </>
+    </div>
   )
 }
 
@@ -187,17 +174,13 @@ export function ScrollArea({
   /** Override padding or gap where a screen differs (e.g. `gap-3`). */
   className?: string
   style?: CSSProperties
-  /**
-   * Customer area from 1280 px: use the whole 1120 px instead of a centred
-   * 720 px column (the home screen). Forms and detail screens leave it off.
-   */
+  /** Identifies overview content; all workspace pages now use the available width. */
   wide?: boolean
 }) {
-  const { width } = useShellScope()
-  const pane = usePane()
   return (
     <main
-      className={cx('mo-scroll', width === 'customer' && pane === null && !wide && XL_COLUMN, className)}
+      data-content={wide ? 'wide' : undefined}
+      className={cx('mo-scroll min-w-0', className)}
       style={style}
     >
       {children}
@@ -207,13 +190,10 @@ export function ScrollArea({
 
 /** Fixed footer for the main action (`.foot`), padded above the phone's home bar. */
 export function Footer({ children, row = false, className }: { children: ReactNode; row?: boolean; className?: string }) {
-  const { width } = useShellScope()
-  const pane = usePane()
   return (
     <div
       className={cx(
         'mo-foot',
-        width === 'customer' && pane === null && XL_COLUMN,
         row && 'flex-row gap-2.5',
         className,
       )}

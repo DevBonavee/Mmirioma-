@@ -52,12 +52,12 @@ export function DriverHome() {
   return (
     <MobileShell>
       <TopBar left={<MenuLink to={`${base}/menu`} />} right={<ProfileLink to={`${base}/menu`} name={p?.name ?? '·'} tone="green" />} />
-      <ScrollArea className="gap-3">
+      <ScrollArea className="gap-3 md:grid md:grid-cols-2 md:content-start xl:grid-cols-3 xl:gap-5">
         {profile.isPending && <LoadingBlock />}
         {profile.isError && <ErrorBlock error={profile.error} onRetry={() => profile.refetch()} />}
         {p && (
           <>
-            <div className="rise-1 relative box-border min-h-[132px] overflow-hidden rounded-[22px] bg-[linear-gradient(160deg,#E7F7EE_0%,#C9EEDA_100%)] p-4">
+            <div className="rise-1 relative box-border min-h-[132px] overflow-hidden rounded-[22px] bg-[linear-gradient(160deg,#E7F7EE_0%,#C9EEDA_100%)] p-4 md:col-span-full md:min-h-[160px] md:p-6">
               <Illustration name="tanker" className="animate-drive absolute right-[-24px] bottom-1.5 w-[200px]" />
               <div className="relative max-w-[170px]">
                 <div className="text-[13px] font-bold text-[#15803D]">Tanker driver</div>
@@ -152,7 +152,7 @@ export function DriverHome() {
             <HomeAppCard app="partner" tone="green" className="rise-4" />
 
             <SectionHeader
-              className="rise-4"
+              className="rise-4 md:col-span-full"
               title={`Tanker orders near you (${list.length})`}
               action={
                 <TextLink to={`${base}/orders`} className="text-sub">

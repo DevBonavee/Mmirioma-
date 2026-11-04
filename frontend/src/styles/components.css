@@ -26,6 +26,7 @@
   .mo-scroll {
     flex: 1;
     min-height: 0;
+    min-width: 0;
     overflow-y: auto;
     padding: 16px 18px 20px;
     display: flex;
@@ -38,6 +39,7 @@
      (cards with illustrations) may shrink in the flex column and clip its content. */
   .mo-scroll > * {
     flex-shrink: 0;
+    min-width: 0;
   }
   .mo-foot {
     display: flex;
@@ -312,7 +314,7 @@
 }
 
 /*
- * Window scroll for the phone-width screens (rider and driver app), from 768 px
+ * Window scroll for legacy phone screens and fluid partner workspaces, from 768 px
  * (docs/design/responsive.md, #342). MobileShell sets data-scroll="window" on the
  * column. The column grows with its content, the header sticks to the top of the
  * window and the footer or tab bar to the bottom, so the browser's scrollbar is
@@ -320,6 +322,12 @@
  * wins over the frame's `h-dvh overflow-hidden` utilities.
  */
 @media (min-width: 768px) {
+  [data-shell='customer'] > .mo-scroll,
+  [data-shell='partner'] > .mo-scroll,
+  [data-shell='customer'] > .mo-foot,
+  [data-shell='partner'] > .mo-foot {
+    padding-inline: clamp(24px, 3vw, 48px);
+  }
   [data-scroll='window'] {
     height: auto;
     min-height: 100dvh;
@@ -329,9 +337,10 @@
     min-height: auto;
     overflow: visible;
   }
-  [data-scroll='window'] .mo-top {
+  [data-scroll='window'] .mo-header {
     position: sticky;
     top: 0;
+    z-index: 3;
   }
   [data-scroll='window'] .mo-foot,
   [data-scroll='window'] .mo-tabs {

@@ -116,30 +116,32 @@ export function PartnerHistory() {
         {history.isPending && <LoadingBlock />}
         {history.isError && <ErrorBlock error={history.error} onRetry={() => history.refetch()} />}
         {history.isSuccess && list.length === 0 && <EmptyBlock illustration="keke" title="No trips in this period" text="Finished trips show here." />}
-        {list.map((j) => (
-          <Card key={j.reference} className="rise-3 flex items-center gap-3 p-3">
-            <span className="flex h-[52px] w-16 shrink-0 items-center justify-center rounded-icon bg-sky">
-              <Illustration name={jobDeliveryType(j, vehicle)} className="w-14" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-[14px] font-extrabold">{jobQuantity(j)}</div>
-              <div className="text-chip text-mute">{jobShort(j)}</div>
-              <div className="text-chip text-mute">{jobEndedAt(j) ? relativeWhen(jobEndedAt(j)!) : ''}</div>
-              {j.stage === 'failed' && j.end_reason && END_REASON_LABEL[j.end_reason] && (
-                <div className="text-chip text-mute">Reason: {END_REASON_LABEL[j.end_reason]}</div>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              {j.earning_minor_units !== null && (
-                <span className="font-extrabold">{formatNaira(j.stage === 'delivered' ? j.earning_minor_units : 0)}</span>
-              )}
-              {/* Failed and disputed jobs are shown, never hidden (@chidimmamogbo on #12). */}
-              <Chip tone={j.stage === 'delivered' ? 'green' : j.stage === 'under_review' ? 'amber' : 'red'} className="px-2 py-0.5 text-[11px]">
-                {ENDED_STAGE_LABEL[j.stage] ?? 'Ended'}
-              </Chip>
-            </div>
-          </Card>
-        ))}
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {list.map((j) => (
+            <Card key={j.reference} className="rise-3 flex items-center gap-3 p-3">
+              <span className="flex h-[52px] w-16 shrink-0 items-center justify-center rounded-icon bg-sky">
+                <Illustration name={jobDeliveryType(j, vehicle)} className="w-14" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-extrabold">{jobQuantity(j)}</div>
+                <div className="text-chip text-mute">{jobShort(j)}</div>
+                <div className="text-chip text-mute">{jobEndedAt(j) ? relativeWhen(jobEndedAt(j)!) : ''}</div>
+                {j.stage === 'failed' && j.end_reason && END_REASON_LABEL[j.end_reason] && (
+                  <div className="text-chip text-mute">Reason: {END_REASON_LABEL[j.end_reason]}</div>
+                )}
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                {j.earning_minor_units !== null && (
+                  <span className="font-extrabold">{formatNaira(j.stage === 'delivered' ? j.earning_minor_units : 0)}</span>
+                )}
+                {/* Failed and disputed jobs are shown, never hidden (@chidimmamogbo on #12). */}
+                <Chip tone={j.stage === 'delivered' ? 'green' : j.stage === 'under_review' ? 'amber' : 'red'} className="px-2 py-0.5 text-[11px]">
+                  {ENDED_STAGE_LABEL[j.stage] ?? 'Ended'}
+                </Chip>
+              </div>
+            </Card>
+          ))}
+        </div>
         {list.length > 0 && known && <p className="m-0 text-center text-chip text-mute">Sample amounts.</p>}
       </ScrollArea>
     </MobileShell>

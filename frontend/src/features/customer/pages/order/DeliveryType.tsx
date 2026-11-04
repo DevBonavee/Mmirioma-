@@ -25,7 +25,7 @@ export function DeliveryType() {
       <TopBar left={<BackLink to="/home" />} />
       <ScrollArea>
         <OrderStepHeading step={1} title="Choose delivery type" sub="How would you like to receive your water?" />
-        <div className="flex flex-col gap-3.5">
+        <div className="grid gap-3.5 md:grid-cols-2">
           <TypeCard
             className="rise-2"
             selected={type === 'keke'}

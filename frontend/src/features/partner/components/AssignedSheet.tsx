@@ -28,7 +28,7 @@ export function AssignedSheet({ job }: { job: PartnerJob }) {
   }, [job.reference])
 
   return (
-    <div className="absolute inset-0 z-20 md:fixed md:mx-auto md:max-w-phone">
+    <div className="absolute inset-0 z-20 md:fixed">
       <div className="rise-1 absolute inset-0 bg-[rgba(10,37,64,.55)]" aria-hidden="true" />
       <div
         ref={sheetRef}
@@ -36,7 +36,7 @@ export function AssignedSheet({ job }: { job: PartnerJob }) {
         role="dialog"
         aria-modal="true"
         aria-label="New order assigned"
-        className="animate-sheet absolute inset-x-0 bottom-0 flex flex-col gap-3 rounded-t-[28px] bg-white px-[18px] pt-2.5 pb-[max(22px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_rgba(10,37,64,0.25)] outline-none"
+        className="animate-sheet absolute inset-x-0 bottom-0 flex max-h-[90dvh] flex-col gap-3 overflow-y-auto rounded-t-[28px] bg-white px-[18px] pt-2.5 pb-[max(22px,env(safe-area-inset-bottom))] shadow-[0_-16px_40px_rgba(10,37,64,0.25)] outline-none md:inset-x-auto md:bottom-auto md:top-1/2 md:left-1/2 md:w-[min(640px,calc(100%_-_48px))] md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-[28px] md:p-6"
       >
         <span aria-hidden="true" className="h-[5px] w-11 self-center rounded-[3px] bg-input-line" />
         <div className="flex items-center gap-2.5">
