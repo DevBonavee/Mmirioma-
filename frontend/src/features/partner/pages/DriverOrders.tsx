@@ -52,9 +52,11 @@ export function DriverOrders() {
             text={offline ? 'Go online from your dashboard to see orders.' : 'New orders show up here. Check again soon.'}
           />
         )}
-        {list.map((j) => (
-          <TankerJobCard key={j.reference} job={j} to={`${base}/orders/${j.reference}`} className="rise-3" />
-        ))}
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 xl:gap-5">
+          {list.map((j) => (
+            <TankerJobCard key={j.reference} job={j} to={`${base}/orders/${j.reference}`} className="rise-3" />
+          ))}
+        </div>
         <p className="m-0 text-center text-caption text-mute">No countdown. Orders stay until a driver accepts or the admin assigns.</p>
       </ScrollArea>
     </MobileShell>

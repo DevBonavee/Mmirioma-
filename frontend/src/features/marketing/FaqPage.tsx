@@ -38,7 +38,7 @@ export function FaqPage() {
               </nav>
               <Kicker>Help centre</Kicker>
               <h1 className="m-0 font-display text-[clamp(38px,5vw,64px)] leading-[1.02] font-extrabold tracking-[-1.5px] text-ink">
-                Frequently asked <span className="text-mk-teal">questions</span>
+                Frequently asked <span className="text-mk-teal-button">questions</span>
               </h1>
               <p className="m-0 max-w-[560px] text-[18px] leading-[1.6] text-slate">Ordering, delivery, your code, payments and driving for us. Search or pick a topic.</p>
               <label htmlFor="faq-search" className="sr-only">

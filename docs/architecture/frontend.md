@@ -125,10 +125,21 @@ are 10 px rounded rectangles, not pills (owner request).
 
 ### Assets and icons
 
+- `features/onboarding/`: the owner-authorized optional first-time guide, with
+  customer/rider/tanker copy, native modal accessibility, signup-only eligibility
+  and a versioned browser-local marker containing no profile or job data. It
+  reuses existing session and home-screen queries; see
+  `docs/features/first-time-tour.md` for entry, replay and priority behavior.
+
 - `public/brand/`: official logos (use `<Logo>` from `src/components/brand/Logo.tsx`,
   WebP with PNG fallback, right density per screen). Never redraw the logo.
 - `public/illustrations/`: keke, tanker, gift, jerrycan, drop-hero (use
   `<Illustration>`). `jerrycan` and `drop-hero` exist only as WebP.
+- `public/marketing/homepage-keke-rider.png`: transparent loaded cargo keke,
+  exposed as `<Illustration name="keke-rider">` for partner screens. The original
+  `keke` name retains its handoff asset for other callers. The homepage scene is
+  `public/marketing/homepage-hero-keke.png`; edit prompts are in
+  `docs/design/prompts/homepage-cargo-keke.md`.
 - `public/favicon.ico`, `favicon-16.png`, `favicon-32.png`, `apple-touch-icon.png`,
   `public/icons/icon-{192,512,1024}.png` and `public/manifest.webmanifest`.
 - `src/components/icons/`: the 74 inline stroke icons from the design HTML,
@@ -209,34 +220,58 @@ use `hit-48`: the look stays, the touch area is 48 × 48.
 - `components/layout/MobileShell.tsx`: `MobileShell` (`.ph`), `TopBar` (`.top`)
   with `BackLink`, `MenuLink`, `NotificationsLink`, `ProfileLink`,
   `TopBarTitle`, `TopBarSpacer`; `ScrollArea` (`.scroll`) and `Footer`
-  (`.foot`). The shell is `100dvh` tall with one scrolling area; from 360 px it
-  fills the screen. From 768 px it is a centred column whose width a `ShellScope`
-  (`ShellScope.tsx`, `shellContext.ts`) sets for the screens below it: 430 px
-  without one (rider and driver app), `customer` 720 px then up to 1120 px from
-  1280 px with the header navigation, `card` 480 px for the signed-out customer
-  screens. `CustomerArea` and the customer routes set it, so the partner files
-  need no change. Footer and tab bar pad above the phone's home bar
+  (`.foot`). Customer and partner `ShellScope` workspaces fill the available
+  width, including the 431–767 px range previously capped at 430 px. They do
+  not reapply the former 720 px main/footer content band. Standalone customer
+  and partner public account routes use `card`, also full viewport width. The default `phone` policy remains for legacy previews and
+  unrelated routes. `CustomerArea`, `PartnerArea` and public auth routes set
+  their scope explicitly. Footer and tab bar pad above the phone's home bar
   (`env(safe-area-inset-bottom)`).
-- Window scroll (rider and driver app, #342): below 768 px the shell is as
-  above. From 768 px the `phone`-width shell marks its frame
+- `components/layout/AuthLayout.tsx`: customer and partner sign-in, registration,
+  password-help and contact pages share a full-width header and brand/form grid.
+  From 1024 px the two columns sit beside each other; below that they stack.
+  The form is limited to 560 px on desktop / 640 px on tablet for readability,
+  independently of the page width. `.mo-auth` overrides the viewport-height
+  frame and uses document scrolling on every device, so long forms and
+  short-height browser windows can reach the final action. No duplicate forms
+  or changes to authentication, registration fields or feature APIs.
+  The partner banner keeps its explanatory copy visible at every width and
+  places the existing loaded keke and tanker in a responsive fleet grid. At
+  640–1023 px copy and vehicles share a row; smaller screens and the desktop
+  brand column stack them. All content participates in layout rather than
+  using an isolated absolutely positioned vehicle.
+  The owner-supplied 1600 x 1066 photograph at
+  `public/marketing/auth-water-hands.jpg` replaces the shared decorative drop
+  background. CSS gives only the photograph a gentle 20-second pan/zoom and
+  removes it under reduced motion; navy overlays support the white copy.
+- Window scroll (rider and driver app): below 768 px the shell keeps one
+  internal scroll region. From 768 px the `partner` and legacy `phone` scopes mark their frame
   `data-scroll="window"` (not for a `background="ink"` drawer menu, whose panel
   fills the screen), and the rules at the end of `styles/components.css` let the
   column grow with its content, so the browser window scrolls and a desktop
   browser shows one scrollbar. The header (`.mo-top`) sticks to the top of the
-  window and the footer (`.mo-foot`) or tab bar (`.mo-tabs`) to the bottom. A
-  sheet drawn over the column (`AssignedSheet`) is `fixed` from 768 px, kept
-  inside the 430 px column, because the column is no longer one viewport high.
-  To undo it, remove the `data-scroll` attribute and that CSS block.
+  window together with desktop navigation (`.mo-header`), and the footer
+  (`.mo-foot`) or tab bar (`.mo-tabs`) to the bottom. Full-screen absolute map
+  scenes use `MobileShell viewport` to retain a stable viewport height.
+  `AssignedSheet` covers the viewport and becomes a centered, scrollable
+  dialog up to 640 px wide from 768 px; it stays a bottom sheet on phones.
 - Two panes (customer Orders and Addresses, 1280 px and up): `pages/Splits.tsx`
   draws a list `Pane` and a detail `Pane` side by side. A screen inside a pane
   (`usePane()`) fills the pane instead of the page, and the list pane has no
   top bar. Below 1280 px the same routes show the one screen, chosen with
   `useMediaQuery` (`lib/useMediaQuery.ts`); everything else uses Tailwind
   breakpoints.
-- `components/layout/BottomTabBar.tsx`: `.tabs`, current tab `aria-current`.
+- Customer and partner primary navigation moves from bottom tabs to header
+  links at 1280 px. The partner destination list is shared by both views and
+  keeps Earnings disabled. `BottomTabBar.tsx` divides the width by the number
+  of enabled items, so three partner links do not leave an empty fourth track.
+- Driver dashboards, available jobs and history use responsive card grids;
+  delivery details and code entry use two columns on larger screens. The
+  keypad stays readable rather than stretching its keys across the workspace.
 - `components/layout/DrawerMenu.tsx`: slide-in menu screens (`c-menu`, `r-menu`,
   `t-menu`); closes on backdrop, close button or Escape. `tone="green"` gives
   the tanker app's green backdrop, header and current row (`MenuItem tone`).
+  Menus expand to a centered panel up to 720 px on tablets/desktops.
 - `components/layout/AdminShell.tsx` and `adminNav.tsx`: header (logo, search,
   notifications, profile), the full 13-item sidebar from the dashboard design
   on every admin page, count badges. From 1024 px the 248 px sidebar is on the

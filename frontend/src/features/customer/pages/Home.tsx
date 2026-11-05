@@ -8,6 +8,8 @@ import { ActionTile, IconBadge, SectionHeader, TextLink } from '../../../compone
 import { HomeAppCard } from '../../pwa/PushParts'
 import { ButtonLink } from '../../../components/ui/Button'
 import { useSession } from '../../auth/useSession'
+import { AutomaticTour } from '../../onboarding/WelcomeTour'
+import { isActiveStage } from '../../../domain/orders'
 import { POINTS_ENABLED } from '../../../lib/features'
 import { CustomerTabs, CustomerTopBar } from '../components/CustomerChrome'
 import { RecentOrderCard } from '../components/OrderBits'
@@ -48,8 +50,9 @@ export function Home() {
 
   return (
     <MobileShell>
+      <AutomaticTour audience="customer" blocked={!orders.isSuccess || orders.data.some((order) => isActiveStage(order.stage))} />
       <CustomerTopBar />
-      {/* From 1280 px the home screen uses the whole 1120 px as two columns; the wide rows span both. */}
+      {/* Desktop uses the available workspace as two columns; the wide rows span both. */}
       <ScrollArea wide className="gap-3.5 xl:grid xl:grid-cols-2 xl:content-start xl:gap-4 xl:px-8 xl:pt-6">
         <div className="contents xl:col-span-2 xl:flex xl:flex-col xl:gap-3.5">
         <VerifyPhoneBanner from="/home" />

@@ -1,0 +1,5 @@
+# Keep archival text hashes portable without altering screenshot/font bytes.
+* text=auto eol=lf
+*.png -text
+*.webp -text
+*.woff2 -text

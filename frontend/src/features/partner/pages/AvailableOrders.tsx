@@ -56,7 +56,7 @@ export function AvailableOrders({ header }: { header?: ReactNode }) {
         {jobs.isError && <ErrorBlock error={jobs.error} onRetry={() => jobs.refetch()} />}
         {jobs.isSuccess && list.length === 0 && (
           <EmptyBlock
-            illustration="keke"
+            illustration="keke-rider"
             title={offline ? 'You are offline' : 'No orders right now'}
             text={offline ? 'Go online from your dashboard to see orders.' : 'New orders show up here. Check again soon.'}
           />
@@ -96,7 +96,9 @@ export function AvailableOrders({ header }: { header?: ReactNode }) {
             <p className="m-0 text-center text-chip text-mute">The map is a guide. Pins are not exact locations.</p>
           </>
         ) : (
-          list.map((j) => <AvailableJobCard key={j.reference} job={j} to={`${base}/orders/${j.reference}`} className="rise-3" />)
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 xl:gap-5">
+            {list.map((j) => <AvailableJobCard key={j.reference} job={j} to={`${base}/orders/${j.reference}`} className="rise-3" />)}
+          </div>
         )}
         <p className="rise-4 m-0 text-center text-caption text-mute">
           No countdown. An order stays here until a {vehicle === 'keke' ? 'rider' : 'driver'} accepts it or the admin assigns it.

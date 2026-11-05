@@ -145,7 +145,7 @@ page's tags in the raw HTML. Nothing has been checked against Google itself yet.
   placeholder in `index.html` from one list of titles and descriptions, or by
   writing one small HTML file per public path at build time. Both need one shared
   list so the page and the server never disagree. Neither adds a library.
-- **The share image is `hero-scene.jpg` (2202 x 969)**, wider than the usual
+- **The share image is `homepage-hero-keke.png` (1890 x 832)**, wider than the usual
   1.91:1 ratio, so link previews will crop it. A purpose-made 1200 x 630 image
   from the team would be better.
 - **The tab title on a first load of an app page** (sign-in, admin) is the

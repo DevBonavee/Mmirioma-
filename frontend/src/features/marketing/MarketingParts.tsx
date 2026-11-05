@@ -83,7 +83,7 @@ export function SectionHead({ kicker, title, lead, className }: { kicker: string
 export function Oma() {
   return (
     <>
-      Mmiri<span className="text-mk-teal">Oma</span>
+      Mmiri<span className="text-mk-teal-button">Oma</span>
     </>
   )
 }

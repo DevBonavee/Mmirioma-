@@ -7,8 +7,8 @@ import { OrderDraftProvider } from './order/OrderDraftProvider'
 
 /**
  * Layout route for every signed-in customer screen. It makes the shell the
- * customer width (720 px on a tablet, up to 1120 px from 1280 px, with the
- * header navigation) instead of the 430 px phone column.
+ * fluid workspace width, with header navigation on desktop, instead of a
+ * fixed phone/tablet column.
  */
 export function CustomerArea() {
   return (

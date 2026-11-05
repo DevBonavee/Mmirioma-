@@ -22,6 +22,7 @@ import { isActiveStage } from '../../../domain/orders'
 import { formatPhone } from '../../../lib/format/phone'
 import { useLogout, useSession } from '../../auth/useSession'
 import { InstallMenuItem } from '../../pwa/InstallParts'
+import { TourReplay } from '../../onboarding/WelcomeTour'
 import { POINTS_ENABLED } from '../../../lib/features'
 import { useNotifications, useOrders, usePoints, useProfile } from '../queries'
 
@@ -123,6 +124,7 @@ export function Menu() {
         Account settings
       </MenuItem>
       <InstallMenuItem app="customer" />
+      <TourReplay audience="customer" />
       <MenuItem to="/partner/signup" icon={<VehicleSmallIcon size={20} />}>
         Register as a driver
       </MenuItem>

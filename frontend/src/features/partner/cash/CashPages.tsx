@@ -242,7 +242,7 @@ export function MyCash() {
                 {canHandOver && <ButtonLink to={`${base}/cash/handover`}>Hand over cash</ButtonLink>}
               </Card>
             ) : (
-              <EmptyBlock illustration={vehicle} title="No cash to hand over" text="Cash you record after a delivery shows here." />
+              <EmptyBlock illustration={vehicle === 'keke' ? 'keke-rider' : 'tanker'} title="No cash to hand over" text="Cash you record after a delivery shows here." />
             )}
             {onHand.length > 0 && (
               <section aria-label="To hand over">

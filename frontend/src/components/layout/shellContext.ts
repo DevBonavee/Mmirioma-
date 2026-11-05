@@ -1,21 +1,16 @@
 import { createContext, useContext, type ReactNode } from 'react'
 
 /**
- * How wide `MobileShell` is from 768 px up (docs/design/responsive.md):
- *
- * - `phone`: a 430 px column. The default, and what the rider and driver app uses.
- * - `customer`: 720 px on a tablet, up to 1120 px from 1280 px, with the
- *   navigation in the header.
- * - `card`: 480 px, for the customer's signed-out screens (sign in, sign up).
- *
- * Below 768 px all three are the same full-width phone screen.
+ * Page-width policies. Customer and partner workspaces fill the available
+ * width, including public authentication pages. Only legacy phone previews
+ * are capped. Width is independent of the page's scroll owner and navigation.
  */
-export type ShellWidth = 'phone' | 'customer' | 'card'
+export type ShellWidth = 'phone' | 'customer' | 'partner' | 'card'
 
 /** What a group of screens tells `MobileShell` about itself. */
 export interface ShellScopeValue {
   width: ShellWidth
-  /** Header navigation shown from 1280 px in place of the bottom tab bar (customer only). */
+  /** Header navigation shown from 1280 px in place of the bottom tab bar. */
   nav?: ReactNode
 }
 

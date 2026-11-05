@@ -43,7 +43,7 @@ export function AboutPage() {
               </nav>
               <Kicker>About us</Kicker>
               <h1 className="m-0 font-display text-[clamp(38px,5vw,64px)] leading-[1.02] font-extrabold tracking-[-1.5px] text-ink">
-                About <span className="text-mk-teal">MmiriOma</span>
+                About <span className="text-mk-teal-button">MmiriOma</span>
               </h1>
               <p className="m-0 text-[19px] leading-[1.55] text-mk-lead">{BRAND_LINE}</p>
             </div>

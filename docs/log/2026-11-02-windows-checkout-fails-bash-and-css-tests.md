@@ -7,4 +7,13 @@
 - **Cause:** The deployment tests run the `deploy/*.sh` scripts and need the executable bit, which Windows does not keep. The CSS test searches `marketing.css` for a string with `\n`, and a Windows checkout with CRLF line endings has `\r\n` there.
 - **Fix / workaround:** None needed for CI. Locally, run these two files in WSL or Git Bash with LF line endings, and treat the eight failures as environment-only when nothing in `deploy/` or `marketing.css` changed. A test that does not depend on line endings would fix the CSS one.
 - **Status:** workaround
+- **Quality-review recurrence (2026-11-04):** The broad Windows run again
+  failed direct Unix deployment-script execution. A corrected run passed all
+  1,724 non-deployment tests (307 database skips); 21 deployment configuration
+  checks passed with 23 Unix execution tests deselected. All seven deploy
+  scripts passed Git Bash `bash -n`. Docker's daemon was unavailable; the WSL
+  Ubuntu installation has Python 3.12 rather than the required 3.14 and lacks
+  the test dependencies. Linux execution, database migrations and integration
+  remain for the configured Ubuntu/PostGIS CI environment. Deployment scripts
+  and CI were not changed for Windows.
 - **Refs:** #333 (found while running the full checks), `backend/tests/test_deployment_config.py`, `frontend/src/features/marketing/sizeTiles.test.tsx`.

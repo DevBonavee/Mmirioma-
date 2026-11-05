@@ -49,6 +49,7 @@ async function fill(user: ReturnType<typeof userEvent.setup>, { password = STRON
 }
 
 beforeEach(() => {
+  localStorage.removeItem('mmirioma:tour:v1:customer:u1')
   server.refusal = null
   server.sent = []
 })
@@ -120,6 +121,7 @@ describe('SignUp submit', () => {
     await fill(user)
     await user.click(submit())
     expect(await screen.findByText('Verify phone screen')).toBeInTheDocument()
+    expect(localStorage.getItem('mmirioma:tour:v1:customer:u1')).toBe('pending')
     expect(server.sent).toEqual([{ name: 'Sample Customer', phone: '08031234567', password: STRONG, accepted_terms: true }])
   })
 
@@ -215,6 +217,7 @@ describe('SignUp server errors', () => {
   it('shows a used phone under Phone number, keeps the name, phone and tick, and clears the passwords', async () => {
     await refusedWith(refused(409, 'phone_already_registered'))
     expect(await screen.findByText('This number already has an account. Sign in instead.')).toBeInTheDocument()
+    expect(localStorage.getItem('mmirioma:tour:v1:customer:u1')).toBeNull()
     expect(screen.getByLabelText('Full name')).toHaveValue('Sample Customer')
     expect(screen.getByLabelText('Phone number')).toHaveValue('08031234567')
     expect(box()).toBeChecked()

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Confetti } from '../../../../components/art/Art'
 import { Illustration } from '../../../../components/brand/Illustration'
 import { Logo } from '../../../../components/brand/Logo'
+import { HomeLogo } from '../../../../components/brand/HomeLogo'
 import { StarIcon } from '../../../../components/icons/icons'
 import { MobileShell, ScrollArea } from '../../../../components/layout/MobileShell'
 import { ErrorBlock, LoadingBlock } from '../../../../components/layout/StateScreens'
@@ -65,10 +66,10 @@ export function Delivered() {
         {order.isError && <ErrorBlock error={order.error} onRetry={() => order.refetch()} />}
         {o && (
           <>
-            <div className="relative flex size-28 shrink-0 items-center justify-center" aria-hidden="true">
+            <div className="relative flex size-28 shrink-0 items-center justify-center">
               <span className="animate-ping absolute size-[76px] rounded-full bg-[rgba(21,112,216,.3)]" />
               <span className="animate-pop flex size-[92px] items-center justify-center rounded-full bg-white shadow-[0_14px_30px_rgba(21,112,216,0.25)]">
-                <Logo variant="mark" height={75} alt="" />
+                <HomeLogo><Logo variant="mark" height={75} alt="" /></HomeLogo>
               </span>
             </div>
             <h1 className="rise-1 m-0 text-[26px] font-extrabold tracking-[-0.5px]">Water delivered!</h1>

@@ -52,7 +52,7 @@ export function DrawerMenu({ closeTo, label, header, children, footer, tone = 'b
       />
       <nav
         aria-label={label}
-        className="animate-slide-in relative flex h-full w-[310px] max-w-[85%] flex-col bg-white shadow-[16px_0_40px_rgba(0,0,0,0.25)]"
+        className="animate-slide-in relative flex h-full w-[310px] max-w-[85%] flex-col bg-white shadow-[16px_0_40px_rgba(0,0,0,0.25)] md:w-[min(720px,85%)] md:mx-auto md:max-w-none"
       >
         <div
           className={cx(
