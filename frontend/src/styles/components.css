@@ -369,6 +369,10 @@
 .mo-auth-hero[data-audience='partner'] { background: #0b4fa8; }
 .mo-auth-main { display: flex; min-width: 0; align-items: center; justify-content: center; padding: 28px 22px max(36px, env(safe-area-inset-bottom)); }
 .mo-auth-form { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; max-width: 640px; }
+/* The video panel sizes itself (42vh) below 1024 px; from 1024 px the rule below gives the story its full height. */
+@media (max-width: 1023.98px) {
+  .mo-auth-video .mo-auth-story { height: auto; }
+}
 @media (min-width: 768px) {
   .mo-auth-story { height: 260px; }
   .mo-auth-main { padding: 40px clamp(32px, 5vw, 80px); }

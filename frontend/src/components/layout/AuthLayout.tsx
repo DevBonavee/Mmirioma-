@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import SignupHeroMedia from '../auth/SignupHeroMedia'
 import { HomeLogo } from '../brand/HomeLogo'
 import { Illustration } from '../brand/Illustration'
 import { Logo } from '../brand/Logo'
@@ -30,7 +31,17 @@ export function AuthLayout({ children, audience = 'customer', backTo }: {
         </Link>
       </header>
       <div className="mo-auth-grid">
-        <aside className="mo-auth-hero" data-audience={audience} aria-label={partner ? 'Deliver with MmiriOma' : 'Water delivery with MmiriOma'}>
+        {!partner && (
+          // Customer pages: the water-supply video with its animated copy. 42vh above the form
+          // below 1024 px, the whole left half from 1024 px (the story box sets that height).
+          <aside className="mo-auth-hero mo-auth-video" data-audience={audience} aria-label="Water delivery with MmiriOma">
+            <div className="mo-auth-story">
+              <SignupHeroMedia className="h-[42vh] lg:h-full" />
+            </div>
+          </aside>
+        )}
+        {partner && (
+        <aside className="mo-auth-hero" data-audience={audience} aria-label="Deliver with MmiriOma">
           <div className="mo-auth-story">
             <img
               src="/marketing/auth-water-hands.jpg"
@@ -59,6 +70,7 @@ export function AuthLayout({ children, audience = 'customer', backTo }: {
             </div>}
           </div>
         </aside>
+        )}
         <main className="mo-auth-main">
           <div className="mo-auth-form">{children}</div>
         </main>

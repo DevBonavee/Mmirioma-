@@ -93,6 +93,32 @@ reachability, retained partner vehicles, logo destination and runtime errors.
 Lint, typecheck, real-mode build and demo-value exclusion passed. The original
 photo matches the copied asset byte-for-byte. Existing build warnings remain.
 
+### Customer hero video (5 November 2026)
+
+The customer audience of `AuthLayout` (customer sign-in, sign-up, forgot password
+and support contact) now shows `SignupHeroMedia`
+(`frontend/src/components/auth/SignupHeroMedia.tsx` and its CSS module) in the
+left panel instead of the photograph above. The rider and driver pages (`audience="partner"`)
+keep the photograph and the vehicle illustrations, and the header and form are unchanged.
+
+- **Size:** below 1024 px the panel is 42vh above the form; from 1024 px it fills the
+  left half (the story box keeps its sticky, window-high size).
+- **Video:** a muted, looping, inline, autoplaying clip from `frontend/public/media/`
+  (webm and mp4, 9:16 and 16:9 cuts, with poster images, about 8.3 MB in all). The
+  cut follows the panel's shape. The files are not precached by the service worker,
+  so they are fetched only on these pages. The earlier statement "no video request"
+  applies to the photograph amendment only.
+- **Copy:** live HTML (eyebrow, two-line headline, subline), animated with CSS, and a
+  Collect, Clean, Store, Deliver ticker synced to the video's clock. The video is
+  hidden from assistive technology; the headline reads as one sentence.
+- **Reduced motion:** the video does not autoplay, no animation runs, and every stage is
+  shown as done.
+- **No** new dependency, endpoint or form behavior.
+
+Validation: component tests (`SignupHeroMedia.test.tsx`), and Chrome checks of
+`/signin` and `/signup` at 1440, 1024, 768 and 390 px (autoplay, ticker, no sideways
+overflow, no console errors).
+
 ## 3. Important files
 
 | File | Responsibility |
