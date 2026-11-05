@@ -1,0 +1,280 @@
+/* MmiriOma — signup hero media. Navy matches the baked-in bottom of the 9:16 video. */
+.root {
+  --navy: #0c2e4a;
+  --navy-deep: #071c2f;
+  --aqua: #7fdcff;
+  --aqua-soft: #d3f5ff;
+  --brand: #1a73e8;
+  position: relative;
+  /* Sizes below use cqw (this box's width), not vw: the panel is half the screen on a
+     desktop but a 480 px card or a full phone width elsewhere. */
+  container-type: inline-size;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--navy);
+  color: #fff;
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  z-index: -3;
+  transform: scale(1.06);
+  animation: settle 2.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.veilTop,
+.veilBottom,
+.sheen,
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.veilTop {
+  z-index: -2;
+  background: linear-gradient(180deg, rgba(7, 28, 47, 0.55) 0%, rgba(7, 28, 47, 0) 22%);
+}
+
+.veilBottom {
+  z-index: -2;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 46, 74, 0) 45%,
+    rgba(12, 46, 74, 0.72) 66%,
+    var(--navy) 80%,
+    var(--navy-deep) 100%
+  );
+}
+
+/* Wide containers: copy sits left, so shade from the left instead */
+.root[data-orientation="landscape"] .veilBottom {
+  background:
+    linear-gradient(90deg, rgba(7, 28, 47, 0.92) 0%, rgba(12, 46, 74, 0.7) 34%, rgba(12, 46, 74, 0) 62%),
+    linear-gradient(180deg, rgba(12, 46, 74, 0) 55%, rgba(7, 28, 47, 0.75) 100%);
+}
+
+/* Slow caustic light sweep across the footage */
+.sheen {
+  z-index: -1;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(211, 245, 255, 0.10) 48%,
+    transparent 60%
+  );
+  background-size: 250% 100%;
+  mix-blend-mode: screen;
+  animation: sweep 9s ease-in-out infinite;
+}
+
+.grain {
+  z-index: -1;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Copy ---------- */
+.copy {
+  position: absolute;
+  left: clamp(20px, 5cqw, 56px);
+  right: clamp(20px, 5cqw, 56px);
+  bottom: clamp(28px, 6vh, 64px);
+  max-width: 520px;
+}
+
+.root[data-orientation="landscape"] .copy {
+  max-width: 600px;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.eyebrowLine {
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--aqua), var(--brand));
+  transform-origin: left;
+  animation: draw 0.9s cubic-bezier(0.65, 0, 0.35, 1) 0.1s both;
+}
+
+.eyebrowText {
+  animation: track-in 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.headline {
+  margin: 0;
+  font-size: clamp(28px, 7.2cqw, 52px);
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.line {
+  display: block;
+}
+
+.wordMask {
+  display: inline-block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+  vertical-align: bottom;
+}
+
+.wordMask + .wordMask {
+  margin-left: 0.24em;
+}
+
+.word {
+  display: inline-block;
+  animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Water-shimmer on the accent word */
+.accent {
+  background: linear-gradient(
+    100deg,
+    #ffffff 0%,
+    #ffffff 35%,
+    var(--aqua) 48%,
+    var(--aqua-soft) 54%,
+    #ffffff 66%,
+    #ffffff 100%
+  );
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rise 1s cubic-bezier(0.22, 1, 0.36, 1) both,
+    shimmer 4.5s ease-in-out 1.6s infinite;
+}
+
+.subline {
+  margin: 18px 0 0;
+  max-width: 34ch;
+  font-size: clamp(14px, 3.4cqw, 17px);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+  animation: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.05s both;
+}
+
+/* ---------- Stage ticker ---------- */
+.stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 28px 0 12px;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  animation: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.3s both;
+}
+
+.stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.5s ease;
+}
+
+.stageDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 0.5s ease, box-shadow 0.5s ease, transform 0.5s ease;
+}
+
+.stageDone {
+  color: rgba(255, 255, 255, 0.75);
+}
+.stageDone .stageDot {
+  background: var(--aqua);
+}
+
+.stageActive {
+  color: #fff;
+}
+.stageActive .stageDot {
+  background: var(--aqua);
+  transform: scale(1.25);
+  box-shadow: 0 0 0 4px rgba(127, 220, 255, 0.18), 0 0 14px rgba(127, 220, 255, 0.8);
+  animation: pulse 1.6s ease-out infinite;
+}
+
+.track {
+  height: 2px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.14);
+  animation: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) 1.4s both;
+}
+
+.fill {
+  height: 100%;
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--brand), var(--aqua));
+  box-shadow: 0 0 12px rgba(127, 220, 255, 0.7);
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes settle {
+  from { transform: scale(1.14); filter: brightness(0.6) saturate(0.8); }
+  to   { transform: scale(1.06); filter: none; }
+}
+@keyframes sweep {
+  0%, 100% { background-position: 120% 0; }
+  50%      { background-position: -20% 0; }
+}
+@keyframes draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@keyframes track-in {
+  from { opacity: 0; letter-spacing: 0.5em; filter: blur(6px); }
+  to   { opacity: 1; letter-spacing: 0.18em; filter: blur(0); }
+}
+@keyframes rise {
+  from { transform: translateY(105%) rotate(4deg); opacity: 0; filter: blur(8px); }
+  to   { transform: translateY(0) rotate(0); opacity: 1; filter: blur(0); }
+}
+@keyframes shimmer {
+  0%, 15%   { background-position: 100% 0; }
+  60%, 100% { background-position: 0% 0; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(127, 220, 255, 0.45), 0 0 14px rgba(127, 220, 255, 0.8); }
+  100% { box-shadow: 0 0 0 10px rgba(127, 220, 255, 0), 0 0 14px rgba(127, 220, 255, 0.8); }
+}
+
+/* ---------- Reduced motion ---------- */
+.reduced *,
+.reduced .video {
+  animation: none !important;
+  transition: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .root *, .video { animation: none !important; transition: none !important; }
+}
