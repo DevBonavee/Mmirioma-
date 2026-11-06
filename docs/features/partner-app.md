@@ -13,6 +13,14 @@ with the customer's delivery code, and follow their sample earnings.
 
 ## 2. Feature workflow
 
+The owner requested a fuller partner account banner on 4 November 2026.
+`components/layout/AuthLayout.tsx` now explains that this app is for Keke riders
+and tanker drivers in Enugu, with orders, delivery steps and cash records.
+Both the loaded Keke and existing tanker artwork appear with visible captions.
+Copy remains visible on phones and tablets as well as desktop; the banner
+stacks or shares a row according to the available space. Login, registration,
+vehicle selection, approval and verification behavior are unchanged.
+
 1. **Sign in** at `/partner/login` (one login for riders and tanker drivers).
    New partners create an account at `/partner/signup` and choose Keke or
    Tanker (decision 9). Tanker drivers type how many gallons their tanker
@@ -69,7 +77,43 @@ with the customer's delivery code, and follow their sample earnings.
    papers, notifications and support are the rider screens with tanker words
    (decision 18).
 
+### Loaded cargo-keke artwork (4 November 2026)
+
+The owner requested replacing partner-side keke illustrations with the same
+loaded cargo keke created for the homepage. `Illustration` now accepts
+`name="keke-rider"`, backed by the transparent
+`frontend/public/marketing/homepage-keke-rider.png` (1536 x 1024). It shows the
+right-facing branded vehicle, a realistic seated rider and strapped blue
+25-litre water containers. The original `keke` illustration remains available
+to other callers; tanker illustrations retain their existing asset.
+
+The cutout is used in partner sign-in, registration and its Keke vehicle tile,
+rider home and order cards, assigned-delivery sheets, pickup and trip markers,
+delivery details and completion, history, vehicle details and issue reporting.
+Existing sizing classes fit it into the same slots. Transparency lets it blend
+into the existing blue and white card backgrounds without a white rectangle.
+The artwork's container labels do not change verified load, order quantities,
+API contracts, job transitions or delivery-code rules.
+
+Playwright checked 11 simulated partner scenarios at 390, 768 and 1440 px:
+sign-in, Keke registration, home, available deliveries, assigned delivery,
+vehicle, pickup, delivery completion, delivery details, history and issue
+reporting. All 33 cases passed the existing layout and interaction checks,
+loaded the new cutout and had no legacy keke illustration. Screenshots use
+clearly identified simulated data; sign-in and vehicle captures were also
+reviewed visually. The combined marketing, partner and brand tests passed
+354 tests in 26 files. Lint, TypeScript, the real-mode production build and
+demo-value exclusion also passed, with the existing map-chunk and PWA warnings.
+See the [prompt record](../design/prompts/homepage-cargo-keke.md) for image provenance.
+
 ## 3. Important files
+
+New registrations can take the optional [first-time tour](first-time-tour.md)
+after the existing phone-verification flow. It is replayable from the menu and
+profile, and defers to active/assigned jobs. Partner logos now open the public
+homepage `/` under the owner's 4 November 2026 instruction; the Home navigation
+still opens the appropriate rider/driver dashboard. Empty states also use the
+loaded cutout through `EmptyBlock`, with tanker art selected for tanker accounts.
 
 | Path | Responsibility |
 | --- | --- |

@@ -65,7 +65,7 @@ export function RiderDone() {
             )}
             <Card pad className="rise-4 box-border w-full text-left">
               <div className="flex items-center gap-3">
-                <Illustration name="keke" className="w-[86px]" />
+                <Illustration name="keke-rider" className="w-[86px]" />
                 <div className="flex-1">
                   <div className="font-extrabold">{j.reference}</div>
                   <div className="text-caption text-mute">

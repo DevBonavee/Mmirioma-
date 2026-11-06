@@ -15,6 +15,33 @@ The three follow-up issues build from this document: #341 (customer app),
 behaves on a phone, a tablet and a desktop. It does not change a colour, a
 business rule or an endpoint.
 
+## Implementation revision: 4 November 2026
+
+The user subsequently requested implementation of fluid customer **and driver**
+interfaces: neither app should remain a narrow phone-width page on a larger
+screen. That explicit request replaces the customer/partner width constraints
+below for the current implementation. The original review and tables are kept
+as historical decisions, not presented as a newly approved desktop design.
+
+- Customer and partner workspaces now fill the available viewport width.
+  Customer main/footer regions no longer center everything in a 720 px band.
+- Mobile remains a single column; driver dashboards, available deliveries and
+  history become card grids on larger screens. Existing customer list/detail
+  panes remain in place.
+- Driver navigation uses the existing destinations in a desktop header at
+  1280 px, and evenly spaced bottom tabs below that width.
+- Public account pages (customer and partner sign-in, registration, password
+  help and contact) fill the viewport. From 1024 px a branded illustration
+  panel sits beside the form; below that they stack. Only inputs retain a
+  readable line length (560 px desktop / 640 px tablet). All sizes use document
+  scrolling to keep long forms reachable. This replaces the earlier 768 px
+  account-page cap after the user supplied a desktop screenshot and requested
+  a full-width website layout. This revision awaits PR review.
+- Assignment sheets become centered dialogs up to 640 px; full-screen map
+  pages remain fluid.
+- Branding, routes, state transitions, feature flags and API contracts are
+  preserved. See [implementation and verification](../features/responsive-layout.md).
+
 ## Decisions to confirm
 
 The issue assumed three things. @Bonvee120 confirmed them on 2026-11-03 before

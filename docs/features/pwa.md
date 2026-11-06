@@ -45,6 +45,13 @@ notifications.
 
 ## 3. Important files
 
+Owner amendment (4 November 2026): partner logo links now open the public
+homepage `/`. This intentionally leaves the partner manifest's `/partner/`
+scope when tapped in the installed app. The manifest scope, start URL and Home
+navigation remain as documented. Install-card phone artwork is now a sharp
+capture of the actual interface with a labelled sample account; see
+`scripts/capture-install-previews.cjs` and `docs/features/public-pages.md`.
+
 | Path | Responsibility |
 | --- | --- |
 | `frontend/public/manifest.webmanifest`, `partner.webmanifest` | The two apps (name, start URL, scope, icons) |

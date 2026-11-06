@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "sourceCommit": "59bda1a33225f4660ecef721d1e9055a0549014f",
+  "requiredDocuments": 6,
+  "indexedSourceFilesVerified": 176,
+  "indexedDocumentsVerified": 104,
+  "referenceSnapshotsVerified": 216,
+  "routePatterns": 90,
+  "activeRoutesCaptured": 83,
+  "redirectRoutesWithoutIndependentScreens": [
+    "/points",
+    "/partner",
+    "/partner/rider/earnings",
+    "/partner/rider/earnings/withdraw",
+    "/partner/driver/jobs/:reference/pickup",
+    "/partner/driver/earnings",
+    "/partner/driver/earnings/withdraw"
+  ],
+  "screenStateCases": 113,
+  "viewportRecords": 339,
+  "captureStatuses": {
+    "captured": 339
+  },
+  "pngFilesVerified": 371,
+  "auditMarkdownLinksVerified": 497,
+  "documentHorizontalOverflowRecords": 0,
+  "horizontalInteractiveOutlierRecords": 0,
+  "browserRuntimeErrorRecords": 0,
+  "trackedFilesOutsidePackUnchanged": true,
+  "privacyNote": "Synthetic fixtures, blocked external/API requests, redacted illustrative credential values; regex checks complement source review and are not a universal secret detector.",
+  "errors": [],
+  "archiveReferenceCopiesVerified": 216,
+  "archiveTextLineEndings": "LF, normalized before publishing; original audit source hashes remain historical."
+}

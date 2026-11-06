@@ -93,17 +93,84 @@
 
   /* ---------- Hero ---------- */
   .mk-hero {
+    position: relative;
+    isolation: isolate;
     aspect-ratio: 734 / 300;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    background:
-      image-set(url('/marketing/hero-scene.webp') type('image/webp'), url('/marketing/hero-scene.jpg') type('image/jpeg')) right bottom / auto 100% no-repeat,
-      linear-gradient(180deg, #e7f6fd 0%, #eff8fd 25%, #f1f9fc 50%, #f3fbfe 75%, #f6fbfe 100%);
+    background: linear-gradient(180deg, #e7f6fd 0%, #eff8fd 25%, #f1f9fc 50%, #f3fbfe 75%, #f6fbfe 100%);
+  }
+  /* Fade only the empty left copy area so the scene has no rectangular edge.
+   * Vehicles stay fully opaque and clear of the live headline and actions.
+   */
+  .mk-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: url('/marketing/homepage-hero-keke.png') right bottom / auto 100% no-repeat;
+    mask-image: linear-gradient(to right, transparent 20%, #000 35%);
   }
   .mk-hero-text {
     max-width: 540px;
     padding: 64px 0;
+  }
+  .mk-hero-heading {
+    margin: 0;
+    padding-top: 6px;
+    font-family: var(--font-display);
+    font-size: clamp(46px, 6.2vw, 84px);
+    font-weight: 600;
+    line-height: 1.04;
+    letter-spacing: -.045em;
+    color: var(--color-ink);
+  }
+  /* Move only the lettering, keeping the lead and buttons completely still. */
+  .mk-hero-heading-motion { display: block; animation: mk-headline-bounce 6s cubic-bezier(.45, 0, .55, 1) infinite; }
+  .mk-hero-heading-line { display: block; }
+  .mk-hero-heading-accent {
+    position: relative;
+    display: table;
+    padding-bottom: .14em;
+    font-weight: 800;
+    /* Existing dark brand teal keeps the headline readable on the pale sky. */
+    color: var(--color-mk-teal-button);
+  }
+  .mk-hero-heading-accent::after {
+    content: '';
+    position: absolute;
+    left: .02em;
+    bottom: .015em;
+    width: 78%;
+    height: .1em;
+    border-bottom: .035em solid currentColor;
+    border-radius: 50%;
+    opacity: .5;
+    transform: rotate(-2deg);
+  }
+  @keyframes mk-headline-bounce {
+    0%, 16%, 86%, 100% { transform: translateY(0); }
+    44% { transform: translateY(-6px); }
+    63% { transform: translateY(0); }
+    74% { transform: translateY(-2px); }
+  }
+  .mk-order-water-drop {
+    display: block;
+    flex-shrink: 0;
+    overflow: visible;
+    transform-origin: center 70%;
+    animation: mk-water-drop-bob 3.8s ease-in-out infinite;
+  }
+  @keyframes mk-water-drop-bob {
+    0%, 100% { transform: translateY(0) scale(1); }
+    45% { transform: translateY(-3px) scale(.98, 1.03); }
+    70% { transform: translateY(1px) scale(1.02, .98); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mk-hero-heading-motion,
+    .mk-order-water-drop { animation: none; transform: none; }
   }
   .mk-hero-side {
     display: none;
@@ -116,7 +183,7 @@
     flex-direction: column;
     justify-content: center;
     background-color: var(--color-mk-drivers);
-    background-image: image-set(url('/marketing/drivers-banner.webp') type('image/webp'), url('/marketing/drivers-banner.jpg') type('image/jpeg'));
+    background-image: linear-gradient(90deg, var(--color-mk-drivers), transparent 50%), url('/marketing/drivers-photo.png');
     background-size: cover;
     background-position: right center;
     background-repeat: no-repeat;
@@ -133,10 +200,75 @@
   }
 
   /* ---------- Grids ---------- */
+  .mk-app-card {
+    display: grid;
+    grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+    align-items: center;
+    gap: 24px;
+    min-width: 0;
+    padding: 28px;
+    border-radius: 24px;
+    background: white;
+    box-shadow: 0 8px 28px rgba(15,60,120,.06);
+  }
+  .mk-app-card-copy { display: flex; min-width: 0; flex-direction: column; gap: 12px; }
+  .mk-app-phone {
+    position: relative;
+    width: min(100%, 190px);
+    margin: 0 auto;
+    aspect-ratio: 1 / 2;
+    border: 7px solid #172535;
+    border-radius: 30px;
+    overflow: hidden;
+    background: #f4f7fb;
+    box-shadow: 0 12px 28px #0a254024, inset 0 0 0 1px #8095a4;
+  }
+  .mk-app-phone img { display: block; width: 100%; height: auto; }
+  .mk-app-phone-speaker { position: absolute; top: 3px; left: 50%; width: 26%; height: 7px; transform: translateX(-50%); border-radius: 8px; background: #172535; }
+  /* Preserve the supplied 3:1 banner on larger screens. Phones use its right
+   * photo half and live HTML text so the rider and heading remain readable.
+   */
+  .mk-keke-banner {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    border-radius: 16px;
+  }
+  .mk-keke-banner img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+  }
+  @media (min-width: 768px) {
+    .mk-keke-banner { aspect-ratio: 3 / 1; }
+    .mk-keke-banner img { object-fit: contain; }
+  }
   .mk-steps {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 32px;
+  }
+  /* One supplied guide, cached once. Crop its photo scenes in the layout so
+   * instructions remain real text and the source bitmap stays unchanged.
+   * Width and offsets correspond to a 550 x 280 window in a 1448 px image.
+   */
+  .mk-step-photo {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 550 / 280;
+    overflow: hidden;
+    border-radius: 20px 20px 0 0;
+    background: var(--color-mk-panel);
+  }
+  .mk-step-photo img {
+    position: absolute;
+    width: calc(100% * 1448 / 550);
+    max-width: none;
+    height: auto;
+    left: var(--mk-photo-left);
+    top: var(--mk-photo-top);
   }
   .mk-approval {
     display: grid;
@@ -156,6 +288,7 @@
   }
 
   @media (max-width: 1180px) {
+    .mk-hero::before { display: none; }
     .mk-hero {
       aspect-ratio: auto;
       background: linear-gradient(180deg, #f3f9fe, #e9f4fd);
@@ -174,6 +307,10 @@
       display: block;
       width: 100%;
       height: auto;
+      /* Crop only the scene's empty left copy area, preserving both vehicles. */
+      aspect-ratio: 1410 / 969;
+      object-fit: cover;
+      object-position: right center;
       border-radius: 20px;
     }
     .mk-drivers {
@@ -248,6 +385,8 @@
     }
   }
   @media (max-width: 600px) {
+    .mk-app-card { grid-template-columns: minmax(0, 1fr); padding: 24px; }
+    .mk-app-phone { width: min(100%, 160px); }
     .mk-steps,
     .mk-approval {
       grid-template-columns: minmax(0, 1fr);

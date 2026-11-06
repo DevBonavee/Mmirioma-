@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
+import { useId, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cx } from '../../lib/cx'
 import { whatsappLink } from '../../lib/whatsapp'
@@ -78,22 +78,43 @@ function Badge({ icon, children, navy = false }: { icon: ReactNode; children: Re
 }
 
 function Hero() {
+  const dropId = useId()
   return (
     <section id="top" className="mk-hero">
       <div className="mk-wrap mk-hero-grid w-full">
         <div className="mk-hero-text flex flex-col gap-[22px]">
           <Kicker>Water delivery in Enugu</Kicker>
-          <h1 className="m-0 font-display text-[clamp(46px,6.2vw,84px)] leading-[0.98] font-extrabold tracking-[-2px] text-ink">
-            Water at
-            <br />
-            <span className="text-mk-teal">your gate</span>
+          <h1 className="mk-hero-heading">
+            <span className="mk-hero-heading-motion">
+              <span className="mk-hero-heading-line">Water at</span>{' '}
+              <span className="mk-hero-heading-accent">your gate</span>
+            </span>
           </h1>
           <p className="m-0 max-w-[460px] text-[19px] leading-[1.55] text-mk-lead">
             Order on your phone. We bring the water by keke or tanker and pour it into your drums or tank.
           </p>
           <div className="flex flex-wrap gap-3.5">
             <Link to="/order" className={cx(PRIMARY_BUTTON, 'min-h-[54px] px-[26px] text-[16px]')}>
-              <DropFilledIcon />
+              <svg className="mk-order-water-drop" aria-hidden="true" focusable="false" width="26" height="30" viewBox="0 0 32 38" fill="none">
+                <defs>
+                  <linearGradient id={`${dropId}-body`} x1="6" y1="8" x2="26" y2="33" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#F0FCFF" stopOpacity=".96" />
+                    <stop offset=".3" stopColor="#B6EEFA" stopOpacity=".85" />
+                    <stop offset=".63" stopColor="#39BCE7" stopOpacity=".72" />
+                    <stop offset="1" stopColor="#DDF9FF" stopOpacity=".98" />
+                  </linearGradient>
+                  <radialGradient id={`${dropId}-light`} cx="0" cy="0" r="1" gradientTransform="translate(20 28) rotate(130) scale(15 11)" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#F4FDFF" stopOpacity=".95" />
+                    <stop offset=".52" stopColor="#B2EEFF" stopOpacity=".2" />
+                    <stop offset="1" stopColor="#1289C4" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <path d="M16 2C14 8 4 17 4 24a12 12 0 0 0 24 0C28 17 18 8 16 2Z" fill={`url(#${dropId}-body)`} stroke="#D6F8FF" strokeWidth=".8" />
+                <path d="M16 2C14 8 4 17 4 24a12 12 0 0 0 24 0C28 17 18 8 16 2Z" fill={`url(#${dropId}-light)`} />
+                <path d="M12.3 12.5C10 16 7 19.5 7 23.5c0 2 .5 3.5 1.5 4.8" stroke="white" strokeWidth="2.1" strokeLinecap="round" opacity=".9" />
+                <path d="M11 32.3c4 2.1 9 1.3 12-2" stroke="#E8FCFF" strokeWidth="1.4" strokeLinecap="round" opacity=".85" />
+                <ellipse cx="21" cy="26" rx="3.7" ry="2" fill="white" opacity=".4" transform="rotate(-35 21 26)" />
+              </svg>
               Order water
               <ArrowRightIcon />
             </Link>
@@ -108,14 +129,15 @@ function Hero() {
             <Badge icon={<ShieldCheckIcon />}>Done only when you give your code</Badge>
           </div>
         </div>
-        <Pic
-          name="hero-vehicles"
-          fallback="jpg"
-          width={1410}
-          height={969}
-          eager
+        <img
+          src="/marketing/homepage-hero-keke.png"
+          width={1890}
+          height={832}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
           className="mk-hero-side"
-          alt="A blue MmiriOma keke loaded with water cans beside a white MmiriOma water tanker in front of a modern house"
+          alt="A right-facing MmiriOma cargo keke with a seated rider and secured 25-litre water containers beside a white water tanker"
         />
       </div>
     </section>
@@ -161,12 +183,17 @@ function Benefits() {
   )
 }
 
-/** The pictures and circle colours of the four steps; the words are `HOW_STEPS` in content.ts. */
-const STEP_ART: { img: string; w: number; h: number; circle: string }[] = [
-  { img: 'step-order', w: 82, h: 122, circle: 'bg-primary' },
-  { img: 'step-deliver', w: 145, h: 92, circle: 'bg-primary' },
-  { img: 'step-pour', w: 115, h: 122, circle: 'bg-mk-step3' },
-  { img: 'step-code', w: 87, h: 108, circle: 'bg-mk-step4' },
+/**
+ * Photo windows in the owner's 1448 x 1086 delivery guide (4 November 2026).
+ * Each window is 550 x 280 source pixels, excluding the printed page header
+ * and instructions. The phone scene serves both phone-related steps; the
+ * approved four-step copy stays in accessible HTML, independent of the image.
+ */
+const STEP_ART: { x: number; y: number; alt: string; circle: string }[] = [
+  { x: 730, y: 108, alt: 'Ordering water on a smartphone', circle: 'bg-primary' },
+  { x: 530, y: 410, alt: 'A delivery rider carrying blue water containers', circle: 'bg-primary' },
+  { x: 770, y: 720, alt: 'A water delivery arriving at a customer’s home', circle: 'bg-mk-step3' },
+  { x: 835, y: 108, alt: 'Using a phone for a water delivery', circle: 'bg-mk-step4' },
 ]
 const STEPS = HOW_STEPS.map((step, i) => ({ ...STEP_ART[i], ...step }))
 
@@ -184,11 +211,18 @@ function HowItWorks() {
       />
       <div className="mk-steps">
         {STEPS.map((s, i) => (
-          <div key={s.title} className="relative flex flex-col gap-3.5 rounded-[20px] bg-white px-[26px] py-8 shadow-[0_8px_28px_rgba(15,60,120,0.07)]">
-            <Pic name={s.img} width={s.w} height={s.h} className="block h-16 w-auto self-center" />
-            <span className={cx('mt-2 inline-flex size-[30px] items-center justify-center rounded-full text-[14px] font-bold text-white', s.circle)}>{i + 1}</span>
-            <h3 className="m-0 font-display text-[20px] font-bold text-ink">{s.title}</h3>
-            <p className="m-0 text-[15px] leading-[1.6] text-slate">{s.text}</p>
+          <div key={s.title} className="relative flex min-w-0 flex-col rounded-[20px] bg-white shadow-[0_8px_28px_rgba(15,60,120,0.07)]">
+            <div
+              className="mk-step-photo"
+              style={{ '--mk-photo-left': `${-s.x / 550 * 100}%`, '--mk-photo-top': `${-s.y / 280 * 100}%` } as CSSProperties}
+            >
+              <img src="/marketing/how-it-works-guide.png" width={1448} height={1086} alt={s.alt} loading="lazy" decoding="async" />
+            </div>
+            <div className="flex flex-1 flex-col gap-3.5 px-[26px] pt-5 pb-7">
+              <span className={cx('inline-flex size-[30px] items-center justify-center rounded-full text-[14px] font-bold text-white', s.circle)}>{i + 1}</span>
+              <h3 className="m-0 font-display text-[20px] font-bold text-ink">{s.title}</h3>
+              <p className="m-0 text-[15px] leading-[1.6] text-slate">{s.text}</p>
+            </div>
             {i < STEPS.length - 1 && (
               <span className="mk-step-arrow absolute top-1/2 right-[-27px] text-mk-arrow" aria-hidden="true">
                 <DottedArrowIcon />
@@ -273,18 +307,21 @@ function OptionCard({
   title,
   text,
   image,
+  banner = false,
   children,
 }: {
   tone: 'keke' | 'tanker'
   title: string
   text: string
   image: ReactNode
+  /** A full-width banner replaces the desktop text/image row; mobile keeps live text. */
+  banner?: boolean
   children: ReactNode
 }) {
   return (
     <div className={cx('flex flex-col gap-5 rounded-3xl p-[clamp(18px,2vw,24px)]', tone === 'keke' ? 'bg-mk-keke' : 'bg-mk-tanker')}>
-      <div className="grid min-h-[190px] grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] items-center gap-3">
-        <div className="flex flex-col gap-2.5">
+      <div className={banner ? 'relative flex min-h-[190px] flex-col justify-center gap-3' : 'grid min-h-[190px] grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] items-center gap-3'}>
+        <div className={cx('flex flex-col gap-2.5', banner && 'md:sr-only')}>
           <h3 className={cx('m-0 font-display text-[30px] font-extrabold', tone === 'keke' ? 'text-mk-keke-title' : 'text-mk-tanker-title')}>{title}</h3>
           <p className="m-0 text-[16px] leading-[1.55] text-mk-lead">{text}</p>
         </div>
@@ -305,7 +342,12 @@ function DeliveryOptions() {
           tone="keke"
           title="Keke Delivery"
           text="For homes, offices and small shops."
-          image={<Pic name="keke" width={473} height={314} alt="Blue MmiriOma keke carrying stacked water cans" className="block h-auto w-full max-w-[320px] justify-self-end" />}
+          banner
+          image={
+            <div className="mk-keke-banner">
+              <img src="/marketing/keke-delivery-banner.png" width={2172} height={724} alt="MmiriOma delivery rider carrying blue water containers" loading="lazy" decoding="async" />
+            </div>
+          }
         >
           <SubCard title="Can sizes">
             <Pictured
@@ -396,11 +438,12 @@ function ForDrivers() {
               </Badge>
             </div>
           </div>
-          <Pic
-            name="drivers-banner"
-            fallback="jpg"
-            width={2202}
-            height={879}
+          <img
+            src="/marketing/drivers-photo.png"
+            width={1983}
+            height={793}
+            loading="lazy"
+            decoding="async"
             className="mk-drivers-photo"
             alt="Smiling MmiriOma driver in a branded polo and cap standing in front of a water tanker"
           />
@@ -424,13 +467,16 @@ function ForDrivers() {
   )
 }
 
-const INSTALL_BUTTON = cx(PRIMARY_BUTTON, 'mt-2 min-h-[50px] self-start px-[22px] text-[15px]')
+const INSTALL_BUTTON = cx(PRIMARY_BUTTON, 'mt-2 min-h-[50px] max-w-full self-start px-[22px] py-3 text-[15px]')
 
-function AppCard({ img, w, h, alt, title, text, button }: { img: string; w: number; h: number; alt: string; title: string; text: string; button: ReactNode }) {
+function AppCard({ img, alt, title, text, button }: { img: string; alt: string; title: string; text: string; button: ReactNode }) {
   return (
-    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,170px),1fr))] items-end gap-x-6 gap-y-3 rounded-3xl bg-white px-7 shadow-[0_8px_28px_rgba(15,60,120,0.06)]">
-      <Pic name={img} width={w} height={h} alt={alt} className="mt-[-36px] block h-auto w-full max-w-[210px] justify-self-center" />
-      <div className="flex flex-col gap-3 self-center pt-7 pb-8">
+    <div className="mk-app-card">
+      <div className="mk-app-phone">
+        <img src={`/marketing/${img}.png`} width={1170} height={2340} alt={alt} loading="lazy" decoding="async" />
+        <span aria-hidden="true" className="mk-app-phone-speaker" />
+      </div>
+      <div className="mk-app-card-copy">
         <h3 className="m-0 font-display text-[22px] font-bold text-ink">{title}</h3>
         <p className="m-0 text-[15px] leading-[1.6] text-slate">{text}</p>
         {button}
@@ -454,10 +500,8 @@ function InstallSection() {
         />
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,460px),1fr))] gap-7">
           <AppCard
-            img="phone-customer"
-            w={341}
-            h={402}
-            alt="Phone showing the MmiriOma customer app"
+            img="app-preview-customer"
+            alt="Actual MmiriOma customer home screen with a clearly labelled sample account"
             title="For customers"
             text="Order water and follow each step of your delivery."
             button={
@@ -468,10 +512,8 @@ function InstallSection() {
             }
           />
           <AppCard
-            img="phone-driver"
-            w={352}
-            h={374}
-            alt="Phone showing the MmiriOma driver dashboard"
+            img="app-preview-partner"
+            alt="Actual MmiriOma rider dashboard with a clearly labelled sample account"
             title="For riders and drivers"
             text="Get orders, deliver them and see what you have earned."
             button={

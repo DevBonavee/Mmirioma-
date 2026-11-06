@@ -47,7 +47,7 @@ export function AvailableJobCard({ job, to, className }: { job: PartnerJob; to: 
             </span>
           )}
         </div>
-        <Illustration name={jobDeliveryType(job, vehicle)} className="w-[104px]" />
+        <Illustration name={jobDeliveryType(job, vehicle) === 'keke' ? 'keke-rider' : 'tanker'} className="w-[104px]" />
       </div>
       <ButtonLink to={to} size="sm" className="mt-2.5">
         View and accept
@@ -106,7 +106,7 @@ export function JobMiniCard({ job, sub, trailing, className }: { job: PartnerJob
   const keke = jobDeliveryType(job, usePartnerApp().vehicle) === 'keke'
   return (
     <Card className={cx('flex items-center gap-3 px-3.5', keke ? 'py-3' : 'py-2.5', className)}>
-      <Illustration name={keke ? 'keke' : 'tanker'} className={keke ? 'w-[76px]' : 'w-[86px]'} />
+      <Illustration name={keke ? 'keke-rider' : 'tanker'} className={keke ? 'w-[76px]' : 'w-[86px]'} />
       <div className="flex-1">
         <div className="font-extrabold">{job.reference}</div>
         <div className="text-caption text-mute">{sub ?? `${jobQuantity(job)}${contactSuffix(job)}`}</div>

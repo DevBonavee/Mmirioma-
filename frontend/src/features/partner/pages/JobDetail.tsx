@@ -38,12 +38,12 @@ export function JobDetail() {
   return (
     <MobileShell>
       <TopBar left={<BackLink to={`${base}/orders`} />} />
-      <ScrollArea className="gap-3">
+      <ScrollArea className="gap-3 lg:grid lg:grid-cols-2 lg:content-start lg:items-start lg:gap-6">
         {job.isPending && <LoadingBlock />}
         {job.isError && <ErrorBlock error={job.error} onRetry={() => job.refetch()} />}
         {j && (
           <>
-            <div className="rise-1 flex items-start justify-between gap-2.5">
+            <div className="rise-1 flex items-start justify-between gap-2.5 lg:col-span-full">
               <ScreenHeading title="Order details" sub={<span className="font-bold text-slate">{j.reference}</span>} />
               {j.earning_minor_units !== null && (
                 <Chip tone="amber" className="px-3 py-2 text-[15px]">
@@ -87,7 +87,7 @@ export function JobDetail() {
                   </>
                 )}
               </div>
-              <Illustration name={keke ? 'keke' : 'tanker'} className={cx('animate-drive', keke ? 'w-[132px]' : 'mr-[-26px] w-[150px]')} />
+              <Illustration name={keke ? 'keke-rider' : 'tanker'} className={cx('animate-drive', keke ? 'w-[132px]' : 'mr-[-26px] w-[150px]')} />
             </div>
             <RouteCard job={j} className="rise-3" />
             {(j.earning_minor_units !== null || j.instructions) && (

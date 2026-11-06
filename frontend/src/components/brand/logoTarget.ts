@@ -2,16 +2,14 @@
 export const HOME_LOGO_NAME = 'MmiriOma, home'
 
 /**
- * Where a logo goes from a path (docs/design/landing-v1.md, "Logo links").
+ * Every screen logo opens the public homepage (owner request, 4 November 2026).
  *
- * The installed partner app has the scope `/partner/` (`partner.webmanifest`),
- * so a link to `/` from inside it would open outside the app. Its logo goes to
- * the partner home, which sends a signed-in partner to their screen and
- * everyone else to sign-in. Every other screen goes to the public homepage.
+ * This supersedes the partner-scope exception. The installed partner app may
+ * open the public site outside its `/partner/` scope; its Home navigation and
+ * launch URL still open the partner dashboard. Unsaved-order protection remains.
  *
- * @param pathname - The current location's path.
- * @returns `/partner/` inside the partner app, otherwise `/`.
+ * @returns The public homepage `/`.
  */
-export function homeFor(pathname: string): '/' | '/partner/' {
-  return pathname === '/partner' || pathname.startsWith('/partner/') ? '/partner/' : '/'
+export function homeFor(): '/' {
+  return '/'
 }

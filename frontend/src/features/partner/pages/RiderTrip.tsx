@@ -164,7 +164,7 @@ function PickupForm({ job: j, base }: { job: PartnerJob; base: string }) {
             )}
             <div className={cans ? 'text-caption text-[#6B5210]' : 'text-[20px] font-extrabold'}>{describeQuantity(litres)}{cans ? ' in total' : ''}</div>
           </div>
-          <Illustration name="keke" className="animate-drive w-[118px]" />
+          <Illustration name="keke-rider" className="animate-drive w-[118px]" />
         </div>
         <Card className="rise-3 px-3.5 py-1.5">
           {rows.map((r, i) => {
@@ -267,7 +267,7 @@ export function CustomerStep() {
               <MapFrame height={330} className="rise-3">
                 <CustomerMapArt />
                 <Illustration
-                  name="keke"
+                  name="keke-rider"
                   alt="Your keke"
                   className="animate-drive absolute top-[57%] left-[32.8%] w-[82px] drop-shadow-[0_6px_8px_rgba(10,37,64,0.25)]"
                 />

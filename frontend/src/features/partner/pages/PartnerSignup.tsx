@@ -6,7 +6,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { ChevronDownIcon } from '../../../components/icons/icons'
 import { Illustration } from '../../../components/brand/Illustration'
-import { BackLink, MobileShell, ScrollArea, TopBar } from '../../../components/layout/MobileShell'
+import { AuthLayout } from '../../../components/layout/AuthLayout'
 import { ErrorBlock, LoadingScreen } from '../../../components/layout/StateScreens'
 import { Button } from '../../../components/ui/Button'
 import { OptionTile } from '../../../components/ui/Choice'
@@ -21,6 +21,7 @@ import { passwordProblem } from '../../../lib/format/password'
 import { applyServerFieldErrors, passwordsMatch, phoneField, signUpSecurityFields } from '../../../lib/forms'
 import { HOME_PATH } from '../../auth/authPaths'
 import { SignUpSecurityFields } from '../../auth/SignUpSecurityFields'
+import { saveTourStatus } from '../../onboarding/tourStorage'
 import { SESSION_KEY, useLogout, useSession } from '../../auth/useSession'
 import { formatPhone } from '../../../lib/format/phone'
 import { cx } from '../../../lib/cx'
@@ -87,23 +88,20 @@ export function PartnerSignupPage() {
   if (!user) return <PartnerSignup />
   if (user.role !== 'customer') return <Navigate to={HOME_PATH[user.role]} replace />
   return (
-    <MobileShell background="white">
-      <TopBar className="border-b-0" left={<BackLink to="/menu" />} />
-      <ScrollArea className="gap-3.5 px-[22px] pt-2 pb-[22px]">
-        <ScreenHeading className="rise-1" title="Deliver with MmiriOma" sub="Ride a keke or drive a tanker, and earn on every delivery." />
-        <div className="rise-2 flex justify-center">
-          <Illustration name="keke" className="animate-drive w-44" />
-        </div>
-        <Notice className="rise-3">
-          You are signed in to the customer app as <b>{formatPhone(user.phone)}</b>. A rider or driver account needs its own phone number. Log out
-          here, then create your rider or driver account.
-        </Notice>
-        {logout.isError && <Notice tone="error">{errorMessage(logout.error)}</Notice>}
-        <Button className="rise-4" loading={logout.isPending} onClick={() => logout.mutate()}>
-          Log out and continue
-        </Button>
-      </ScrollArea>
-    </MobileShell>
+    <AuthLayout audience="partner" backTo="/menu">
+      <ScreenHeading className="rise-1" title="Deliver with MmiriOma" sub="Ride a keke or drive a tanker, and earn on every delivery." />
+      <div className="rise-2 flex justify-center">
+        <Illustration name="keke-rider" className="animate-drive w-44" />
+      </div>
+      <Notice className="rise-3">
+        You are signed in to the customer app as <b>{formatPhone(user.phone)}</b>. A rider or driver account needs its own phone number. Log out
+        here, then create your rider or driver account.
+      </Notice>
+      {logout.isError && <Notice tone="error">{errorMessage(logout.error)}</Notice>}
+      <Button className="rise-4" loading={logout.isPending} onClick={() => logout.mutate()}>
+        Log out and continue
+      </Button>
+    </AuthLayout>
   )
 }
 
@@ -119,6 +117,7 @@ export function PartnerSignup() {
   const signup = useMutation({
     mutationFn: partnerSignup,
     onSuccess: (session) => {
+      saveTourStatus(session.user, 'pending')
       qc.clear()
       qc.setQueryData(SESSION_KEY, session)
       // A new partner cannot be approved until the phone is verified (partners.md decision 9).
@@ -175,103 +174,100 @@ export function PartnerSignup() {
     (signup.error.code === 'phone_already_registered' || (signup.error.code === 'validation_error' && Array.isArray(signup.error.details) && unplaced.length === 0))
 
   return (
-    <MobileShell background="white">
-      <TopBar className="border-b-0" left={<BackLink to="/partner/login" />} />
-      <ScrollArea className="gap-3.5 px-[22px] pt-2 pb-[22px]">
-        <ScreenHeading className="rise-1" title="Deliver with MmiriOma" sub="Create your rider or driver account. We check your vehicle before you get orders." />
-        <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3.5">
-          {signup.isError && !fieldLevel && <Notice tone="error">{unplaced.length ? unplaced.join(' ') : errorMessage(signup.error)}</Notice>}
-          <fieldset className="rise-2 m-0 border-0 p-0">
-            <legend className="mb-1.5 p-0 text-[14px] font-bold">What do you drive?</legend>
-            <Controller
-              control={control}
-              name="vehicle_type"
-              render={({ field }) => (
-                <div className="grid grid-cols-2 gap-3">
-                  <OptionTile selected={field.value === 'keke'} onSelect={() => field.onChange('keke')} className="pt-4 pb-3">
-                    <Illustration name="keke" className="h-14 w-auto" />
-                    <span className="text-[15px] font-extrabold">Keke</span>
-                    <span className="text-tab text-mute">Jerrycans</span>
-                  </OptionTile>
-                  <OptionTile selected={field.value === 'tanker'} onSelect={() => field.onChange('tanker')} className="pt-4 pb-3">
-                    <Illustration name="tanker" className="h-14 w-auto" />
-                    <span className="text-[15px] font-extrabold">Tanker</span>
-                    <span className="text-tab text-mute">Tank delivery</span>
-                  </OptionTile>
-                </div>
-              )}
-            />
-          </fieldset>
-          {vehicle === 'tanker' && (
-            <TextField
-              label="How many gallons does your tanker carry?"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="e.g. 4,000"
-              hint="Type the full load in gallons, for example 4,000 gallons (16,000 litres)."
-              error={errors.tank_gallons?.message}
-              {...register('tank_gallons')}
-            />
-          )}
-          <TextField className="rise-3" label="Full name" autoComplete="name" placeholder="e.g. Chinedu Okafor" error={errors.name?.message} {...register('name')} />
+    <AuthLayout audience="partner" backTo="/partner/login">
+      <ScreenHeading className="rise-1" title="Deliver with MmiriOma" sub="Create your rider or driver account. We check your vehicle before you get orders." />
+      <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3.5">
+        {signup.isError && !fieldLevel && <Notice tone="error">{unplaced.length ? unplaced.join(' ') : errorMessage(signup.error)}</Notice>}
+        <fieldset className="rise-2 m-0 border-0 p-0">
+          <legend className="mb-1.5 p-0 text-[14px] font-bold">What do you drive?</legend>
+          <Controller
+            control={control}
+            name="vehicle_type"
+            render={({ field }) => (
+              <div className="grid grid-cols-2 gap-3">
+                <OptionTile selected={field.value === 'keke'} onSelect={() => field.onChange('keke')} className="pt-4 pb-3">
+                  <Illustration name="keke-rider" className="h-14 w-auto" />
+                  <span className="text-[15px] font-extrabold">Keke</span>
+                  <span className="text-tab text-mute">Jerrycans</span>
+                </OptionTile>
+                <OptionTile selected={field.value === 'tanker'} onSelect={() => field.onChange('tanker')} className="pt-4 pb-3">
+                  <Illustration name="tanker" className="h-14 w-auto" />
+                  <span className="text-[15px] font-extrabold">Tanker</span>
+                  <span className="text-tab text-mute">Tank delivery</span>
+                </OptionTile>
+              </div>
+            )}
+          />
+        </fieldset>
+        {vehicle === 'tanker' && (
           <TextField
-            className="rise-3"
-            label="Phone number"
-            type="tel"
-            inputMode="tel"
-            autoComplete="tel"
-            placeholder="0803 000 0000"
-            hint="Customers and admin call you on this number."
-            error={errors.phone?.message}
-            {...register('phone', {
-              onBlur: (event) => {
-                if (event.target.value) void trigger('phone')
-              },
-            })}
+            label="How many gallons does your tanker carry?"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="e.g. 4,000"
+            hint="Type the full load in gallons, for example 4,000 gallons (16,000 litres)."
+            error={errors.tank_gallons?.message}
+            {...register('tank_gallons')}
           />
-          <TextField className="rise-4" label="Plate number" placeholder={vehicle === 'keke' ? 'ENU 482 KK' : 'ENU 115 XA'} error={errors.plate?.message} {...register('plate')} />
-          {noAreas ? (
-            <Notice tone="error" className="rise-4">
-              Driver sign-up is not open right now because no delivery areas are set up yet. Please try again later, or contact MmiriOma support on{' '}
-              <a href={`tel:${support.phone}`} className="font-bold">
-                {formatPhone(support.phone)}
-              </a>
-              .
-            </Notice>
-          ) : (
-            <AreaSelect
-              className="rise-4"
-              areas={areas.data}
-              loading={areas.isPending}
-              error={areas.isError ? areas.error : null}
-              onRetry={() => void areas.refetch()}
-              fieldError={errors.service_zone_id?.message}
-              {...register('service_zone_id')}
-            />
-          )}
-          <SignUpSecurityFields
-            password={password}
-            passwordField={register('password')}
-            confirmField={register('confirm_password', {
-              onBlur: (event) => {
-                if (event.target.value) void trigger('confirm_password')
-              },
-            })}
-            termsField={register('accepted_terms')}
-            errors={{ password: errors.password?.message, confirm: errors.confirm_password?.message, terms: errors.accepted_terms?.message }}
+        )}
+        <TextField className="rise-3" label="Full name" autoComplete="name" placeholder="e.g. Chinedu Okafor" error={errors.name?.message} {...register('name')} />
+        <TextField
+          className="rise-3"
+          label="Phone number"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder="0803 000 0000"
+          hint="Customers and admin call you on this number."
+          error={errors.phone?.message}
+          {...register('phone', {
+            onBlur: (event) => {
+              if (event.target.value) void trigger('phone')
+            },
+          })}
+        />
+        <TextField className="rise-4" label="Plate number" placeholder={vehicle === 'keke' ? 'ENU 482 KK' : 'ENU 115 XA'} error={errors.plate?.message} {...register('plate')} />
+        {noAreas ? (
+          <Notice tone="error" className="rise-4">
+            Driver sign-up is not open right now because no delivery areas are set up yet. Please try again later, or contact MmiriOma support on{' '}
+            <a href={`tel:${support.phone}`} className="font-bold">
+              {formatPhone(support.phone)}
+            </a>
+            .
+          </Notice>
+        ) : (
+          <AreaSelect
+            className="rise-4"
+            areas={areas.data}
+            loading={areas.isPending}
+            error={areas.isError ? areas.error : null}
+            onRetry={() => void areas.refetch()}
+            fieldError={errors.service_zone_id?.message}
+            {...register('service_zone_id')}
           />
-          <Button type="submit" className="rise-5" loading={signup.isPending} disabled={!areas.isSuccess || noAreas || passwordProblem(password) !== null}>
-            Create account
-          </Button>
-        </form>
-        <p className="m-0 text-center text-chip text-mute">
-          Already have an account?{' '}
-          <Link to="/partner/login" className="font-bold text-primary no-underline hover:text-primary-dark">
-            Log in
-          </Link>
-        </p>
-      </ScrollArea>
-    </MobileShell>
+        )}
+        <SignUpSecurityFields
+          password={password}
+          passwordField={register('password')}
+          confirmField={register('confirm_password', {
+            onBlur: (event) => {
+              if (event.target.value) void trigger('confirm_password')
+            },
+          })}
+          termsField={register('accepted_terms')}
+          errors={{ password: errors.password?.message, confirm: errors.confirm_password?.message, terms: errors.accepted_terms?.message }}
+        />
+        <Button type="submit" className="rise-5" loading={signup.isPending} disabled={!areas.isSuccess || noAreas || passwordProblem(password) !== null}>
+          Create account
+        </Button>
+      </form>
+      <p className="m-0 text-center text-chip text-mute">
+        Already have an account?{' '}
+        <Link to="/partner/login" className="font-bold text-primary no-underline hover:text-primary-dark">
+          Log in
+        </Link>
+      </p>
+    </AuthLayout>
   )
 }
 

@@ -19,7 +19,8 @@ Windows**. Run them from the repository root unless a `cd` is shown.
 
 - Docker with Docker Compose v2 (`docker compose version`)
 - Python 3.14
-- Node.js 24 and npm
+- Node.js 24.15 or newer in the 24.x line and npm (the locked jsdom test tools
+  require at least 24.15; older Node 24 releases emit `EBADENGINE`)
 
 ## 1. Environment variables
 

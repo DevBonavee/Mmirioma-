@@ -167,6 +167,14 @@ describe('text over the water stays readable', () => {
   const token = (name: string) => new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6})`).exec(themeCss)![1]
   const water = /--mk-water:\s*(#[0-9a-fA-F]{6})/.exec(marketingCss)![1]
 
+  it('keeps the hero accent readable on every stop of its sky gradient', () => {
+    const accentRule = /\.mk-hero-heading-accent\s*\{([^}]+)\}/.exec(marketingCss)![1]
+    const colorToken = /color: var\(--color-([\w-]+)\)/.exec(accentRule)![1]
+    for (const sky of ['#e7f6fd', '#eff8fd', '#f6fbfe']) {
+      expect(contrast(token(colorToken), sky)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
   it('keeps the size, in ink, at 4.5:1 or better over the water', () => {
     expect(contrast(token('ink'), water)).toBeGreaterThanOrEqual(4.5)
   })

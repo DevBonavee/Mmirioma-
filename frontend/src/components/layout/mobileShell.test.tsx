@@ -24,7 +24,7 @@ function screenContents() {
 }
 
 describe('MobileShell width', () => {
-  it('is the 430 px phone column without a scope (the rider and driver app)', () => {
+  it('keeps the legacy preview column separate from application workspaces', () => {
     const { container } = render(<MemoryRouter>{screenContents()}</MemoryRouter>)
     const cls = frame(container).className
     expect(cls).toContain('max-w-phone')
@@ -32,29 +32,24 @@ describe('MobileShell width', () => {
     expect(cls).not.toContain('xl:max-w-customer-wide')
   })
 
-  it('widens to 720 px, then 1120 px, for the customer, and stays full width on a phone', () => {
-    const { container } = render(<MemoryRouter><ShellScope width="customer">{screenContents()}</ShellScope></MemoryRouter>)
-    const cls = frame(container).className.split(' ')
-    // `max-w-phone` is the phone rule; the others apply from 768 and 1280 px.
-    expect(cls).toEqual(expect.arrayContaining(['max-w-phone', 'md:max-w-customer', 'xl:max-w-customer-wide']))
+  it.each(['customer', 'partner', 'card'] as const)('uses the fluid %s workspace without the phone cap', (width) => {
+    const { container } = render(<MemoryRouter><ShellScope width={width}>{screenContents()}</ShellScope></MemoryRouter>)
+    expect(frame(container)).toHaveAttribute('data-shell', width)
+    expect(frame(container)).toHaveClass('w-full', 'min-w-0')
+    expect(frame(container).className).not.toContain('max-w-')
   })
 
-  it('is a 480 px card for the signed-out customer screens', () => {
-    const { container } = render(<MemoryRouter><ShellScope width="card">{screenContents()}</ShellScope></MemoryRouter>)
-    expect(frame(container).className.split(' ')).toEqual(expect.arrayContaining(['max-w-phone', 'md:max-w-card']))
-  })
-
-  it('centres the scroll area and footer in a 720 px column on the customer desktop only', () => {
+  it('does not reintroduce the old customer column through main or footer padding', () => {
     const column = 'xl:px-[max(18px,calc((100%_-_720px)/2))]'
     const { rerender } = render(<MemoryRouter><ShellScope width="customer">{screenContents()}</ShellScope></MemoryRouter>)
-    expect(screen.getByRole('main')).toHaveClass(column)
-    expect(screen.getByText('Footer')).toHaveClass(column)
+    expect(screen.getByRole('main')).not.toHaveClass(column)
+    expect(screen.getByText('Footer')).not.toHaveClass(column)
     rerender(<MemoryRouter>{screenContents()}</MemoryRouter>)
     expect(screen.getByRole('main')).not.toHaveClass(column)
     expect(screen.getByText('Footer')).not.toHaveClass(column)
   })
 
-  it('lets a wide screen (the home screen) use the whole customer area', () => {
+  it('continues to accept the overview content marker', () => {
     render(
       <MemoryRouter>
         <ShellScope width="customer">
@@ -64,12 +59,12 @@ describe('MobileShell width', () => {
         </ShellScope>
       </MemoryRouter>,
     )
-    expect(screen.getByRole('main').className).not.toContain('xl:px-[max(')
+    expect(screen.getByRole('main')).toHaveAttribute('data-content', 'wide')
   })
 })
 
 describe('MobileShell window scroll (#342, docs/design/responsive.md)', () => {
-  function render_(width?: 'customer' | 'card', background?: 'ink') {
+  function render_(width?: 'customer' | 'partner' | 'card', background?: 'ink') {
     const screen_ = (
       <MobileShell background={background}>
         <TopBar />
@@ -79,8 +74,8 @@ describe('MobileShell window scroll (#342, docs/design/responsive.md)', () => {
     return render(<MemoryRouter>{width ? <ShellScope width={width}>{screen_}</ShellScope> : screen_}</MemoryRouter>)
   }
 
-  it('marks the phone-width frame (rider and driver app) for window scroll from 768 px', () => {
-    const { container } = render_()
+  it.each([undefined, 'partner'] as const)('allows window scroll for the %s scope from 768 px', (width) => {
+    const { container } = render_(width)
     expect(frame(container)).toHaveAttribute('data-scroll', 'window')
   })
 
@@ -97,6 +92,12 @@ describe('MobileShell window scroll (#342, docs/design/responsive.md)', () => {
 
   it('keeps a drawer menu (ink background) in the viewport-high frame', () => {
     const { container } = render_(undefined, 'ink')
+    expect(frame(container)).not.toHaveAttribute('data-scroll')
+  })
+
+  it('keeps an absolute map scene viewport-high even inside the fluid partner area', () => {
+    const { container } = render(<MemoryRouter><ShellScope width="partner"><MobileShell viewport>Map</MobileShell></ShellScope></MemoryRouter>)
+    expect(frame(container)).toHaveAttribute('data-shell', 'partner')
     expect(frame(container)).not.toHaveAttribute('data-scroll')
   })
 })

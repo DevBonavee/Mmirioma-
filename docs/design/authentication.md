@@ -208,3 +208,23 @@ Added by this design and recorded in
 logo (full and icon only), password field with Show/Hide, locked field state,
 large button (56 px) and sunlight variant, account menu, staff top bar,
 splash, and the token `--spacing-touch-lg` (56 px).
+
+## Owner's photograph and motion amendment (2026-11-04)
+
+The owner supplied `WhatsApp Image 2026-11-04 at 6.11.20 PM.jpeg` and requested
+replacing the sign-in/signup artwork with this photograph and adding motion.
+The original 1600 x 1066 JPEG is copied unchanged to
+`frontend/public/marketing/auth-water-hands.jpg`. `AuthLayout.tsx` uses it for
+customer and partner account pages, including their shared account-help layouts.
+The previously requested Keke/tanker artwork and explanatory partner copy remain.
+
+Use a responsive cover crop focused on the stream and hands: 55% / 62% on
+smaller screens and 55% / 50% in the desktop column. A navy gradient supports
+white text without the former screen-blend filter. Keep the input area still.
+The photograph alone pans and zooms gently over a 20-second cycle, scaling from
+1.035 to 1.085 with less than one percent translation. Overscan prevents exposed
+edges. `prefers-reduced-motion: reduce` removes motion and transforms. No pause
+control is added, following the owner's existing preference.
+
+This is photographic motion in CSS using the supplied original; forms,
+registration, phone verification, destinations and API contracts do not change.

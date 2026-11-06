@@ -7,6 +7,7 @@ import { Card, CardLink } from '../../../components/ui/Card'
 import { Chip } from '../../../components/ui/Chip'
 import { IconBadge, ScreenHeading, SectionHeader, TextLink, type IconBadgeTone } from '../../../components/ui/Content'
 import { HomeAppCard } from '../../pwa/PushParts'
+import { AutomaticTour } from '../../onboarding/WelcomeTour'
 import { ToggleKnob } from '../../../components/ui/Controls'
 import { Notice } from '../../../components/ui/Notice'
 import { errorMessage } from '../../../lib/api/errorMessage'
@@ -47,14 +48,15 @@ export function RiderHome() {
 
   return (
     <MobileShell>
+      <AutomaticTour audience="keke" blocked={!p || p.approval === 'suspended' || (p.approval === 'approved' && (!active.isSuccess || active.data.length > 0))} />
       <PartnerHomeTopBar />
-      <ScrollArea className="gap-3">
+      <ScrollArea className="gap-3 md:grid md:grid-cols-2 md:content-start xl:grid-cols-3 xl:gap-5">
         {profile.isPending && <LoadingBlock />}
         {profile.isError && <ErrorBlock error={profile.error} onRetry={() => profile.refetch()} />}
         {p && (
           <>
             <ScreenHeading
-              className="rise-1"
+              className="rise-1 md:col-span-full"
               titleClassName="text-[22px]"
               title={`${greeting()}, ${p.name.split(' ')[0]}!`}
               sub={`Keke rider · ${p.service_areas.join(' and ')} area`}
@@ -123,7 +125,7 @@ export function RiderHome() {
                 to={jobStepPath(base, inProgress)}
                 className="rise-4 relative flex items-center gap-3 overflow-hidden rounded-stat bg-[linear-gradient(120deg,#0B4FA8,#1570D8)] px-3.5 py-3 text-white no-underline hover:text-white"
               >
-                <Illustration name="keke" className="animate-drive w-[70px]" />
+                <Illustration name="keke-rider" className="animate-drive w-[70px]" />
                 <span className="flex flex-1 flex-col">
                   <span className="text-chip font-bold text-[#CFE3FB]">ACTIVE DELIVERY</span>
                   <span className="font-extrabold">
@@ -140,7 +142,7 @@ export function RiderHome() {
             <HomeAppCard app="partner" className="rise-4" />
 
             <SectionHeader
-              className="rise-5"
+              className="rise-5 md:col-span-full"
               title={`Available orders (${available.data?.length ?? 0})`}
               action={<TextLink to={`${base}/orders`} className="text-sub">View all</TextLink>}
             />
@@ -148,7 +150,7 @@ export function RiderHome() {
             {available.isError && <ErrorBlock error={available.error} onRetry={() => available.refetch()} />}
             {available.isSuccess && !first && (
               <EmptyBlock
-                illustration="keke"
+                illustration="keke-rider"
                 title={!approved ? 'No orders yet' : online ? 'No orders right now' : 'You are offline'}
                 text={!approved ? 'Orders show here once admin approves you.' : online ? 'New orders near you will show up here.' : 'Go online to see orders near you.'}
               />
@@ -178,7 +180,7 @@ export function RiderHome() {
                       {formatNaira(first.earning_minor_units)}
                     </Chip>
                   )}
-                  <Illustration name="keke" className="w-[86px]" />
+                  <Illustration name="keke-rider" className="w-[86px]" />
                 </div>
               </CardLink>
             )}

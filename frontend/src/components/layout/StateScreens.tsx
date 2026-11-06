@@ -45,7 +45,7 @@ export function EmptyBlock({
   title: string
   text?: string
   action?: ReactNode
-  illustration?: 'jerrycan' | 'keke' | 'tanker' | 'gift'
+  illustration?: 'jerrycan' | 'keke' | 'keke-rider' | 'tanker' | 'gift'
 }) {
   return (
     <div className="flex flex-col items-center gap-2 py-6 text-center">

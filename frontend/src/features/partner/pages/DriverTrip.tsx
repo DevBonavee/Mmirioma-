@@ -49,7 +49,7 @@ export function DriverRefill() {
   return (
     <JobStep stage="accepted">
       {(j) => (
-        <MobileShell>
+        <MobileShell viewport>
           <div className="absolute inset-0 bg-map">
             <TankerRefillMapArt />
             <Illustration
@@ -77,7 +77,7 @@ export function DriverRefill() {
               </div>
             </div>
           </div>
-          <div className="rise-2 absolute right-0 bottom-0 left-0 z-[2] flex flex-col gap-3 rounded-t-[26px] bg-white px-[18px] pt-2.5 pb-5 shadow-[0_-12px_30px_rgba(10,37,64,0.15)]">
+          <div className="rise-2 absolute right-0 bottom-0 left-0 z-[2] flex max-h-[75dvh] flex-col gap-3 overflow-y-auto rounded-t-[26px] bg-white px-[18px] pt-2.5 pb-5 shadow-[0_-12px_30px_rgba(10,37,64,0.15)] md:right-6 md:bottom-6 md:left-auto md:w-[min(560px,calc(100%_-_48px))] md:rounded-[26px] md:p-6">
             <span aria-hidden="true" className="h-[5px] w-11 self-center rounded-[3px] bg-line" />
             <div className="flex items-center justify-between gap-2.5">
               <div>

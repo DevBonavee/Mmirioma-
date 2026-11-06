@@ -47,7 +47,7 @@ export function ContactPage() {
             </nav>
             <Kicker>Contact us</Kicker>
             <h1 className="m-0 font-display text-[clamp(38px,5vw,64px)] leading-[1.02] font-extrabold tracking-[-1.5px] text-ink">
-              Contact <span className="text-mk-teal">MmiriOma</span>
+              Contact <span className="text-mk-teal-button">MmiriOma</span>
             </h1>
             <p className="m-0 max-w-[620px] text-[19px] leading-[1.55] text-mk-lead">{contactLead(CONTACT_FORM_ENABLED, whatsapp !== null)}</p>
           </div>

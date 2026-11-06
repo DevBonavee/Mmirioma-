@@ -101,7 +101,7 @@ export function RiderEarnings() {
               ))}
             </div>
             {list.length === 0 ? (
-              <EmptyBlock illustration="keke" title="Nothing here yet" text="Your trips show here once delivered." />
+              <EmptyBlock illustration="keke-rider" title="Nothing here yet" text="Your trips show here once delivered." />
             ) : (
               <Card className="rise-5 px-3.5 py-1">
                 {list.map((x) => (

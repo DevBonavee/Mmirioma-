@@ -10,7 +10,7 @@ export interface TabItem {
 }
 
 /**
- * Bottom tab bar on home screens (`.tabs`): four equal tabs, the current one
+ * Bottom tab bar on home screens (`.tabs`): equally sized enabled tabs, the current one
  * is blue and marked `aria-current="page"`.
  */
 export function BottomTabBar({
@@ -28,7 +28,8 @@ export function BottomTabBar({
   return (
     <nav
       aria-label={label}
-      className={cx('mo-tabs grid shrink-0 grid-cols-4 border-t border-line bg-white px-1.5 pt-2 pb-[max(12px,env(safe-area-inset-bottom))]', className)}
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      className={cx('mo-tabs grid shrink-0 border-t border-line bg-white px-1.5 pt-2 pb-[max(12px,env(safe-area-inset-bottom))]', className)}
     >
       {items.map((item) => {
         const on = item.to === current
